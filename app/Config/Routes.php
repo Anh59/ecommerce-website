@@ -2,11 +2,12 @@
 
 use CodeIgniter\Router\RouteCollection;
 use App\Controllers\CustomersController;
+use App\Controllers\ProfileController;  
 /**
  * @var RouteCollection $routes
  */
 $routes->get('/', 'Home::index');
-$routes->get('/about', 'Home::about',['as'=>'home_about']);
+$routes->get('/about', 'Home::about',['as'=>'home_about']);// trang chủ
 $routes->get('/layout', 'Home::layout');
 $routes->get('/login', 'Home::login');
 $routes->get('/blog', 'Home::blog');
@@ -40,7 +41,7 @@ $routes->group('api_Customers',function($routes) {
     $routes->get('customers_forgot_password', 'CustomersController::forgotPassword',['as' => 'customes_forgot_password']);
     $routes->post('customers_forgot_password', 'CustomersController::processForgotPassword',['as'=>'Customers_processForgotPassword']);
     $routes->post('customers_pass_verify_otp', 'CustomersController::pass_verifyOTP',['as'=>'Customers_processPassVerifyOTP']);
-    $routes->post('customers_reset_password', 'CustomersController::resetPassword',['as' => 'Customes_resetPassword']);
+    $routes->post('customers_reset_password', 'CustomersController::resetPassword',['as' => 'Customers_resetPassword']);
 
     $routes->get('google_login', 'GoogleController::googleLogin', ['as' => 'google_login']);
     $routes->get('google_callback', 'GoogleController::googleCallback', ['as' => 'google_callback']);

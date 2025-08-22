@@ -1,6 +1,7 @@
 <?= $this->extend('Customers/layout/main') ?>
 
 <?= $this->section('styles') ?>
+
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
@@ -50,16 +51,17 @@
                             <div class="col-md-12 form-group p_star">
                                 <input type="email" class="form-control" id="email" name="email"
                                     placeholder="Email" required>
+                                <div class="invalid-feedback"></div>
                             </div>
 
                             <div class="col-md-12 form-group p_star" style="position: relative;">
                                 <input type="password" class="form-control" id="password" name="password" 
                                     placeholder="Password" required>
                                 <i class="fa fa-eye" id="togglePassword" 
-                                   onclick="password.type = (password.type==='password') ? 'text' : 'password'; 
-                                            this.classList.toggle('fa-eye-slash');" 
-                                   style="position:absolute; right:15px; top:50%; transform:translateY(-50%); cursor:pointer;">
+                                   onclick="togglePasswordVisibility()" 
+                                   style="position:absolute; right:15px; top:50%; transform:translateY(-50%); cursor:pointer; color: #999;">
                                 </i>
+                                <div class="invalid-feedback"></div>
                             </div>
 
                             <div class="col-md-12 form-group">
@@ -68,7 +70,12 @@
                                     <label for="remember_me">Remember me</label>
                                 </div>
 
-                                <button type="submit" class="btn_3">Log In</button>
+                                <button type="submit" class="btn_3" id="loginBtn">
+                                    <span id="loginBtnText">Log In</span>
+                                    <span id="loginSpinner" class="d-none">
+                                        <i class="fa fa-spinner fa-spin"></i> Logging in...
+                                    </span>
+                                </button>
                                 <a class="lost_pass" href="<?= route_to('customes_forgot_password'); ?>">Forget password?</a>
                             </div>
                         </form>
@@ -90,30 +97,151 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script>
 $(document).ready(function(){
+    // Hàm toggle password visibility
+    window.togglePasswordVisibility = function() {
+        const passwordField = document.getElementById('password');
+        const toggleIcon = document.getElementById('togglePassword');
+        
+        if (passwordField.type === 'password') {
+            passwordField.type = 'text';
+            toggleIcon.classList.remove('fa-eye');
+            toggleIcon.classList.add('fa-eye-slash');
+        } else {
+            passwordField.type = 'password';
+            toggleIcon.classList.remove('fa-eye-slash');
+            toggleIcon.classList.add('fa-eye');
+        }
+    };
+
+    // Xử lý submit form login
     $('#loginForm').on('submit', function(e){
         e.preventDefault();
+        
+        // Xóa các thông báo lỗi cũ
+        $('.form-control').removeClass('is-invalid');
+        $('.invalid-feedback').empty();
+        
+        // Validate form trước khi gửi
+        let email = $('#email').val().trim();
+        let password = $('#password').val().trim();
+        let hasError = false;
+
+        if (!email) {
+            $('#email').addClass('is-invalid');
+            $('#email').next('.invalid-feedback').text('Vui lòng nhập email');
+            hasError = true;
+        } else if (!isValidEmail(email)) {
+            $('#email').addClass('is-invalid');
+            $('#email').next('.invalid-feedback').text('Email không hợp lệ');
+            hasError = true;
+        }
+
+        if (!password) {
+            $('#password').addClass('is-invalid');
+            $('#password').next('.invalid-feedback').text('Vui lòng nhập mật khẩu');
+            hasError = true;
+        }
+
+        if (hasError) {
+            showErrorMessage("Lỗi", "Vui lòng kiểm tra lại thông tin!");
+            return;
+        }
+        
+        // Hiển thị loading
+        $('#loginBtnText').addClass('d-none');
+        $('#loginSpinner').removeClass('d-none');
+        $('#loginBtn').prop('disabled', true);
+        showLoading();
 
         $.ajax({
             url: '<?= route_to("Customers_processLogin") ?>',
             type: 'POST',
             data: $(this).serialize(),
+            dataType: 'json',
+            timeout: 15000, // 15 seconds timeout
             success: function(response){
+                hideLoading();
+                resetLoginButton();
+
                 if(response.status === 'success'){
-                    sessionStorage.setItem('authToken', response.token);
-                    showSuccessMessage("Thành công!", response.message);
-                    window.location.href = '<?= route_to("home_about") ?>';
-                }else{
-                    showErrorMessage("Lỗi", response.message);
+                    // Hiển thị thông báo thành công
+                    showSuccessMessage("Đăng nhập thành công!", response.message);
+                    
+                    // Chờ 2 giây rồi chuyển hướng
+                    setTimeout(function(){
+                        if(response.redirect_url) {
+                            window.location.href = response.redirect_url;
+                        } else {
+                            // Fallback về trang chủ nếu không có redirect_url
+                            window.location.href = '<?= base_url() ?>';
+                        }
+                    }, 2000);
+                } else {
+                    // Hiển thị lỗi từ server
+                    showErrorMessage("Đăng nhập thất bại!", response.message);
+                    
+                    // Highlight field có lỗi nếu cần
+                    if (response.message.includes('Email')) {
+                        $('#email').addClass('is-invalid');
+                        $('#email').next('.invalid-feedback').text(response.message);
+                    } else if (response.message.includes('Mật khẩu')) {
+                        $('#password').addClass('is-invalid');
+                        $('#password').next('.invalid-feedback').text(response.message);
+                    }
                 }
             },
-            error: function(){
-                showErrorMessage("Lỗi", "Xảy ra lỗi trong quá trình xử lý");
+            error: function(xhr, status, error){
+                hideLoading();
+                resetLoginButton();
+
+                let errorMessage = "Xảy ra lỗi trong quá trình xử lý!";
+                
+                if (status === 'timeout') {
+                    errorMessage = "Kết nối quá chậm, vui lòng thử lại!";
+                } else if (xhr.status === 404) {
+                    errorMessage = "Không tìm thấy trang xử lý!";
+                } else if (xhr.status === 500) {
+                    errorMessage = "Lỗi hệ thống, vui lòng thử lại sau!";
+                } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+
+                console.log('AJAX Error:', xhr.responseText);
+                showErrorMessage("Lỗi kết nối", errorMessage);
             }
         });
     });
+
+    // Hàm reset trạng thái button login
+    function resetLoginButton() {
+        $('#loginBtnText').removeClass('d-none');
+        $('#loginSpinner').addClass('d-none');
+        $('#loginBtn').prop('disabled', false);
+    }
+
+    // Hàm validate email
+    function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
+    // Xóa lỗi khi người dùng bắt đầu gõ
+    $('#email, #password').on('input', function() {
+        $(this).removeClass('is-invalid');
+        $(this).next('.invalid-feedback').empty();
+    });
+
+    // Enter key để submit form
+    $('#email, #password').on('keypress', function(e) {
+        if (e.which === 13) { // Enter key
+            $('#loginForm').submit();
+        }
+    });
+
+    // Auto focus vào email khi trang load
+    $('#email').focus();
 });
 </script>
 <?= $this->endSection() ?>

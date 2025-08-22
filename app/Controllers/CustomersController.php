@@ -106,40 +106,75 @@ class CustomersController extends BaseController
             return view('Customers/customers_sign');
         }
 
-        public function processLogin()
-        {
-            // Lấy dữ liệu đầu vào
-            $email = $this->request->getPost('email');
-            $password = $this->request->getPost('password');
-            
-            // Kiểm tra thông tin tài khoản
-            $customerModel = new CustomerModel();
-            $customer = $customerModel->where('email', $email)->first();
         
-            if ($customer) {
-                // Kiểm tra nếu tài khoản đã được xác thực OTP
-                if ($customer['is_verified']) {
-                    // Kiểm tra mật khẩu
-                    if (password_verify($password, $customer['password'])) {
-                        // Đăng nhập thành công, lưu thông tin người dùng vào session
-                        session()->set([
-                            'isLoggedIn' => true, // Cờ xác nhận đăng nhập
-                            'customer_id' => $customer['id'],
-                            'customer_name' => $customer['name'],
-                            'customer_avatar' => $customer['image_url'], // Lưu đường dẫn avatar vào session
-                        ]);
-        
-                        return $this->response->setJSON(['status' => 'success', 'message' => 'Đăng nhập thành công!']);
-                    } else {
-                        return $this->response->setJSON(['status' => 'error', 'message' => 'Mật khẩu không đúng.']);
-                    }
+public function processLogin()
+{
+    // Lấy dữ liệu đầu vào
+    $email = $this->request->getPost('email');
+    $password = $this->request->getPost('password');
+    
+    // Kiểm tra thông tin tài khoản
+    $customerModel = new CustomerModel();
+    $customer = $customerModel->where('email', $email)->first();
+
+    if ($customer) {
+        // Kiểm tra nếu tài khoản đã được xác thực OTP
+        if ($customer['is_verified']) {
+            // Kiểm tra mật khẩu
+            if (password_verify($password, $customer['password'])) {
+                // Đăng nhập thành công, lưu thông tin người dùng vào session
+                session()->set([
+                    'user' => [
+                        'id' => $customer['id'],
+                        'name' => $customer['name'],
+                        'email' => $customer['email'],
+                        'phone' => $customer['phone'] ?? '',
+                        'address' => $customer['address'] ?? '',
+                        'avatar' => $customer['image_url'] ?? ''
+                    ],
+                    'isLoggedIn' => true,
+                    'customer_id' => $customer['id'],
+                    'customer_name' => $customer['name'],
+                    'customer_avatar' => $customer['image_url'] ?? '',
+                ]);
+
+                // Kiểm tra nếu là request AJAX
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON([
+                        'status' => 'success', 
+                        'message' => 'Đăng nhập thành công!',
+                        'redirect_url' => route_to('home_about') // Có thể thay bằng route_to('home') nếu có
+                    ]);
                 } else {
-                    return $this->response->setJSON(['status' => 'error', 'message' => 'Tài khoản chưa được xác thực. Vui lòng kiểm tra email.']);
+                    // Nếu không phải AJAX, chuyển hướng trực tiếp
+                    session()->setFlashdata('success', 'Đăng nhập thành công!');
+                    return redirect()->to(route_to('home_about'));
                 }
             } else {
-                return $this->response->setJSON(['status' => 'error', 'message' => 'Email không tồn tại.']);
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON(['status' => 'error', 'message' => 'Mật khẩu không đúng.']);
+                } else {
+                    session()->setFlashdata('error', 'Mật khẩu không đúng.');
+                    return redirect()->back();
+                }
+            }
+        } else {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['status' => 'error', 'message' => 'Tài khoản chưa được xác thực. Vui lòng kiểm tra email.']);
+            } else {
+                session()->setFlashdata('error', 'Tài khoản chưa được xác thực. Vui lòng kiểm tra email.');
+                return redirect()->back();
             }
         }
+    } else {
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Email không tồn tại.']);
+        } else {
+            session()->setFlashdata('error', 'Email không tồn tại.');
+            return redirect()->back();
+        }
+    }
+}
         
         
         
@@ -150,7 +185,7 @@ class CustomersController extends BaseController
         {
             session()->remove(['customer_id', 'customer_name', 'customer_avatar']); // Xóa session
             session()->destroy(); // Hủy session
-            return redirect()->route('Tour_index');
+            return redirect()->route('home_about'); // Chuyển hướng về trang chủ
         }
         
 
