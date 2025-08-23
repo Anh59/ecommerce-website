@@ -2,7 +2,8 @@
 
 use CodeIgniter\Router\RouteCollection;
 use App\Controllers\CustomersController;
-use App\Controllers\ProfileController;  
+use App\Controllers\ProfileController;
+  
 /**
  * @var RouteCollection $routes
  */
@@ -21,8 +22,11 @@ $routes->get('/tracking', 'Home::tracking');
 $routes->get('/confirmation', 'Home::confirmation');
 $routes->get('/elements', 'Home::elements');
 $routes->get('/feature', 'Home::feature');
+$routes->get('/Dashboard', 'Home::Dashboard');
 
 
+$routes->get('adminlogin', 'UserController::loginForm');
+$routes->post('login', 'UserController::login');
 
 $routes->group('api_Customers',function($routes) {
    

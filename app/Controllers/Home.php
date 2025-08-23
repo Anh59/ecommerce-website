@@ -62,4 +62,8 @@ class Home extends BaseController
     {
         return view('Customers/feature');
     }
+    public function Dashboard(): string
+    {
+        return view('Dashboard/layout');
+    }
 }
