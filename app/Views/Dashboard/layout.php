@@ -194,10 +194,10 @@
             <i class="far fa-user"></i> Profile 
         
           </a>
-          <a href="logout" class="dropdown-item">
+          <a href="<?= base_url('logout') ?>" class="dropdown-item">
             <i class="fas fa-sign-out-alt mr-2"></i>Logout 
-        
-          </a>
+        </a>
+
         
       </li>
 
@@ -257,13 +257,13 @@
                       <?php endif; ?>
 
                       <li class="nav-item">
-                  <a href="#" class="nav-link">
-                    <i class="nav-icon fas fa-chart-pie"></i>
-                    <p>
-                      Quản lý 
-                      <i class="right fas fa-angle-left"></i>
-                    </p>
-                  </a>
+                        <a href="#" class="nav-link">
+                            <i class="nav-icon fas fa-chart-pie"></i>
+                            <p>
+                            Quản lý 
+                            <i class="right fas fa-angle-left"></i>
+                            </p>
+                        </a>
                   <ul class="nav nav-treeview">
                  
                   <?php if ($session->get('Table_Group') === true ): ?>

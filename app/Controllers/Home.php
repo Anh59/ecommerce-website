@@ -66,4 +66,8 @@ class Home extends BaseController
     {
         return view('Dashboard/layout');
     }
+    public function Errors(): string
+    {
+        return view('Dashboard/errors');
+    }
 }

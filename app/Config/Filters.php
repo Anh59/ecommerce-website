@@ -12,7 +12,8 @@ use CodeIgniter\Filters\InvalidChars;
 use CodeIgniter\Filters\PageCache;
 use CodeIgniter\Filters\PerformanceMetrics;
 use CodeIgniter\Filters\SecureHeaders;
-
+use App\Filters\LogFilter;
+use App\Filters\PerermissionsFilter;
 class Filters extends BaseFilters
 {
     /**
@@ -34,6 +35,9 @@ class Filters extends BaseFilters
         'forcehttps'    => ForceHTTPS::class,
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
+        'log'           => LogFilter::class,//kiểm tra xem đăng nhập hay chưa
+        'Perermissions' => PerermissionsFilter::class,// Lấy các giá trị Perermissions
+        'authCheck' => \App\Filters\AuthCheck::class,//kiểm tra người dùng
     ];
 
     /**

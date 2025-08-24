@@ -36,13 +36,16 @@
           </div>
         </div>
         <div class="input-group mb-3">
-          <input type="password" name="password" class="form-control" placeholder="Password">
-          <div class="input-group-append">
-            <div class="input-group-text">
-              <span class="fas fa-lock"></span>
-            </div>
-          </div>
-        </div>
+  <input type="password" name="password" id="password" class="form-control" placeholder="Password">
+  <div class="input-group-append">
+    <div class="input-group-text" style="cursor:pointer;" 
+         onclick="let p=document.getElementById('password'); p.type = p.type==='password'?'text':'password';">
+      <span class="fas fa-eye"></span>
+    </div>
+  </div>
+</div>
+
+
         <div class="row">
           <div class="col-8">
             <div class="icheck-primary">
@@ -71,7 +74,7 @@
         <a href="forgot-password.html">I forgot my password</a>
       </p>
       <p class="mb-0">
-        <a href="register" class="text-center">Register a new membership</a>
+        <a href="<?= route_to('adminregister') ?>" class="text-center">Register a new membership</a>
       </p>
     </div>
   </div>

@@ -3,7 +3,6 @@
 use CodeIgniter\Router\RouteCollection;
 use App\Controllers\CustomersController;
 use App\Controllers\ProfileController;
-  
 /**
  * @var RouteCollection $routes
  */
@@ -22,12 +21,10 @@ $routes->get('/tracking', 'Home::tracking');
 $routes->get('/confirmation', 'Home::confirmation');
 $routes->get('/elements', 'Home::elements');
 $routes->get('/feature', 'Home::feature');
-$routes->get('/Dashboard', 'Home::Dashboard');
 
 
-$routes->get('adminlogin', 'UserController::loginForm');
-$routes->post('login', 'UserController::login');
 
+// Xử lý phần API cho khách hàng
 $routes->group('api_Customers',function($routes) {
    
 
@@ -78,4 +75,40 @@ $routes->group('api_Customers',function($routes) {
 
     });
   
+});
+
+// Xử lý phần Dashboard
+$routes->get('/Dashboard', 'Home::Dashboard');
+$routes->get('errors','Home::Errors');
+
+$routes->get('adminlogin', 'UserController::loginForm',['as'=>'adminlogin']);
+$routes->post('login', 'UserController::login');
+$routes->get('adminregister', 'UserController::registerForm',['as' => 'adminregister']);
+$routes->post('register', 'UserController::register');
+$routes->get('logout', 'UserController::logout');
+
+$routes->group('Dashboard', function (RouteCollection $routes) {// ['filter' => 'Perermissions'], đã bỏ filter dòng này nếu sau có lỗi check lại
+
+    // login
+    $routes->get('table', 'DashboardController::table', ['as' => 'Dashboard_table', 'filter' => 'Perermissions:Dashboard_table']);
+
+    // Group
+    $routes->group('Group', ['filter' => 'Perermissions'], function (RouteCollection $routes) {
+        $routes->get('table-group', 'GroupController::table', ['as' => 'Table_Group', 'filter' => 'Perermissions:Table_Group']);
+        $routes->get('table-create', 'GroupController::create', ['as' => 'Table_Create', 'filter' => 'Perermissions:Table_Create']);
+        $routes->post('table-store', 'GroupController::store', ['as' => 'Table_Store', 'filter' => 'Perermissions:Table_Store']);
+        $routes->post('group-update/(:num)', 'GroupController::update/$1', ['as' => 'Group_update', 'filter' => 'Perermissions:Group_update']);
+        $routes->get('group-edit/(:num)', 'GroupController::edit/$1', ['as' => 'Group_edit', 'filter' => 'Perermissions:Group_edit']);
+        $routes->post('group-delete/(:num)', 'GroupController::delete/$1', ['as' => 'Group_delete', 'filter' => 'Perermissions:Group_delete']);
+    });
+    // User
+    $routes->group('User', function (RouteCollection $routes) {
+         $routes->get('table-user', 'TableUserController::tableuser', ['as' => 'Table_User', 'filter' => 'Perermissions:Table_User']);
+         $routes->post('change_user_group', 'TableUserController::changeUserGroup', ['as' => 'change_user_group']);
+         $routes->get('table-user-create', 'TableUserController::create', ['as' => 'Table_User_Create', 'filter' => 'Perermissions:Table_User_Create']);
+         $routes->post('table-user-store', 'TableUserController::store', ['as' => 'Table_User_Store', 'filter' => 'Perermissions:Table_User_Store']);
+         $routes->get('table-user-edit/(:num)', 'TableUserController::editUser/$1', ['as' => 'Table_User_Edit', 'filter' => 'Perermissions:Table_User_Edit']);
+         $routes->post('table-user-update/(:num)', 'TableUserController::updateUser/$1', ['as' => 'Table_User_Update', 'filter' => 'Perermissions:Table_User_Update']);
+         $routes->post('table-user-delete/(:num)', 'TableUserController::deleteUser/$1', ['as' => 'Table_User_Delete', 'filter' => 'Perermissions:Table_User_Delete']);
+    });
 });
