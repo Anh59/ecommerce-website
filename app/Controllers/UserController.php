@@ -59,7 +59,7 @@ class UserController extends Controller
 
             $response->setCookie($cookieOptions);
 
-            return redirect()->to('Dashboard')->withCookies(); // Chuyển hướng đến trang dashboard sau khi đăng nhập thành công
+            return redirect()->to('Dashboard/table')->withCookies(); // Chuyển hướng đến trang dashboard sau khi đăng nhập thành công
         } else {
             // Đăng nhập thất bại
             return redirect()->back()->with('error', 'Invalid email or password');

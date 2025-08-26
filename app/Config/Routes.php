@@ -87,13 +87,13 @@ $routes->get('adminregister', 'UserController::registerForm',['as' => 'adminregi
 $routes->post('register', 'UserController::register');
 $routes->get('logout', 'UserController::logout');
 
-$routes->group('Dashboard',['filter' => 'Perermissions'], function (RouteCollection $routes) {// ['filter' => 'Perermissions'], đã bỏ filter dòng này nếu sau có lỗi check lại
+$routes->group('Dashboard', function (RouteCollection $routes) {// ['filter' => 'Perermissions'], đã bỏ filter dòng này nếu sau có lỗi check lại
 
     // login
     $routes->get('table', 'DashboardController::table', ['as' => 'Dashboard_table', 'filter' => 'Perermissions:Dashboard_table']);
 
     // Group
-    $routes->group('Group', ['filter' => 'Perermissions'], function (RouteCollection $routes) {
+    $routes->group('Group',  function (RouteCollection $routes) {
         $routes->get('table-group', 'GroupController::table', ['as' => 'Table_Group', 'filter' => 'Perermissions:Table_Group']);
         $routes->get('table-create', 'GroupController::create', ['as' => 'Table_Create', 'filter' => 'Perermissions:Table_Create']);
         $routes->post('table-store', 'GroupController::store', ['as' => 'Table_Store', 'filter' => 'Perermissions:Table_Store']);
@@ -148,4 +148,23 @@ $routes->group('Dashboard',['filter' => 'Perermissions'], function (RouteCollect
         $routes->post('table-customers-delete/(:num)', 'TableCustomersController::delete/$1', ['as' => 'Table_Customers_Delete', 'filter' => 'Perermissions:Table_Customers_Delete']);
         //$routes->post('table-customers-lock/(:num)', 'TableCustomersController::lockCustomer/$1', ['as' => 'Table_Customers_Lock', 'filter' => 'Perermissions:Table_Customers_Lock']);
     });
+
+   
+    // Products
+        $routes->get('products', 'ProductsController::index', ['as' => 'Table_products', 'filter' => 'Perermissions:Table_products']);
+        $routes->get('products/list', 'ProductsController::list', ['as' => 'products.list', 'filter' => 'Perermissions:products.list']);
+        $routes->post('products/store', 'ProductsController::store', ['as' => 'products.store', 'filter' => 'Perermissions:products.store']);
+        $routes->get('products/(:num)/edit', 'ProductsController::edit/$1', ['as' => 'products.edit', 'filter' => 'Perermissions:products.edit']);
+        $routes->post('products/(:num)/update', 'ProductsController::update/$1', ['as' => 'products.update', 'filter' => 'Perermissions:products.update']);
+        $routes->post('products/(:num)/delete', 'ProductsController::delete/$1', ['as' => 'products.delete', 'filter' => 'Perermissions:products.delete']);
+
+        // Product images (optional)
+        $routes->post('products/(:num)/images/upload', 'ProductsController::uploadImages/$1', ['as' => 'products.images.upload']);
+        $routes->post('products/images/(:num)/delete', 'ProductsController::deleteImage/$1', ['as' => 'products.images.delete']);
+
+    // (Tương tự thêm routes cho posts, invoices, reviews...)
+
+
+
+
 });

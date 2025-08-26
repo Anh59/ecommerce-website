@@ -52,7 +52,7 @@ class PerermissionsFilter implements FilterInterface
             $session->set('Table_Permissions', true);
             $session->set('Table_User', true);
             $session->set('Table_Customers', true);
-            $session->set('Table_Tours', true);
+            $session->set('Table_products', true);
             $session->set('Table_Rooms', true);
             $session->set('Table_Transports', true);
             $session->set('Table_Consultations', true);

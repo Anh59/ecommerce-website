@@ -342,11 +342,11 @@
                   </a>
                   <ul class="nav nav-treeview">
                  
-                    <?php if ($session->get('Table_Rooms') === true ): ?>
+                    <?php if ($session->get('Table_products') === true ): ?>
                       <li class="nav-item">
-                          <a href="<?= route_to('Table_Rooms') ?>" class="nav-link">
+                          <a href="<?= route_to('Table_products') ?>" class="nav-link">
                           <i class="fas fa-bed nav-icon"></i>
-                              <p>Phòng nghỉ</p>
+                              <p>Sản phẩm</p>
                           </a>
                       </li>
                       <?php endif; ?>
