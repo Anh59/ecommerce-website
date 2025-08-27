@@ -23,7 +23,7 @@ $routes->get('/elements', 'Home::elements');
 $routes->get('/feature', 'Home::feature');
 
 
-
+// Xây các trang website cho khách hàng
 // Xử lý phần API cho khách hàng
 $routes->group('api_Customers',function($routes) {
    
