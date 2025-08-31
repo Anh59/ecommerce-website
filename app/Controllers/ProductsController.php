@@ -48,10 +48,10 @@ class ProductsController extends BaseController
     {
         $validation = \Config\Services::validation();
         $rules = [
-            'name' => 'required',
-            'slug' => 'required|is_unique[products.slug]',
-            'sku'  => 'required|is_unique[products.sku]',
-            'price'=> 'required|numeric',
+            'name' => 'required|max_length[255]',
+            'slug' => 'required|max_length[255]|is_unique[products.slug]',
+            'sku'  => 'required|max_length[100]|is_unique[products.sku]',
+            'price'=> 'required|numeric|greater_than[0]',
             'category_id' => 'required|integer'
         ];
 
@@ -64,6 +64,13 @@ class ProductsController extends BaseController
         }
 
         $post = $this->request->getPost();
+
+        // Set default values
+        if (!isset($post['is_active'])) $post['is_active'] = 1;
+        if (!isset($post['is_featured'])) $post['is_featured'] = 0;
+        if (!isset($post['stock_quantity'])) $post['stock_quantity'] = 0;
+        if (!isset($post['min_stock_level'])) $post['min_stock_level'] = 0;
+        if (!isset($post['stock_status'])) $post['stock_status'] = 'in_stock';
 
         // Xử lý specifications
         $specifications = [];
@@ -117,7 +124,24 @@ class ProductsController extends BaseController
         $post['updated_at'] = date('Y-m-d H:i:s');
 
         // Lưu product
-        $id = $this->productModel->insert($post);
+        try {
+            $id = $this->productModel->insert($post);
+            
+            if (!$id) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Không thể tạo sản phẩm',
+                    'errors' => $this->productModel->errors(),
+                    'token' => csrf_hash()
+                ]);
+            }
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Lỗi: ' . $e->getMessage(),
+                'token' => csrf_hash()
+            ]);
+        }
 
         // Lưu product_images nếu có files multiple
         $files = $this->request->getFiles();
@@ -185,25 +209,38 @@ class ProductsController extends BaseController
     // 5. Update
     public function update($id)
     {
-        // Validation
+        // Validation với exclude current record
+        $validation = \Config\Services::validation();
         $rules = [
-            'name' => 'required',
-            'slug' => "required|is_unique[products.slug,id,{$id}]",
-            'sku'  => "required|is_unique[products.sku,id,{$id}]",
-            'price'=> 'required|numeric',
+            'name' => 'required|max_length[255]',
+            'slug' => "required|max_length[255]|is_unique[products.slug,id,{$id}]",
+            'sku'  => "required|max_length[100]|is_unique[products.sku,id,{$id}]",
+            'price'=> 'required|numeric|greater_than[0]',
             'category_id' => 'required|integer'
         ];
         
         if (!$this->validate($rules)) {
             return $this->response->setJSON([
                 'status'=>'error',
-                'errors'=>\Config\Services::validation()->getErrors(),
+                'errors'=>$validation->getErrors(),
                 'token'=>csrf_hash()
             ]);
         }
 
         $post = $this->request->getPost();
         $oldProduct = $this->productModel->find($id);
+
+        if (!$oldProduct) {
+            return $this->response->setJSON([
+                'status'=>'error',
+                'message'=>'Không tìm thấy sản phẩm',
+                'token'=>csrf_hash()
+            ]);
+        }
+
+        // Set default values for update
+        if (!isset($post['is_active'])) $post['is_active'] = $oldProduct['is_active'];
+        if (!isset($post['is_featured'])) $post['is_featured'] = 0;
 
         // Xử lý specifications
         $specifications = [];
@@ -256,13 +293,17 @@ class ProductsController extends BaseController
         if (isset($post['stock_quantity']) && (int)$post['stock_quantity'] != (int)$oldProduct['stock_quantity']) {
             $diff = (int)$post['stock_quantity'] - (int)$oldProduct['stock_quantity'];
             if ($diff != 0) {
-                (new StockMovementModel())->insert([
-                    'product_id' => $id,
-                    'type' => $diff > 0 ? 'in' : 'out',
-                    'quantity' => abs($diff),
-                    'reason' => 'manual_adjustment',
-                    'created_at' => date('Y-m-d H:i:s')
-                ]);
+                try {
+                    (new StockMovementModel())->insert([
+                        'product_id' => $id,
+                        'type' => $diff > 0 ? 'in' : 'out',
+                        'quantity' => abs($diff),
+                        'reason' => 'manual_adjustment',
+                        'created_at' => date('Y-m-d H:i:s')
+                    ]);
+                } catch (\Exception $e) {
+                    log_message('error', 'Failed to create stock movement: ' . $e->getMessage());
+                }
             }
         }
 
@@ -273,7 +314,15 @@ class ProductsController extends BaseController
 
         $post['updated_at'] = date('Y-m-d H:i:s');
 
-        $this->productModel->update($id, $post);
+        try {
+            $this->productModel->update($id, $post);
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'status'=>'error',
+                'message'=>'Lỗi cập nhật: ' . $e->getMessage(),
+                'token'=>csrf_hash()
+            ]);
+        }
 
         return $this->response->setJSON([
             'status'=>'success',

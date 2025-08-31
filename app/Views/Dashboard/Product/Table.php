@@ -286,7 +286,7 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
+<script src="<?= base_url('js/datatable.js') ?>"></script>
 <style>
 .product-image { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
 .preview-image { width: 100px; height: 100px; object-fit: cover; border-radius: 4px; margin: 5px; position: relative; display: inline-block; }
@@ -366,9 +366,7 @@ $(document).ready(function(){
         ],
         order: [[0, 'desc']],
         pageLength: 25,
-        language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/vi.json'
-        }
+        
     });
 
     // Show add modal
@@ -586,24 +584,38 @@ $(document).ready(function(){
         }
     });
 
-    // Preview multiple images
-    $('#images').on('change', function(){
-        const files = this.files;
-        let html = '';
-        
+   // Preview multiple images - ĐÃ SỬA
+$('#images').on('change', function(){
+    const files = this.files;
+    let html = $('#imagesPreview').html();
+    
+    if (files && files.length) {
         for (let i = 0; i < files.length; i++) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                html += `
-                    <div class="preview-image">
-                        <img src="${e.target.result}" width="100" height="100" style="object-fit: cover;">
-                    </div>
-                `;
+                html += `<div class="preview-image">
+                    <img src="${e.target.result}" width="100" height="100" style="object-fit: cover;">
+                    <button type="button" class="btn btn-sm btn-danger delete-image-btn remove-new-image">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>`;
                 $('#imagesPreview').html(html);
             }
             reader.readAsDataURL(files[i]);
         }
-    });
+    }
+});
+
+// Xóa ảnh mới (chưa upload) - THÊM MỚI
+$(document).on('click', '.remove-new-image', function(){
+    $(this).closest('.preview-image').remove();
+});
+
+// Reset file input khi đóng modal - THÊM MỚI
+$('#productModal').on('hidden.bs.modal', function(){
+    $('#main_image, #images').val('');
+    $('#mainPreview, #imagesPreview').html('');
+});
 
     // Form validation
     $('#productForm').on('submit', function(e){

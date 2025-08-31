@@ -48,8 +48,8 @@ class ProductModel extends Model
     // Validation
     protected $validationRules = [
         'name' => 'required|max_length[255]',
-        'slug' => 'required|max_length[255]|is_unique[products.slug,id,{id}]',
-        'sku'  => 'required|max_length[100]|is_unique[products.sku,id,{id}]',
+        'slug' => 'required|max_length[255]|is_unique[products.slug]',
+        'sku'  => 'required|max_length[100]|is_unique[products.sku]',
         'price' => 'required|numeric',
         'category_id' => 'required|integer'
     ];
@@ -117,19 +117,27 @@ class ProductModel extends Model
 
     protected function updateStockStatus(array $data)
     {
-        if (isset($data['id'])) {
-            $product = $this->find($data['id']);
-            if ($product) {
-                $stockStatus = $this->determineStockStatus(
-                    $product['stock_quantity'], 
-                    $product['min_stock_level']
-                );
-                
-                if ($stockStatus !== $product['stock_status']) {
-                    $this->update($data['id'], ['stock_status' => $stockStatus]);
-                }
+        if (isset($data['id']) && is_array($data['id'])) {
+            $id = $data['id'][0]; // Lấy ID từ array nếu là update
+        } elseif (isset($data['result'])) {
+            $id = $data['result']; // ID mới được tạo
+        } else {
+            return $data;
+        }
+        
+        $product = $this->find($id);
+        if ($product) {
+            $stockStatus = $this->determineStockStatus(
+                $product['stock_quantity'], 
+                $product['min_stock_level']
+            );
+            
+            if ($stockStatus !== $product['stock_status']) {
+                // Tránh vòng lặp callback bằng cách update trực tiếp
+                $this->builder()->where('id', $id)->update(['stock_status' => $stockStatus]);
             }
         }
+        
         return $data;
     }
 
