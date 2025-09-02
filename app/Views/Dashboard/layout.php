@@ -37,7 +37,7 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/v/dt/jqc-1.12.4/dt-2.0.7/b-3.0.2/sl-2.0.2/datatables.min.css" />
     <!-- <link rel="stylesheet" href="Editor-PHP-2.3.2/css/editor.dataTables.css"> -->
     <link rel="stylesheet" href="https://cdn.datatables.net/datetime/1.5.2/css/dataTables.dateTime.min.css">
-
+<link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
 </head>
 
 <body class="hold-transition sidebar-mini layout-fixed">
@@ -1183,7 +1183,7 @@
 <!-- <script src="dist/js/pages/dashboard.js"></script> -->
  <!-- hiệu ứng silde-show của thông tin chi tiết tour -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <!-- <script>

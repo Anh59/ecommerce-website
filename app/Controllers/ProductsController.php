@@ -332,40 +332,42 @@ class ProductsController extends BaseController
     }
 
     // 6. Delete
-    public function delete($id)
-    {
-        $product = $this->productModel->find($id);
-        if (!$product) {
-            return $this->response->setJSON([
-                'status'=>'error',
-                'message'=>'Không tìm thấy sản phẩm',
-                'token'=>csrf_hash()
-            ]);
-        }
-
-        // Xóa ảnh chính
-        if (!empty($product['main_image']) && file_exists(FCPATH . $product['main_image'])) {
-            unlink(FCPATH . $product['main_image']);
-        }
-
-        // Xóa ảnh phụ
-        $images = $this->imageModel->where('product_id', $id)->findAll();
-        foreach ($images as $img) {
-            if (file_exists(FCPATH . $img['image_url'])) {
-                unlink(FCPATH . $img['image_url']);
-            }
-        }
-        $this->imageModel->where('product_id', $id)->delete();
-
-        // Soft delete product
-        $this->productModel->update($id, ['deleted_at' => date('Y-m-d H:i:s')]);
-
+    // 6. Delete
+public function delete($id)
+{
+    $product = $this->productModel->find($id);
+    if (!$product) {
         return $this->response->setJSON([
-            'status'=>'success',
-            'message'=>'Xóa thành công',
+            'status'=>'error',
+            'message'=>'Không tìm thấy sản phẩm',
             'token'=>csrf_hash()
         ]);
     }
+
+    // Xóa ảnh chính
+    if (!empty($product['main_image']) && file_exists(FCPATH . $product['main_image'])) {
+        unlink(FCPATH . $product['main_image']);
+    }
+
+    // Xóa ảnh phụ
+    $images = $this->imageModel->where('product_id', $id)->findAll();
+    foreach ($images as $img) {
+        if (file_exists(FCPATH . $img['image_url'])) {
+            unlink(FCPATH . $img['image_url']);
+        }
+    }
+    $this->imageModel->where('product_id', $id)->delete();
+
+    // 🔥 Gọi soft delete đúng chuẩn
+    $this->productModel->delete($id);
+
+    return $this->response->setJSON([
+        'status'=>'success',
+        'message'=>'Xóa thành công',
+        'token'=>csrf_hash()
+    ]);
+}
+
 
     // 7. Xóa ảnh riêng lẻ
     public function deleteImage($id)
