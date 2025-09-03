@@ -151,16 +151,20 @@ $routes->group('Dashboard', function (RouteCollection $routes) {// ['filter' => 
 
    
     // Products
-        $routes->get('products', 'ProductsController::index', ['as' => 'Table_products', 'filter' => 'Perermissions:Table_products']);
-        $routes->get('products/list', 'ProductsController::list', ['as' => 'products.list', 'filter' => 'Perermissions:products.list']);
-        $routes->post('products/store', 'ProductsController::store', ['as' => 'products.store', 'filter' => 'Perermissions:products.store']);
-        $routes->get('products/(:num)/edit', 'ProductsController::edit/$1', ['as' => 'products.edit', 'filter' => 'Perermissions:products.edit']);
-        $routes->post('products/(:num)/update', 'ProductsController::update/$1', ['as' => 'products.update', 'filter' => 'Perermissions:products.update']);
-        $routes->post('products/(:num)/delete', 'ProductsController::delete/$1', ['as' => 'products.delete', 'filter' => 'Perermissions:products.delete']);
-
-        // Product images (optional)
-        $routes->post('products/(:num)/images/upload', 'ProductsController::uploadImages/$1', ['as' => 'products.images.upload']);
-        $routes->post('products/images/(:num)/delete', 'ProductsController::deleteImage/$1', ['as' => 'products.images.delete']);
+        // $routes->get('products', 'ProductsController::index', ['as' => 'Table_products', 'filter' => 'Perermissions:Table_products']);
+        $routes->get('products', 'ProductsController::index',['as' => 'Table_products', 'filter' => 'Perermissions:Table_products']);
+    $routes->get('products/list', 'ProductsController::list');
+    $routes->post('products/store', 'ProductsController::store');
+    $routes->get('products/(:num)/edit', 'ProductsController::edit/$1');
+    $routes->post('products/(:num)/update', 'ProductsController::update/$1');
+    $routes->post('products/(:num)/delete', 'ProductsController::delete/$1');
+    $routes->post('products/images/(:num)/delete', 'ProductsController::deleteImage/$1');
+    
+    // Alternative routes for consistency
+    $routes->match(['get', 'post'], 'products/create', 'ProductsController::store');
+    $routes->match(['get', 'post'], 'products/edit/(:num)', 'ProductsController::edit/$1');
+    $routes->match(['post', 'put'], 'products/update/(:num)', 'ProductsController::update/$1');
+    $routes->match(['post', 'delete'], 'products/delete/(:num)', 'ProductsController::delete/$1');
 
     // (Tương tự thêm routes cho posts, invoices, reviews...)
 

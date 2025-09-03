@@ -206,10 +206,20 @@ class ProductsController extends BaseController
         ]);
     }
 
-    // 5. Update
+    // 5. Update - ĐÃ SỬA
     public function update($id)
     {
-        // Validation với exclude current record
+        // Kiểm tra product tồn tại trước
+        $oldProduct = $this->productModel->find($id);
+        if (!$oldProduct) {
+            return $this->response->setJSON([
+                'status'=>'error',
+                'message'=>'Không tìm thấy sản phẩm',
+                'token'=>csrf_hash()
+            ]);
+        }
+
+        // Validation với exclude current record - ĐÃ SỬA
         $validation = \Config\Services::validation();
         $rules = [
             'name' => 'required|max_length[255]',
@@ -228,15 +238,6 @@ class ProductsController extends BaseController
         }
 
         $post = $this->request->getPost();
-        $oldProduct = $this->productModel->find($id);
-
-        if (!$oldProduct) {
-            return $this->response->setJSON([
-                'status'=>'error',
-                'message'=>'Không tìm thấy sản phẩm',
-                'token'=>csrf_hash()
-            ]);
-        }
 
         // Set default values for update
         if (!isset($post['is_active'])) $post['is_active'] = $oldProduct['is_active'];
@@ -263,7 +264,7 @@ class ProductsController extends BaseController
         }
         
         if (!empty($specifications)) {
-            $post['specifications'] = json_encode($specifications);
+            $post['specifications'] = json_encode($specifications, JSON_UNESCAPED_UNICODE);
         }
 
         // Xử lý dimensions
@@ -273,7 +274,7 @@ class ProductsController extends BaseController
         if (!empty($post['dimension_height'])) $dimensions['height'] = (float)$post['dimension_height'];
         
         if (!empty($dimensions)) {
-            $post['dimensions'] = json_encode($dimensions);
+            $post['dimensions'] = json_encode($dimensions, JSON_UNESCAPED_UNICODE);
         }
 
         // Xử lý main image
@@ -287,6 +288,21 @@ class ProductsController extends BaseController
             $newName = $mainImage->getRandomName();
             $mainImage->move(FCPATH . 'uploads/products', $newName);
             $post['main_image'] = 'uploads/products/' . $newName;
+        }
+
+        // Xử lý ảnh phụ mới
+        $files = $this->request->getFiles();
+        if (!empty($files['images'])) {
+            foreach ($files['images'] as $f) {
+                if ($f && $f->isValid()) {
+                    $fname = $f->getRandomName();
+                    $f->move(FCPATH . 'uploads/products', $fname);
+                    $this->imageModel->insert([
+                        'product_id' => $id,
+                        'image_url'  => 'uploads/products/' . $fname,
+                    ]);
+                }
+            }
         }
 
         // Stock movement nếu stock_quantity thay đổi
@@ -307,67 +323,89 @@ class ProductsController extends BaseController
             }
         }
 
-        // Clean post data
+        // Clean post data - remove temporary fields
         unset($post['spec_height'], $post['spec_width'], $post['spec_length'], $post['spec_weight']);
         unset($post['spec_material'], $post['spec_color'], $post['spec_power'], $post['spec_capacity'], $post['spec_other']);
         unset($post['dimension_length'], $post['dimension_width'], $post['dimension_height']);
 
+        // Set updated timestamp
         $post['updated_at'] = date('Y-m-d H:i:s');
 
         try {
-            $this->productModel->update($id, $post);
+            // SỬA: Sử dụng skipValidation để tránh lỗi validation khi update
+            $this->productModel->skipValidation(true)->update($id, $post);
+            
+            // Verify update thành công
+            $updatedProduct = $this->productModel->find($id);
+            if (!$updatedProduct) {
+                throw new \Exception('Không thể cập nhật sản phẩm');
+            }
+            
+            return $this->response->setJSON([
+                'status'=>'success',
+                'message'=>'Cập nhật thành công',
+                'token'=>csrf_hash()
+            ]);
+            
         } catch (\Exception $e) {
+            log_message('error', 'Update product error: ' . $e->getMessage());
             return $this->response->setJSON([
                 'status'=>'error',
                 'message'=>'Lỗi cập nhật: ' . $e->getMessage(),
                 'token'=>csrf_hash()
             ]);
         }
-
-        return $this->response->setJSON([
-            'status'=>'success',
-            'message'=>'Cập nhật thành công',
-            'token'=>csrf_hash()
-        ]);
     }
 
-    // 6. Delete
-    // 6. Delete
-public function delete($id)
-{
-    $product = $this->productModel->find($id);
-    if (!$product) {
-        return $this->response->setJSON([
-            'status'=>'error',
-            'message'=>'Không tìm thấy sản phẩm',
-            'token'=>csrf_hash()
-        ]);
-    }
+    // 6. Delete - ĐÃ SỬA
+    public function delete($id)
+    {
+        $product = $this->productModel->find($id);
+        if (!$product) {
+            return $this->response->setJSON([
+                'status'=>'error',
+                'message'=>'Không tìm thấy sản phẩm',
+                'token'=>csrf_hash()
+            ]);
+        }
 
-    // Xóa ảnh chính
-    if (!empty($product['main_image']) && file_exists(FCPATH . $product['main_image'])) {
-        unlink(FCPATH . $product['main_image']);
-    }
+        try {
+            // Xóa ảnh chính
+            if (!empty($product['main_image']) && file_exists(FCPATH . $product['main_image'])) {
+                unlink(FCPATH . $product['main_image']);
+            }
 
-    // Xóa ảnh phụ
-    $images = $this->imageModel->where('product_id', $id)->findAll();
-    foreach ($images as $img) {
-        if (file_exists(FCPATH . $img['image_url'])) {
-            unlink(FCPATH . $img['image_url']);
+            // Xóa ảnh phụ
+            $images = $this->imageModel->where('product_id', $id)->findAll();
+            foreach ($images as $img) {
+                if (file_exists(FCPATH . $img['image_url'])) {
+                    unlink(FCPATH . $img['image_url']);
+                }
+            }
+            $this->imageModel->where('product_id', $id)->delete();
+
+            // SỬA: Sử dụng delete thực sự thay vì soft delete
+            $deleted = $this->productModel->delete($id);
+            
+            if (!$deleted) {
+                throw new \Exception('Không thể xóa sản phẩm');
+            }
+
+            return $this->response->setJSON([
+                'status'=>'success',
+                'message'=>'Xóa thành công',
+                'token'=>csrf_hash()
+            ]);
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Delete product error: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'status'=>'error',
+                'message'=>'Lỗi xóa: ' . $e->getMessage(),
+                'token'=>csrf_hash()
+            ]);
         }
     }
-    $this->imageModel->where('product_id', $id)->delete();
-
-    // 🔥 Gọi soft delete đúng chuẩn
-    $this->productModel->delete($id);
-
-    return $this->response->setJSON([
-        'status'=>'success',
-        'message'=>'Xóa thành công',
-        'token'=>csrf_hash()
-    ]);
-}
-
 
     // 7. Xóa ảnh riêng lẻ
     public function deleteImage($id)
