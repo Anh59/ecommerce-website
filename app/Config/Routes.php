@@ -149,7 +149,17 @@ $routes->group('Dashboard', function (RouteCollection $routes) {// ['filter' => 
         //$routes->post('table-customers-lock/(:num)', 'TableCustomersController::lockCustomer/$1', ['as' => 'Table_Customers_Lock', 'filter' => 'Perermissions:Table_Customers_Lock']);
     });
 
-   
+    // Brand
+    $routes->get('brands', 'BrandController::index', ['as' => 'Table_Brand', 'filter' => 'Perermissions:Table_Brand']);
+    $routes->post('brands/store', 'BrandController::store', ['as' => 'Table_Brand_Store']);
+    $routes->get('brands/(:num)/edit', 'BrandController::edit/$1', ['as' => 'Table_Brand_Edit', 'filter' => 'Perermissions:Table_Brand_Edit']);
+    $routes->post('brands/(:num)/update', 'BrandController::update/$1', ['as' => 'Table_Brand_Update']);
+    $routes->post('brands/(:num)/delete', 'BrandController::delete/$1', ['as' => 'Table_Brand_Delete']);
+    $routes->get('brands/list', 'BrandController::list');
+
+
+    // Category
+    
     // Products
         // $routes->get('products', 'ProductsController::index', ['as' => 'Table_products', 'filter' => 'Perermissions:Table_products']);
         $routes->get('products', 'ProductsController::index',['as' => 'Table_products', 'filter' => 'Perermissions:Table_products']);

@@ -351,11 +351,11 @@
                       </li>
                       <?php endif; ?>
 
-                      <?php if ($session->get('Table_Transports') === true ): ?>
+                      <?php if ($session->get('Table_Brand') === true ): ?>
                       <li class="nav-item">
-                          <a href="<?= route_to('Table_Transports') ?>" class="nav-link">
+                          <a href="<?= route_to('Table_Brand') ?>" class="nav-link">
                           <i class="fas fa-car nav-icon"></i>
-                              <p>Phương Tiện</p>
+                              <p>brand</p>
                           </a>
                       </li>
                       <?php endif; ?>
