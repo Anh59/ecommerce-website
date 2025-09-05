@@ -37,21 +37,27 @@ class BrandController extends BaseController
         }
     }
 
-    // Thêm mới
-    public function store()
+  
+// Thêm mới
+public function store()
 {
     if ($this->request->isAJAX()) {
-        $data = [
-            'name'        => $this->request->getPost('name'),
-            'slug'        => url_title($this->request->getPost('name'), '-', true),
-            'description' => $this->request->getPost('description'),
-            'website'     => $this->request->getPost('website'),
-            'country'     => $this->request->getPost('country'),
-            'is_active'   => $this->request->getPost('is_active') ?? 1,
-            'sort_order'  => $this->request->getPost('sort_order') ?? 0,
-        ];
+        [$rules, $messages] = $this->brandModel->rulesForInsert();
 
-        // Xử lý upload logo (nếu có)
+        if (!$this->validate($rules, $messages)) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => $this->validator->getErrors(),
+                'token'   => csrf_hash()
+            ]);
+        }
+
+        $data = $this->request->getPost([
+            'name', 'website', 'country', 'is_active', 'sort_order'
+        ]);
+        $data['slug'] = url_title($data['name'], '-', true);
+
+        // Upload logo
         $file = $this->request->getFile('logo_url');
         if ($file && $file->isValid() && !$file->hasMoved()) {
             $newName = $file->getRandomName();
@@ -61,9 +67,56 @@ class BrandController extends BaseController
 
         $this->brandModel->insert($data);
 
-        return $this->response->setJSON(['status' => 'success', 'message' => 'Thêm thương hiệu thành công']);
+        return $this->response->setJSON([
+            'status' => 'success',
+            'message' => 'Thêm thương hiệu thành công',
+            'token'   => csrf_hash()
+        ]);
     }
 }
+
+// Cập nhật
+public function update($id)
+{
+    if ($this->request->isAJAX()) {
+        [$rules, $messages] = $this->brandModel->rulesForUpdate($id);
+
+        if (!$this->validate($rules, $messages)) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => $this->validator->getErrors(),
+                'token'   => csrf_hash()
+            ]);
+        }
+
+        $data = $this->request->getPost([
+            'name', 'website', 'country', 'is_active', 'sort_order'
+        ]);
+        $data['slug'] = url_title($data['name'], '-', true);
+
+        // Upload logo mới
+        $file = $this->request->getFile('logo_url');
+        if ($file && $file->isValid() && !$file->hasMoved()) {
+            $newName = $file->getRandomName();
+            $file->move('uploads/brand', $newName);
+            $data['logo_url'] = 'uploads/brand/' . $newName;
+
+            $old = $this->brandModel->find($id);
+            if ($old && !empty($old['logo_url']) && file_exists(FCPATH . $old['logo_url'])) {
+                unlink(FCPATH . $old['logo_url']);
+            }
+        }
+
+        $this->brandModel->update($id, $data);
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'message' => 'Cập nhật thương hiệu thành công',
+            'token'   => csrf_hash()
+        ]);
+    }
+}
+
     // Lấy 1 thương hiệu để edit
     public function edit($id)
 {
@@ -85,40 +138,7 @@ class BrandController extends BaseController
 }
 
 
-    // Cập nhật
-    public function update($id)
-{
-    if ($this->request->isAJAX()) {
-        $data = [
-            'name'        => $this->request->getPost('name'),
-            'slug'        => url_title($this->request->getPost('name'), '-', true),
-            'description' => $this->request->getPost('description'),
-            'website'     => $this->request->getPost('website'),
-            'country'     => $this->request->getPost('country'),
-            'is_active'   => $this->request->getPost('is_active') ?? 1,
-            'sort_order'  => $this->request->getPost('sort_order') ?? 0,
-        ];
-
-        // Xử lý upload logo mới (nếu có)
-        $file = $this->request->getFile('logo_url');
-        if ($file && $file->isValid() && !$file->hasMoved()) {
-            $newName = $file->getRandomName();
-            $file->move('uploads/brand', $newName);
-            $data['logo_url'] = 'uploads/brand/' . $newName;
-
-            // Xóa logo cũ (nếu có)
-            $old = $this->brandModel->find($id);
-            if ($old && !empty($old['logo_url']) && file_exists(FCPATH . $old['logo_url'])) {
-                unlink(FCPATH . $old['logo_url']);
-            }
-        }
-
-        $this->brandModel->update($id, $data);
-
-        return $this->response->setJSON(['status' => 'success', 'message' => 'Cập nhật thương hiệu thành công']);
-    }
-}
-
+ 
 
     // Xóa mềm
     public function delete($id)

@@ -159,7 +159,12 @@ $routes->group('Dashboard', function (RouteCollection $routes) {// ['filter' => 
 
 
     // Category
-    
+    $routes->get('categories', 'CategoryController::index', ['as' => 'Table_categories', 'filter' => 'Perermissions:Table_categories']);
+    $routes->get('categories/list', 'CategoryController::list');
+    $routes->post('categories/store', 'CategoryController::store');
+    $routes->get('categories/(:num)/edit', 'CategoryController::edit/$1');
+    $routes->post('categories/(:num)/update', 'CategoryController::update/$1');
+    $routes->post('categories/(:num)/delete', 'CategoryController::delete/$1');
     // Products
         // $routes->get('products', 'ProductsController::index', ['as' => 'Table_products', 'filter' => 'Perermissions:Table_products']);
         $routes->get('products', 'ProductsController::index',['as' => 'Table_products', 'filter' => 'Perermissions:Table_products']);

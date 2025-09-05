@@ -345,7 +345,7 @@
                     <?php if ($session->get('Table_products') === true ): ?>
                       <li class="nav-item">
                           <a href="<?= route_to('Table_products') ?>" class="nav-link">
-                          <i class="fas fa-bed nav-icon"></i>
+                          <i class="fas fa-product-hunt nav-icon"></i>
                               <p>Sản phẩm</p>
                           </a>
                       </li>
@@ -354,12 +354,19 @@
                       <?php if ($session->get('Table_Brand') === true ): ?>
                       <li class="nav-item">
                           <a href="<?= route_to('Table_Brand') ?>" class="nav-link">
-                          <i class="fas fa-car nav-icon"></i>
-                              <p>brand</p>
+                          <i class="fas fa-brand nav-icon"></i>
+                              <p>Thương hiệu</p>
                           </a>
                       </li>
                       <?php endif; ?>
-
+                           <?php if ($session->get('Table_categories') === true ): ?>
+                      <li class="nav-item">
+                          <a href="<?= route_to('Table_categories') ?>" class="nav-link">
+                          <i class="fas fa-tags nav-icon"></i>
+                              <p>Danh mục</p>
+                          </a>
+                      </li>
+                      <?php endif; ?>
 
                     
                     <?php if ($session->get('Table_Tours') === true ): ?>

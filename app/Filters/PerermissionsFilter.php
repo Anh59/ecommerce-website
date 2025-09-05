@@ -54,7 +54,7 @@ class PerermissionsFilter implements FilterInterface
             $session->set('Table_Customers', true);
             $session->set('Table_products', true);
             $session->set('Table_Brand', true);
-            $session->set('Table_Transports', true);
+            $session->set('Table_categories', true);
             $session->set('Table_Consultations', true);
             $session->set('Table_Promotions', true);
             $session->set('Table_Bookings', true);

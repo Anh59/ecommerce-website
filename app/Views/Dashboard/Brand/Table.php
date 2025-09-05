@@ -190,12 +190,19 @@ $(document).ready(function(){
             success: function(res){
                 if (res.token) updateToken(res.token);
                 if (res.status === 'success') {
-                    $('#brandModal').modal('hide');
-                    table.ajax.reload(null, false);
-                    toastr.success(res.message || 'Lưu thành công');
-                } else {
-                    alert(res.message || 'Có lỗi xảy ra');
-                }
+    $('#brandModal').modal('hide');
+    table.ajax.reload(null, false);
+    toastr.success(res.message || 'Lưu thành công');
+} else {
+    if (typeof res.message === 'object') {
+        // Nếu trả về dạng mảng lỗi validation
+        let errors = Object.values(res.message).join('<br>');
+        toastr.error(errors);
+    } else {
+        toastr.error(res.message || 'Có lỗi xảy ra');
+    }
+}
+    
             },
             error: function(xhr, status, error){
                 alert('Lỗi hệ thống: ' + error);
