@@ -13,9 +13,11 @@
     <thead>
         <tr>
             <th>STT</th>
+            <th>Ảnh</th>
             <th>Tên danh mục</th>
             <th>Slug</th>
-            <th>Mô tả</th>
+            <th>Danh mục cha</th>
+            <th>Sắp xếp</th>
             <th>Trạng thái</th>
             <th>Ngày tạo</th>
             <th>Hành động</th>
@@ -26,8 +28,8 @@
 
 <!-- Modal Form -->
 <div class="modal fade" id="categoryModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <form id="categoryForm">
+    <div class="modal-dialog modal-xl">
+        <form id="categoryForm" enctype="multipart/form-data">
             <?= csrf_field() ?>
             <div class="modal-content">
                 <div class="modal-header">
@@ -38,29 +40,56 @@
                     <input type="hidden" name="id" id="category_id">
 
                     <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Tên danh mục *</label>
-                                <input type="text" name="name" id="name" class="form-control" required>
-                                <div class="invalid-feedback"></div>
+                        <div class="col-md-8">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Tên danh mục *</label>
+                                        <input type="text" name="name" id="name" class="form-control" required>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Danh mục cha</label>
+                                        <select name="parent_id" id="parent_id" class="form-control">
+                                            <option value="">-- Danh mục gốc --</option>
+                                        </select>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Thứ tự sắp xếp</label>
+                                        <input type="number" name="sort_order" id="sort_order" class="form-control" value="0" min="0">
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Trạng thái</label>
+                                        <select name="is_active" id="is_active" class="form-control">
+                                            <option value="1">Hoạt động</option>
+                                            <option value="0">Không hoạt động</option>
+                                        </select>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Trạng thái</label>
-                                <select name="status" id="status" class="form-control">
-                                    <option value="1">Hoạt động</option>
-                                    <option value="0">Không hoạt động</option>
-                                </select>
+                                <label class="form-label">Mô tả</label>
+                                <textarea name="description" id="description" class="form-control" rows="4" placeholder="Mô tả danh mục (tối đa 1000 ký tự)" maxlength="1000"></textarea>
+                                <small class="text-muted">
+                                    <span id="charCount">0</span>/1000 ký tự
+                                </small>
                                 <div class="invalid-feedback"></div>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="mb-3">
-                                <label class="form-label">Mô tả</label>
-                                <textarea name="description" id="description" class="form-control" rows="4" placeholder="Mô tả danh mục (tối đa 500 ký tự)" maxlength="500"></textarea>
-                                <small class="text-muted">
-                                    <span id="charCount">0</span>/500 ký tự
-                                </small>
+                                <label class="form-label">Ảnh danh mục</label>
+                                <input type="file" name="image_url" id="image" class="form-control" accept="image/*">
+                                <small class="text-muted">Chọn ảnh (tối đa 2MB)</small>
                                 <div class="invalid-feedback"></div>
+                            </div>
+                            <div id="imagePreview" class="mt-2">
+                                <!-- Preview image will be shown here -->
                             </div>
                         </div>
                     </div>
@@ -90,16 +119,40 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
 <style>
+.category-image { 
+    width: 60px; 
+    height: 60px; 
+    object-fit: cover; 
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+.preview-image { 
+    width: 100%; 
+    max-width: 200px;
+    height: 200px; 
+    object-fit: cover; 
+    border-radius: 8px; 
+    border: 2px dashed #ddd;
+    display: block;
+    margin: 10px auto;
+}
 .text-truncate-desc {
     max-width: 200px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-
 .badge-status {
     font-size: 0.8em;
     padding: 0.4em 0.8em;
+}
+.parent-category {
+    color: #0066cc;
+    font-weight: 500;
+}
+.child-category {
+    color: #666;
+    font-style: italic;
 }
 </style>
 
@@ -129,6 +182,22 @@ $(document).ready(function(){
         });
     };
 
+    // Load parent categories for dropdown
+    const loadParentCategories = () => {
+        $.get("<?= site_url('Dashboard/categories/getParentCategories') ?>")
+        .done(function(res) {
+            if (res.status === 'success') {
+                updateToken(res.token);
+                const $select = $('#parent_id');
+                $select.find('option:not(:first)').remove(); // Keep first option
+                
+                res.data.forEach(function(category) {
+                    $select.append(`<option value="${category.id}">${category.name}</option>`);
+                });
+            }
+        });
+    };
+
     // DataTable
     const table = $('#categoriesTable').DataTable({
         processing: true,
@@ -155,24 +224,36 @@ $(document).ready(function(){
         columns: [
             { data: null, render: (d, t, r, m) => m.row + 1, width: '50px' },
             { 
+                data: 'image_url', 
+                render: d => d ? 
+                    `<img src="<?= base_url() ?>/${d}" class="category-image" alt="category image">` : 
+                    '<i class="fa fa-image text-muted fa-2x"></i>',
+                width: '80px',
+                orderable: false
+            },
+            { 
                 data: 'name',
-                render: (d, t, r) => `<strong>${d}</strong>`
-            },
-            { 
-                data: 'slug',
-                render: d => `<code class="text-muted">${d}</code>`
-            },
-            { 
-                data: 'description',
-                render: d => {
-                    if (!d) return '<em class="text-muted">Chưa có mô tả</em>';
-                    return d.length > 50 
-                        ? `<span title="${d}" class="text-truncate-desc">${d.substring(0, 50)}...</span>`
-                        : d;
+                render: (d, t, r) => {
+                    const prefix = r.parent_id ? '└─ ' : '';
+                    const cssClass = r.parent_id ? 'child-category' : 'parent-category';
+                    return `<span class="${cssClass}">${prefix}<strong>${d}</strong></span>`;
                 }
             },
             { 
-                data: 'status', 
+                data: 'slug',
+                render: d => `<code class="text-muted small">${d}</code>`
+            },
+            {
+                data: 'parent_name',
+                render: d => d ? `<span class="badge bg-info">${d}</span>` : '<em class="text-muted">Danh mục gốc</em>'
+            },
+            { 
+                data: 'sort_order',
+                render: d => `<span class="badge bg-secondary">${d}</span>`,
+                width: '80px'
+            },
+            { 
+                data: 'is_active', 
                 render: d => d == 1 ? 
                     '<span class="badge bg-success badge-status">Hoạt động</span>' : 
                     '<span class="badge bg-danger badge-status">Ngưng</span>',
@@ -180,8 +261,8 @@ $(document).ready(function(){
             },
             {
                 data: 'created_at',
-                render: d => formatDate(d),
-                width: '150px'
+                render: d => `<small>${formatDate(d)}</small>`,
+                width: '120px'
             },
             { 
                 data: 'id', 
@@ -199,7 +280,7 @@ $(document).ready(function(){
                 orderable: false
             }
         ],
-        order: [[1, 'asc']] // Sắp xếp theo tên
+        order: [[5, 'asc']] // Sắp xếp theo sort_order
     });
 
     // Character counter for description
@@ -207,9 +288,9 @@ $(document).ready(function(){
         const current = $(this).val().length;
         $('#charCount').text(current);
         
-        if (current > 450) {
+        if (current > 800) {
             $('#charCount').addClass('text-warning');
-        } else if (current > 480) {
+        } else if (current > 950) {
             $('#charCount').addClass('text-danger').removeClass('text-warning');
         } else {
             $('#charCount').removeClass('text-warning text-danger');
@@ -219,6 +300,7 @@ $(document).ready(function(){
     // Show add modal
     $('#btnAdd').on('click', function(){
         resetForm();
+        loadParentCategories();
         $('.modal-title').text('Thêm danh mục');
         $('#categoryModal').modal('show');
         setTimeout(() => $('#name').focus(), 500);
@@ -231,10 +313,12 @@ $(document).ready(function(){
         $('.form-control').removeClass('is-invalid');
         $('.invalid-feedback').text('');
         $('#charCount').text('0').removeClass('text-warning text-danger');
+        $('#imagePreview').empty();
+        $('#parent_id').find('option:not(:first)').remove();
     };
 
     // Clear validation on input
-    $('.form-control').on('input', function() {
+    $('.form-control').on('input change', function() {
         $(this).removeClass('is-invalid');
         $(this).siblings('.invalid-feedback').text('');
     });
@@ -247,6 +331,15 @@ $(document).ready(function(){
         .done(function(res){
             if (res.status === 'success') {
                 updateToken(res.token);
+                
+                // Load parent categories first
+                const $select = $('#parent_id');
+                $select.find('option:not(:first)').remove();
+                
+                res.parentCategories.forEach(function(category) {
+                    $select.append(`<option value="${category.id}">${category.name}</option>`);
+                });
+                
                 fillForm(res.category);
                 $('.modal-title').text('Sửa danh mục');
                 $('#categoryModal').modal('show');
@@ -263,11 +356,51 @@ $(document).ready(function(){
         $('#category_id').val(category.id);
         $('#name').val(category.name);
         $('#description').val(category.description || '');
-        $('#status').val(category.status);
+        $('#parent_id').val(category.parent_id || '');
+        $('#sort_order').val(category.sort_order);
+        $('#is_active').val(category.is_active);
         
         // Update character count
         $('#charCount').text((category.description || '').length);
+        
+        // Show current image
+        if (category.image_url) {
+            $('#imagePreview').html(`
+                <div class="text-center">
+                    <img src="<?= base_url() ?>/${category.image_url}" class="preview-image" alt="Current image">
+                    <div class="mt-2">
+                        <small class="text-muted">Ảnh hiện tại</small>
+                    </div>
+                </div>
+            `);
+        }
     };
+
+    // Preview image
+    $('#image').on('change', function(){
+        const file = this.files[0];
+        if (file) {
+            // Validate file size (2MB)
+            if (file.size > 2048000) {
+                showToast('error', 'Dung lượng ảnh không được quá 2MB');
+                $(this).val('');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = e => {
+                $('#imagePreview').html(`
+                    <div class="text-center">
+                        <img src="${e.target.result}" class="preview-image" alt="Preview">
+                        <div class="mt-2">
+                            <small class="text-muted">Ảnh mới</small>
+                        </div>
+                    </div>
+                `);
+            };
+            reader.readAsDataURL(file);
+        }
+    });
 
     // Save category
     $('#btnSave').on('click', function(){
@@ -328,7 +461,7 @@ $(document).ready(function(){
         const $row = $(this).closest('tr');
         const categoryName = table.row($row).data().name;
         
-        if (!confirm(`Bạn có chắc muốn xóa danh mục "${categoryName}"?\n\nLưu ý: Thao tác này không thể hoàn tác!`)) return;
+        if (!confirm(`Bạn có chắc muốn xóa danh mục "${categoryName}"?\n\nLưu ý: Thao tác này sẽ xóa mềm danh mục!`)) return;
         
         const id = $(this).data('id');
         
@@ -351,11 +484,20 @@ $(document).ready(function(){
     // Reset when modal closes
     $('#categoryModal').on('hidden.bs.modal', resetForm);
 
-    // Enter key submit
+    // Enter key submit (except in textarea)
     $('#categoryForm').on('keypress', function(e) {
-        if (e.which === 13 && !e.shiftKey) {
+        if (e.which === 13 && e.target.tagName !== 'TEXTAREA') {
             e.preventDefault();
             $('#btnSave').click();
+        }
+    });
+
+    // Auto-generate sort order
+    $('#name').on('blur', function() {
+        if (!$('#category_id').val() && !$('#sort_order').val()) {
+            // For new category, set sort_order to next available number
+            const currentMax = Math.max(...table.data().toArray().map(row => parseInt(row.sort_order) || 0));
+            $('#sort_order').val(currentMax + 1);
         }
     });
 });

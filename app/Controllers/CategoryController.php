@@ -17,7 +17,7 @@ class CategoryController extends BaseController
     // Danh sách
     public function index()
     {
-        $categories = $this->categoryModel->orderBy('name', 'ASC')->findAll();
+        $categories = $this->categoryModel->orderBy('sort_order', 'ASC')->findAll();
         return view('Dashboard/Category/table', compact('categories'));
     }
 
@@ -28,10 +28,30 @@ class CategoryController extends BaseController
             return $this->response->setStatusCode(400);
         }
 
-        $categories = $this->categoryModel->orderBy('name', 'ASC')->findAll();
+        $categories = $this->categoryModel
+            ->select('categories.*, parent.name as parent_name')
+            ->join('categories as parent', 'categories.parent_id = parent.id', 'left')
+            ->orderBy('categories.sort_order', 'ASC')
+            ->findAll();
+
         return $this->response->setJSON([
             'status' => 'success',
             'data'   => $categories,
+            'token'  => csrf_hash()
+        ]);
+    }
+
+    // Lấy danh sách danh mục cha cho dropdown
+    public function getParentCategories()
+    {
+        if (!$this->request->isAJAX()) {
+            return $this->response->setStatusCode(400);
+        }
+
+        $parents = $this->categoryModel->getParentCategories();
+        return $this->response->setJSON([
+            'status' => 'success',
+            'data'   => $parents,
             'token'  => csrf_hash()
         ]);
     }
@@ -68,9 +88,17 @@ class CategoryController extends BaseController
 
         // Lấy dữ liệu
         $data = $this->request->getPost([
-            'name', 'description', 'status'
+            'name', 'description', 'parent_id', 'sort_order', 'is_active'
         ]);
+        
+        // Xử lý parent_id (nếu là 0 thì set null)
+        $data['parent_id'] = empty($data['parent_id']) ? null : $data['parent_id'];
+        
+        // Tạo slug từ name
         $data['slug'] = url_title($data['name'], '-', true);
+
+        // Xử lý upload image
+        $this->handleImageUpload($data, $id);
 
         // Lưu hoặc cập nhật
         if ($isUpdate) {
@@ -88,6 +116,29 @@ class CategoryController extends BaseController
         ]);
     }
 
+    private function handleImageUpload(&$data, $id = null)
+    {
+        $file = $this->request->getFile('image_url');
+        
+        if ($file && $file->isValid() && !$file->hasMoved()) {
+            $newName = $file->getRandomName();
+            $file->move('uploads/categories', $newName);
+            $data['image_url'] = 'uploads/categories/' . $newName;
+
+            // Xóa ảnh cũ khi update
+            if ($id && $old = $this->categoryModel->find($id)) {
+                $this->deleteOldImage($old['image_url']);
+            }
+        }
+    }
+
+    private function deleteOldImage($imagePath)
+    {
+        if (!empty($imagePath) && file_exists(FCPATH . $imagePath)) {
+            unlink(FCPATH . $imagePath);
+        }
+    }
+
     // Lấy 1 danh mục để edit
     public function edit($id)
     {
@@ -101,32 +152,53 @@ class CategoryController extends BaseController
             ]);
         }
 
+        // Lấy danh sách parent categories (trừ chính nó và con cháu của nó)
+        $parentCategories = $this->categoryModel
+            ->where('id !=', $id)
+            ->where('parent_id IS NULL OR parent_id = 0')
+            ->where('is_active', 1)
+            ->orderBy('sort_order', 'ASC')
+            ->findAll();
+
         return $this->response->setJSON([
             'status' => 'success',
             'category' => $category,
+            'parentCategories' => $parentCategories,
             'token' => csrf_hash()
         ]);
     }
 
-    // Xóa cứng (vì useSoftDeletes = false)
+    // Xóa mềm
     public function delete($id)
     {
         if (!$this->request->isAJAX()) {
             return $this->response->setStatusCode(400);
         }
 
-        // Kiểm tra xem danh mục có được sử dụng không (nếu có bảng liên quan)
-        // Ví dụ: kiểm tra trong bảng products
-        // $productModel = new ProductModel();
-        // if ($productModel->where('category_id', $id)->countAllResults() > 0) {
-        //     return $this->response->setJSON([
-        //         'status' => 'error',
-        //         'message' => 'Không thể xóa danh mục này vì đang được sử dụng',
-        //         'token' => csrf_hash()
-        //     ]);
-        // }
+        // Kiểm tra xem có danh mục con không
+        $childCount = $this->categoryModel->where('parent_id', $id)->countAllResults();
+        if ($childCount > 0) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Không thể xóa danh mục này vì còn danh mục con',
+                'token' => csrf_hash()
+            ]);
+        }
 
-        $this->categoryModel->delete($id);
+        // Kiểm tra xem danh mục có được sử dụng không (trong bảng products chẳng hạn)
+        // Uncomment nếu có bảng products
+        /*
+        $productModel = new \App\Models\ProductModel();
+        if ($productModel->where('category_id', $id)->countAllResults() > 0) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Không thể xóa danh mục này vì đang được sử dụng trong sản phẩm',
+                'token' => csrf_hash()
+            ]);
+        }
+        */
+
+        $this->categoryModel->delete($id); // Xóa mềm
         return $this->response->setJSON([
             'status' => 'success',
             'message' => 'Xóa danh mục thành công',
