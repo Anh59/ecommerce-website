@@ -413,9 +413,9 @@
 
                    
 
-                      <?php if ($session->get('Table_News') === true ): ?>
+                      <?php if ($session->get('Table_blog_posts') === true ): ?>
                       <li class="nav-item">
-                          <a href="<?= route_to('Table_News') ?>" class="nav-link">
+                          <a href="<?= route_to('Table_blog_posts') ?>" class="nav-link">
                           <i class="nav-icon fas fa-newspaper"></i>
 
                               <p>Tin Tức</p>

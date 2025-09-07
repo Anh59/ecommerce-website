@@ -162,12 +162,24 @@ $routes->group('Dashboard', function (RouteCollection $routes) {// ['filter' => 
     $routes->get('categories', 'CategoryController::index', ['as' => 'Table_categories', 'filter' => 'Perermissions:Table_categories']);
     $routes->get('categories/list', 'CategoryController::list');
     $routes->post('categories/store', 'CategoryController::store');
+    $routes->get('categories/getParentCategories', 'CategoryController::getParentCategories');
     $routes->get('categories/(:num)/edit', 'CategoryController::edit/$1');
     $routes->post('categories/(:num)/update', 'CategoryController::update/$1');
     $routes->post('categories/(:num)/delete', 'CategoryController::delete/$1');
+
+    // Blog Posts
+    $routes->get('blog-posts', 'BlogPostController::index', ['as' => 'Table_blog_posts', 'filter' => 'Perermissions:Table_blog_posts']);
+    $routes->get('blog-posts/list', 'BlogPostController::list');
+    $routes->post('blog-posts/store', 'BlogPostController::store');
+    $routes->get('blog-posts/(:num)/edit', 'BlogPostController::edit/$1');
+    $routes->post('blog-posts/(:num)/update', 'BlogPostController::update/$1');
+    $routes->post('blog-posts/(:num)/delete', 'BlogPostController::delete/$1');
+    $routes->get('blog-posts/(:num)/view', 'BlogPostController::view/$1');
+    $routes->post('blog-posts/(:num)/toggle-featured', 'BlogPostController::toggleFeatured/$1');
+    $routes->post('blog-posts/(:num)/change-status', 'BlogPostController::changeStatus/$1');
     // Products
         // $routes->get('products', 'ProductsController::index', ['as' => 'Table_products', 'filter' => 'Perermissions:Table_products']);
-        $routes->get('products', 'ProductsController::index',['as' => 'Table_products', 'filter' => 'Perermissions:Table_products']);
+    $routes->get('products', 'ProductsController::index',['as' => 'Table_products', 'filter' => 'Perermissions:Table_products']);
     $routes->get('products/list', 'ProductsController::list');
     $routes->post('products/store', 'ProductsController::store');
     $routes->get('products/(:num)/edit', 'ProductsController::edit/$1');
