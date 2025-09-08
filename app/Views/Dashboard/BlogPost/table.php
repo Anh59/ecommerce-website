@@ -108,12 +108,7 @@
                                         <div class="invalid-feedback"></div>
                                     </div>
 
-                                    <div class="mb-3">
-                                        <label class="form-label">Tags</label>
-                                        <input type="text" name="tags" id="tags" class="form-control" 
-                                            placeholder="Nhập tags, cách nhau bởi dấu phẩy">
-                                        <small class="text-muted">VD: công nghệ, web, programming</small>
-                                    </div>
+                                   
 
                                     <div class="mb-3">
                                         <label class="form-label">Trạng thái *</label>
@@ -162,21 +157,8 @@
                                 </div>
                             </div>
 
-                            <!-- Gallery images -->
-                            <div class="card mt-3">
-                                <div class="card-header">
-                                    <h6 class="mb-0">Thư viện ảnh</h6>
-                                </div>
-                                <div class="card-body">
-                                    <input type="file" name="gallery_images[]" id="gallery_images" 
-                                        class="form-control" accept="image/*" multiple>
-                                    <small class="text-muted">Chọn nhiều ảnh (tối đa 2MB mỗi ảnh)</small>
-                                    
-                                    <div id="galleryPreview" class="mt-2">
-                                        <!-- Gallery preview will be shown here -->
-                                    </div>
-                                </div>
-                            </div>
+                            
+                           
                         </div>
                     </div>
                 </div>
@@ -316,18 +298,7 @@ $(document).ready(function(){
             },
             { 
                 data: 'title',
-                render: (d, t, r) => {
-                    const tags = r.tags ? JSON.parse(r.tags).map(tag => 
-                        `<span class="tag-item">${tag}</span>`
-                    ).join('') : '';
-                    return `
-                        <div class="text-truncate-title">
-                            <strong>${d}</strong>
-                            <br><small class="text-muted">${r.excerpt}</small>
-                            <div class="mt-1">${tags}</div>
-                        </div>
-                    `;
-                }
+                
             },
             { data: 'author_name' },
             { 
@@ -454,28 +425,7 @@ $(document).ready(function(){
         }
     });
 
-    // Preview gallery images
-    $('#gallery_images').on('change', function(){
-        const files = this.files;
-        $('#galleryPreview').empty();
-        
-        if (files.length > 0) {
-            $('#galleryPreview').append('<div class="mt-2"><small class="text-muted">Thư viện ảnh:</small><div class="gallery-container"></div></div>');
-            
-            Array.from(files).forEach(file => {
-                if (file.size > 2097152) { // 2MB
-                    showToast('warning', `Ảnh ${file.name} quá lớn (>2MB)`);
-                    return;
-                }
-                
-                const reader = new FileReader();
-                reader.onload = e => {
-                    $('.gallery-container').append(`<img src="${e.target.result}" class="gallery-thumb" alt="Gallery image">`);
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-    });
+  
 
     // Auto-fill meta title from title
     $('#title').on('blur', function() {
@@ -523,11 +473,7 @@ $(document).ready(function(){
         $('#image_alt').val(post.image_alt || '');
         $('#is_featured').prop('checked', post.is_featured == 1);
         
-        // Tags
-        if (post.tags) {
-            const tags = Array.isArray(post.tags) ? post.tags : JSON.parse(post.tags || '[]');
-            $('#tags').val(tags.join(', '));
-        }
+     
         
         // Published at
         if (post.published_at) {
@@ -551,18 +497,7 @@ $(document).ready(function(){
             `);
         }
         
-        // Show gallery images
-        if (post.gallery_images) {
-            const galleryImages = Array.isArray(post.gallery_images) ? post.gallery_images : JSON.parse(post.gallery_images || '[]');
-            if (galleryImages.length > 0) {
-                let galleryHtml = '<div class="mt-2"><small class="text-muted">Thư viện ảnh hiện tại:</small><div class="gallery-container">';
-                galleryImages.forEach(img => {
-                    galleryHtml += `<img src="<?= base_url() ?>/${img}" class="gallery-thumb" alt="Gallery image">`;
-                });
-                galleryHtml += '</div></div>';
-                $('#galleryPreview').html(galleryHtml);
-            }
-        }
+     
     };
 
     // Toggle featured
@@ -600,15 +535,14 @@ $(document).ready(function(){
             `<?= site_url('Dashboard/blog-posts') ?>/${id}/update` : 
             "<?= site_url('Dashboard/blog-posts/store') ?>";
 
-        // Process tags
-        const tagsInput = $('#tags').val();
-        if (tagsInput) {
-            const tagsArray = tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag);
-            formData.delete('tags');
-            tagsArray.forEach((tag, index) => {
-                formData.append(`tags[${index}]`, tag);
-            });
+        // Xử lý checkbox is_featured
+        if ($('#is_featured').is(':checked')) {
+            formData.set('is_featured', '1');
+        } else {
+            formData.set('is_featured', '0');
         }
+
+
 
         $btn.prop('disabled', true)
             .html('<i class="fa fa-spinner fa-spin"></i> Đang lưu...');
@@ -639,6 +573,7 @@ $(document).ready(function(){
                         $(`#${field}`).addClass('is-invalid');
                         $(`#${field}`).siblings('.invalid-feedback').text(res.message[field]);
                     });
+                    showToast('error', 'Vui lòng kiểm tra lại thông tin đã nhập');
                 } else {
                     showToast('error', res.message);
                 }

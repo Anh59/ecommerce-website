@@ -188,10 +188,10 @@ $routes->group('Dashboard', function (RouteCollection $routes) {// ['filter' => 
     $routes->post('products/images/(:num)/delete', 'ProductsController::deleteImage/$1');
     
     // Alternative routes for consistency
-    $routes->match(['get', 'post'], 'products/create', 'ProductsController::store');
-    $routes->match(['get', 'post'], 'products/edit/(:num)', 'ProductsController::edit/$1');
-    $routes->match(['post', 'put'], 'products/update/(:num)', 'ProductsController::update/$1');
-    $routes->match(['post', 'delete'], 'products/delete/(:num)', 'ProductsController::delete/$1');
+    // $routes->match(['get', 'post'], 'products/create', 'ProductsController::store');
+    // $routes->match(['get', 'post'], 'products/edit/(:num)', 'ProductsController::edit/$1');
+    // $routes->match(['post', 'put'], 'products/update/(:num)', 'ProductsController::update/$1');
+    // $routes->match(['post', 'delete'], 'products/delete/(:num)', 'ProductsController::delete/$1');
 
     // (Tương tự thêm routes cho posts, invoices, reviews...)
 

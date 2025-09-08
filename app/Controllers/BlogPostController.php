@@ -77,12 +77,19 @@ class BlogPostController extends BaseController
             'is_featured', 'published_at'
         ]);
 
-        // Xử lý tags
-        $tags = $this->request->getPost('tags');
-        if ($tags) {
-            $data['tags'] = is_string($tags) ? explode(',', $tags) : $tags;
+        // Set default values cho các trường không bắt buộc
+        $data['is_featured'] = $data['is_featured'] ?? 0;
+        $data['view_count'] = 0; // Mặc định 0 cho bài viết mới
+        
+        // Xử lý meta fields - set default nếu rỗng
+        if (empty($data['meta_title'])) {
+            $data['meta_title'] = $data['title'];
+        }
+        if (empty($data['meta_description'])) {
+            $data['meta_description'] = substr(strip_tags($data['excerpt']), 0, 160);
         }
 
+     
         // Xử lý published_at
         if ($data['status'] === 'published' && empty($data['published_at'])) {
             $data['published_at'] = date('Y-m-d H:i:s');
@@ -93,11 +100,16 @@ class BlogPostController extends BaseController
             $data['author_id'] = session('user_id');
         }
 
+        // Tính toán reading_time từ content
+        $data['reading_time'] = $this->blogPostModel->calculateReadingTime($data['content']);
+
         // Xử lý upload ảnh
         $this->handleImageUpload($data, $id);
 
         // Lưu hoặc cập nhật
         if ($isUpdate) {
+            // Khi update, không reset view_count
+            unset($data['view_count']);
             $this->blogPostModel->update($id, $data);
             $message = 'Cập nhật bài viết thành công';
         } else {
@@ -127,21 +139,7 @@ class BlogPostController extends BaseController
             }
         }
 
-        // Xử lý gallery images
-        $galleryFiles = $this->request->getFiles();
-        if (isset($galleryFiles['gallery_images'])) {
-            $galleryImages = [];
-            foreach ($galleryFiles['gallery_images'] as $file) {
-                if ($file->isValid() && !$file->hasMoved()) {
-                    $newName = $file->getRandomName();
-                    $file->move('uploads/blog/gallery', $newName);
-                    $galleryImages[] = 'uploads/blog/gallery/' . $newName;
-                }
-            }
-            if (!empty($galleryImages)) {
-                $data['gallery_images'] = $galleryImages;
-            }
-        }
+        
     }
 
     private function deleteOldImage($imagePath)
@@ -165,12 +163,7 @@ class BlogPostController extends BaseController
         }
 
         // Decode JSON fields
-        if (!empty($post['tags'])) {
-            $post['tags'] = json_decode($post['tags'], true);
-        }
-        if (!empty($post['gallery_images'])) {
-            $post['gallery_images'] = json_decode($post['gallery_images'], true);
-        }
+       
 
         return $this->response->setJSON([
             'status' => 'success',
@@ -194,13 +187,9 @@ class BlogPostController extends BaseController
         // Lấy comments
         $comments = $this->blogCommentModel->getCommentsByPost($id);
 
-        // Decode JSON fields
-        if (!empty($post['tags'])) {
-            $post['tags'] = json_decode($post['tags'], true);
-        }
-        if (!empty($post['gallery_images'])) {
-            $post['gallery_images'] = json_decode($post['gallery_images'], true);
-        }
+        
+      
+       
 
         $data = [
             'post' => $post,

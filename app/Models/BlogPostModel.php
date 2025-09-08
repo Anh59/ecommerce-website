@@ -15,7 +15,7 @@ class BlogPostModel extends Model
     
     protected $allowedFields = [
         'title', 'slug', 'excerpt', 'content', 'featured_image', 'image_alt', 
-        'gallery_images', 'author_id', 'author_name', 'category', 'tags', 
+        'author_id', 'author_name', 'category',  
         'status', 'published_at', 'meta_title', 'meta_description', 'view_count', 
         'is_featured', 'reading_time', 'created_at', 'updated_at', 'deleted_at'
     ];
@@ -29,9 +29,9 @@ class BlogPostModel extends Model
         'status'           => 'required|in_list[draft,published,archived]',
         'meta_title'       => 'max_length[255]',
         'meta_description' => 'max_length[500]',
-        'reading_time'     => 'integer|greater_than[0]',
-        'is_featured'      => 'in_list[0,1]',
-        'view_count'       => 'integer'
+        'reading_time'     => 'permit_empty|integer|greater_than[0]',
+        'is_featured'      => 'permit_empty|in_list[0,1]', 
+        'view_count'       => 'permit_empty|integer'
     ];
 
     protected $validationMessages = [
@@ -171,18 +171,25 @@ class BlogPostModel extends Model
         }
 
         if (isset($data['data']['content'])) {
-            // Tính toán thời gian đọc
-            $data['data']['reading_time'] = $this->calculateReadingTime($data['data']['content']);
+            // Tính toán thời gian đọc nếu chưa có
+            if (!isset($data['data']['reading_time']) || empty($data['data']['reading_time'])) {
+                $data['data']['reading_time'] = $this->calculateReadingTime($data['data']['content']);
+            }
         }
 
-        // Xử lý tags và gallery_images (JSON)
-        if (isset($data['data']['tags']) && is_array($data['data']['tags'])) {
-            $data['data']['tags'] = json_encode($data['data']['tags']);
+        // Set default values
+        if (!isset($data['data']['view_count'])) {
+            $data['data']['view_count'] = 0;
         }
+        
+        if (!isset($data['data']['is_featured'])) {
+            $data['data']['is_featured'] = 0;
+        };
 
-        if (isset($data['data']['gallery_images']) && is_array($data['data']['gallery_images'])) {
-            $data['data']['gallery_images'] = json_encode($data['data']['gallery_images']);
-        }
+ 
+
+       
+
 
         return $data;
     }
