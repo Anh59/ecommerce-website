@@ -20,7 +20,7 @@ class BlogCommentController extends BaseController
     // Danh sách bình luận
     public function index()
     {
-        return view('Dashboard/BlogComment/table');
+        return view('Dashboard/BlogPost/comment');
     }
 
     // Danh sách cho DataTables

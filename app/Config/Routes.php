@@ -177,6 +177,16 @@ $routes->group('Dashboard', function (RouteCollection $routes) {// ['filter' => 
     $routes->get('blog-posts/(:num)/view', 'BlogPostController::view/$1');
     $routes->post('blog-posts/(:num)/toggle-featured', 'BlogPostController::toggleFeatured/$1');
     $routes->post('blog-posts/(:num)/change-status', 'BlogPostController::changeStatus/$1');
+
+    // Blog Comments
+    $routes->get('blog-comments', 'BlogCommentController::index', ['as' => 'Table_blog_comments', 'filter' => 'Perermissions:Table_blog_comments']);
+    $routes->get('blog-comments/list', 'BlogCommentController::list');
+    $routes->post('blog-comments/store', 'BlogCommentController::store');
+    $routes->post('blog-comments/(:num)/approve', 'BlogCommentController::approve/$1');
+    $routes->post('blog-comments/(:num)/reject', 'BlogCommentController::reject/$1');
+    $routes->post('blog-comments/(:num)/delete', 'BlogCommentController::delete/$1');
+    $routes->get('blog-comments/pending', 'BlogCommentController::pending');
+    $routes->post('blog-comments/(:num)/toggle-approve', 'BlogCommentController::toggleApprove/$1');
     // Products
         // $routes->get('products', 'ProductsController::index', ['as' => 'Table_products', 'filter' => 'Perermissions:Table_products']);
     $routes->get('products', 'ProductsController::index',['as' => 'Table_products', 'filter' => 'Perermissions:Table_products']);

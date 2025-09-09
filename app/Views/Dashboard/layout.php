@@ -401,12 +401,12 @@
                       </li>
                       <?php endif; ?>
                     
-                    <?php if ($session->get('Table_Bookings') === true ): ?>
+                    <?php if ($session->get('Table_blog_comments') === true ): ?>
                       <li class="nav-item">
-                          <a href="<?= route_to('Table_Bookings') ?>" class="nav-link">
+                          <a href="<?= route_to('Table_blog_comments') ?>" class="nav-link">
                           <i class="nav-icon fas fa-box"></i>
 
-                              <p>Đơn hàng</p>
+                              <p>Bình luận</p>
                           </a>
                       </li>
                       <?php endif; ?>

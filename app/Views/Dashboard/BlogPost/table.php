@@ -477,10 +477,14 @@ $(document).ready(function(){
         
         // Published at
         if (post.published_at) {
-            const date = new Date(post.published_at);
-            const formattedDate = date.toISOString().slice(0, 16);
-            $('#published_at').val(formattedDate);
+            // Chuyển "YYYY-MM-DD HH:MM:SS" → "YYYY-MM-DDTHH:MM:SS"
+            const formatted = post.published_at.replace(' ', 'T');
+            const date = new Date(formatted);
+            if (!isNaN(date.getTime())) {
+                $('#published_at').val(date.toISOString().slice(0, 16));
+            }
         }
+
         
         // Update character count
         $('#excerptCount').text((post.excerpt || '').length);
