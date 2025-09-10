@@ -197,6 +197,18 @@ $routes->group('Dashboard', function (RouteCollection $routes) {// ['filter' => 
     $routes->post('products/(:num)/delete', 'ProductsController::delete/$1');
     $routes->post('products/images/(:num)/delete', 'ProductsController::deleteImage/$1');
     
+    $routes->get('discount-coupons', 'DiscountCouponController::index', ['as' => 'Table_discount_coupons', 'filter' => 'Perermissions:Table_discount_coupons']);
+    $routes->get('discount-coupons/list', 'DiscountCouponController::list');
+    $routes->post('discount-coupons/store', 'DiscountCouponController::store');
+    $routes->get('discount-coupons/(:num)/edit', 'DiscountCouponController::edit/$1');
+    $routes->post('discount-coupons/(:num)/update', 'DiscountCouponController::update/$1');
+    $routes->post('discount-coupons/(:num)/delete', 'DiscountCouponController::delete/$1');
+    $routes->post('discount-coupons/(:num)/toggle-active', 'DiscountCouponController::toggleActive/$1');
+    $routes->post('discount-coupons/(:num)/reset-usage', 'DiscountCouponController::resetUsage/$1');
+    $routes->post('discount-coupons/(:num)/duplicate', 'DiscountCouponController::duplicate/$1');
+    $routes->post('discount-coupons/validate-code', 'DiscountCouponController::validateCode');
+    $routes->post('discount-coupons/generate-code', 'DiscountCouponController::generateCode');
+    $routes->get('discount-coupons/(:num)/usage-report', 'DiscountCouponController::usageReport/$1');
     // Alternative routes for consistency
     // $routes->match(['get', 'post'], 'products/create', 'ProductsController::store');
     // $routes->match(['get', 'post'], 'products/edit/(:num)', 'ProductsController::edit/$1');

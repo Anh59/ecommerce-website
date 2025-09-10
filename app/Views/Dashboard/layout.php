@@ -391,9 +391,9 @@
                   <ul class="nav nav-treeview">
   
                     
-                  <?php if ($session->get('Table_Promotions') === true ): ?>
+                  <?php if ($session->get('Table_discount_coupons') === true ): ?>
                       <li class="nav-item">
-                          <a href="<?= route_to('Table_Promotions') ?>" class="nav-link">
+                          <a href="<?= route_to('Table_discount_coupons') ?>" class="nav-link">
                           <i class="nav-icon fas fa-gift"></i>
 
                               <p>Mã Giảm giá</p>
