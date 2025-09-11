@@ -126,7 +126,6 @@ class CategoryModel extends Model
         }
         return $tree;
     }
-
     // Dates
     protected $useTimestamps = true;
     protected $dateFormat    = 'datetime';

@@ -205,4 +205,5 @@ class CategoryController extends BaseController
             'token' => csrf_hash()
         ]);
     }
+    
 }

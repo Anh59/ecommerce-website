@@ -9,20 +9,24 @@ use App\Controllers\ProfileController;
 $routes->get('/', 'Home::index');
 $routes->get('/about', 'Home::about',['as'=>'home_about']);// trang chủ
 $routes->get('/layout', 'Home::layout');
-$routes->get('/login', 'Home::login');
-$routes->get('/blog', 'Home::blog');
-$routes->get('/contact', 'Home::contact');
-$routes->get('/single-blog', 'Home::single_blog');
-$routes->get('/single-product', 'Home::single_product');
-$routes->get('/cart', 'Home::cart');
-$routes->get('/checkout', 'Home::checkout');
-$routes->get('/category', 'Home::category');
-$routes->get('/tracking', 'Home::tracking');
-$routes->get('/confirmation', 'Home::confirmation');
-$routes->get('/elements', 'Home::elements');
-$routes->get('/feature', 'Home::feature');
+// $routes->get('/login', 'Home::login');
+$routes->get('/blog', 'Home::blog',['as'=>'home_blog']);
+$routes->get('/contact', 'Home::contact',['as'=>'home_contact']);
+$routes->get('/single-blog', 'Home::single_blog',['as'=>'home_single_blog']);
+$routes->get('/single-product', 'Home::single_product',['as'=>'home_single_product']);
+$routes->get('/cart', 'Home::cart',['as'=>'home_cart']);
+$routes->get('/checkout', 'Home::checkout',['as'=>'home_checkout']);
+// $routes->get('/category', 'Home::category',['as'=>'home_category']);
+$routes->get('/tracking', 'Home::tracking',['as'=>'home_tracking']);
+$routes->get('/confirmation', 'Home::confirmation',['as'=>'home_confirmation']);
+$routes->get('/elements', 'Home::elements',['as'=>'home_elements']);
+$routes->get('/feature', 'Home::feature',['as'=>'home_feature']);
 
 
+// Routes cho Wishlist
+$routes->get('wishlist', 'WishlistController::index', ['as' => 'wishlist']);
+$routes->post('wishlist/add', 'WishlistController::add', ['as' => 'wishlist_add']);
+$routes->post('wishlist/remove', 'WishlistController::remove', ['as' => 'wishlist_remove']);
 // Xây các trang website cho khách hàng
 // Xử lý phần API cho khách hàng
 $routes->group('api_Customers',function($routes) {
@@ -32,7 +36,7 @@ $routes->group('api_Customers',function($routes) {
     $routes->post('customers_register','CustomersController::processRegistration', ['as' => 'Customers_processRegistration']);
     $routes->post('customers_verify_otp', 'CustomersController::verifyOTP', ['as' => 'Customers_verifyOTP']);
 
-    $routes->get('customers_sign','CustomersController::login',['as' => 'Customers_sign']);
+    $routes->get('customers_sign','CustomersController::login',['as' => 'Customers_sign']);// đăng nhập
     $routes->post('customers_sign','CustomersController::processLogin',['as' => 'Customers_processLogin']);
 
     $routes->get('customers_logout','CustomersController::logout',['as' => 'Customers_logout']);

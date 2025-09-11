@@ -1,30 +1,27 @@
 <?= $this->extend('Customers/layout/main') ?>
 
 <?= $this->section('styles') ?>
-<!-- CSS riêng cho cart -->
   <link rel="stylesheet" href="<?= base_url('aranoz-master/css/nice-select.css'); ?>">
   <link rel="stylesheet" href="<?= base_url('aranoz-master/css/price_rangs.css'); ?>">
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
-<!-- Nội dung cart --> 
+
   <!--================Home Banner Area =================-->
-  <!-- breadcrumb start-->
   <section class="breadcrumb breadcrumb_bg">
     <div class="container">
       <div class="row justify-content-center">
         <div class="col-lg-8">
           <div class="breadcrumb_iner">
             <div class="breadcrumb_iner_item">
-              <h2>Cart Products</h2>
-              <p>Home <span>-</span>Cart Products</p>
+              <h2>Giỏ hàng</h2>
+              <p>Home <span>-</span> Giỏ hàng</p>
             </div>
           </div>
         </div>
       </div>
     </div>
   </section>
-  <!-- breadcrumb start-->
 
   <!--================Cart Area =================-->
   <section class="cart_area padding_top">
@@ -34,187 +31,192 @@
           <table class="table">
             <thead>
               <tr>
-                <th scope="col">Product</th>
-                <th scope="col">Price</th>
-                <th scope="col">Quantity</th>
-                <th scope="col">Total</th>
+                <th scope="col">Sản phẩm</th>
+                <th scope="col">Giá</th>
+                <th scope="col">Số lượng</th>
+                <th scope="col">Tổng</th>
+                <th scope="col">Thao tác</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="cart-items">
+              <?php if (empty($cartItems)): ?>
               <tr>
-                <td>
-                  <div class="media">
-                    <div class="d-flex">
-                      <img src="<?= base_url('aranoz-master/img/product/single-product/cart-1.jpg'); ?>" alt="" />
-                    </div>
-                    <div class="media-body">
-                      <p>Minimalistic shop for multipurpose use</p>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <h5>$360.00</h5>
-                </td>
-                <td>
-                  <div class="product_count">
-                    <span class="input-number-decrement"> <i class="ti-angle-down"></i></span>
-                    <input class="input-number" type="text" value="1" min="0" max="10">
-                    <span class="input-number-increment"> <i class="ti-angle-up"></i></span>
-                  </div>
-                </td>
-                <td>
-                  <h5>$720.00</h5>
-                </td>
+                <td colspan="5" class="text-center">Giỏ hàng của bạn đang trống</td>
               </tr>
-              <tr>
-                <td>
-                  <div class="media">
-                    <div class="d-flex">
-                      <img src="<?= base_url('aranoz-master/img/product/single-product/cart-1.jpg'); ?>" alt="" />
+              <?php else: ?>
+                <?php $subtotal = 0; ?>
+                <?php foreach ($cartItems as $item): ?>
+                <?php 
+                  $itemTotal = $item->price * $item->quantity;
+                  $subtotal += $itemTotal;
+                ?>
+                <tr id="cart-item-<?= $item->product_id ?>">
+                  <td>
+                    <div class="media">
+                      <div class="d-flex">
+                        <img src="<?= base_url('uploads/products/' . $item->main_image) ?>" alt="<?= $item->name ?>" width="100" />
+                      </div>
+                      <div class="media-body">
+                        <p><?= $item->name ?></p>
+                      </div>
                     </div>
-                    <div class="media-body">
-                      <p>Minimalistic shop for multipurpose use</p>
+                  </td>
+                  <td>
+                    <h5><?= number_format($item->price, 0, ',', '.') ?>₫</h5>
+                  </td>
+                  <td>
+                    <div class="product_count">
+                      <span class="input-number-decrement" onclick="updateQuantity(<?= $item->product_id ?>, <?= $item->quantity - 1 ?>)">
+                        <i class="ti-angle-down"></i>
+                      </span>
+                      <input class="input-number" type="text" value="<?= $item->quantity ?>" min="1" max="10" id="quantity-<?= $item->product_id ?>">
+                      <span class="input-number-increment" onclick="updateQuantity(<?= $item->product_id ?>, <?= $item->quantity + 1 ?>)">
+                        <i class="ti-angle-up"></i>
+                      </span>
                     </div>
-                  </div>
-                </td>
-                <td>
-                  <h5>$360.00</h5>
-                </td>
-                <td>
-                  <div class="product_count">
-                    <!-- <input type="text" value="1" min="0" max="10" title="Quantity:"
-                      class="input-text qty input-number" />
-                    <button
-                      class="increase input-number-increment items-count" type="button">
-                      <i class="ti-angle-up"></i>
+                  </td>
+                  <td>
+                    <h5 id="item-total-<?= $item->product_id ?>"><?= number_format($itemTotal, 0, ',', '.') ?>₫</h5>
+                  </td>
+                  <td>
+                                        <button class="btn btn-sm btn-danger" onclick="removeItem(<?= $item->product_id ?>)">
+                      <i class="ti-trash"></i> Xóa
                     </button>
-                    <button
-                      class="reduced input-number-decrement items-count" type="button">
-                      <i class="ti-angle-down"></i>
-                    </button> -->
-                    <span class="input-number-decrement"> <i class="ti-angle-down"></i></span>
-                    <input class="input-number" type="text" value="1" min="0" max="10">
-                    <span class="input-number-increment"> <i class="ti-angle-up"></i></span>
-                  </div>
-                </td>
-                <td>
-                  <h5>$720.00</h5>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div class="media">
-                    <div class="d-flex">
-                      <img src="<?= base_url('aranoz-master/img/product/single-product/cart-1.jpg'); ?>" alt="" />
-                    </div>
-                    <div class="media-body">
-                      <p>Minimalistic shop for multipurpose use</p>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <h5>$360.00</h5>
-                </td>
-                <td>
-                  <div class="product_count">
-                    <span class="input-number-decrement"> <i class="ti-angle-down"></i></span>
-                    <input class="input-number" type="text" value="1" min="0" max="10">
-                    <span class="input-number-increment"> <i class="ti-angle-up"></i></span>
-                  </div>
-                </td>
-                <td>
-                  <h5>$720.00</h5>
-                </td>
-              </tr>
-              <tr class="bottom_button">
-                <td>
-                  <a class="btn_1" href="#">Update Cart</a>
-                </td>
-                <td></td>
-                <td></td>
-                <td>
-                  <div class="cupon_text float-right">
-                    <a class="btn_1" href="#">Close Coupon</a>
-                  </div>
-                </td>
-              </tr>
+                  </td>
+                </tr>
+                <?php endforeach; ?>
+              <?php endif; ?>
               <tr>
                 <td></td>
                 <td></td>
                 <td>
-                  <h5>Subtotal</h5>
+                  <h5>Tạm tính</h5>
                 </td>
                 <td>
-                  <h5>$2160.00</h5>
+                  <h5 id="cart-subtotal"><?= number_format($subtotal, 0, ',', '.') ?>₫</h5>
                 </td>
+                <td></td>
               </tr>
               <tr class="shipping_area">
                 <td></td>
                 <td></td>
                 <td>
-                  <h5>Shipping</h5>
+                  <h5>Phí vận chuyển</h5>
                 </td>
                 <td>
                   <div class="shipping_box">
                     <ul class="list">
                       <li>
-                        <a href="#">Flat Rate: $5.00</a>
-                      </li>
-                      <li>
-                        <a href="#">Free Shipping</a>
-                      </li>
-                      <li>
-                        <a href="#">Flat Rate: $10.00</a>
+                        <a href="#">Phí cố định: 30,000₫</a>
                       </li>
                       <li class="active">
-                        <a href="#">Local Delivery: $2.00</a>
+                        <a href="#">Miễn phí vận chuyển cho đơn trên 500,000₫</a>
                       </li>
                     </ul>
-                    <h6>
-                      Calculate Shipping
-                      <i class="fa fa-caret-down" aria-hidden="true"></i>
-                    </h6>
-                    <select class="shipping_select">
-                      <option value="1">Bangladesh</option>
-                      <option value="2">India</option>
-                      <option value="4">Pakistan</option>
-                    </select>
-                    <select class="shipping_select section_bg">
-                      <option value="1">Select a State</option>
-                      <option value="2">Select a State</option>
-                      <option value="4">Select a State</option>
-                    </select>
-                    <input type="text" placeholder="Postcode/Zipcode" />
-                    <a class="btn_1" href="#">Update Details</a>
                   </div>
                 </td>
+                <td></td>
+              </tr>
+              <tr>
+                <td></td>
+                <td></td>
+                <td>
+                  <h5>Tổng cộng</h5>
+                </td>
+                <td>
+                  <h5 id="cart-total">
+                    <?php
+                    $shipping = $subtotal >= 500000 ? 0 : 30000;
+                    $total = $subtotal + $shipping;
+                    echo number_format($total, 0, ',', '.') . '₫';
+                    ?>
+                  </h5>
+                </td>
+                <td></td>
               </tr>
             </tbody>
           </table>
           <div class="checkout_btn_inner float-right">
-            <a class="btn_1" href="#">Continue Shopping</a>
-            <a class="btn_1 checkout_btn_1" href="#">Proceed to checkout</a>
+            <a class="btn_1" href="<?= base_url('category') ?>">Tiếp tục mua hàng</a>
+            <?php if (!empty($cartItems)): ?>
+            <a class="btn_1 checkout_btn_1" href="<?= base_url('checkout') ?>">Thanh toán</a>
+            <?php endif; ?>
           </div>
         </div>
       </div>
+    </div>
   </section>
-  <!--================End Cart Area =================-->
+
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
-<!-- JS riêng cho cart -->
   <script src="<?= base_url('aranoz-master/js/mail-script.js'); ?>"></script>
   <script src="<?= base_url('aranoz-master/js/stellar.js'); ?>"></script>
   <script src="<?= base_url('aranoz-master/js/price_rangs.js'); ?>"></script>
-  <!-- custom js -->
-  <script src="<?= base_url('aranoz-master/js/custom.js'); ?>"></script>
+  
+  <script>
+  function updateQuantity(productId, newQuantity) {
+    if (newQuantity < 1) newQuantity = 1;
+    
+    $.ajax({
+      url: '<?= base_url('cart/update') ?>',
+      type: 'POST',
+      data: {
+        product_id: productId,
+        quantity: newQuantity
+      },
+      success: function(response) {
+        if (response.success) {
+          $('#quantity-' + productId).val(newQuantity);
+          $('#item-total-' + productId).text(response.item_total + '₫');
+          $('#cart-subtotal').text(response.subtotal + '₫');
+          
+          // Tính lại tổng cộng với phí vận chuyển
+          const subtotal = parseInt(response.subtotal.replace(/\./g, ''));
+          const shipping = subtotal >= 500000 ? 0 : 30000;
+          const total = subtotal + shipping;
+          $('#cart-total').text(total.toLocaleString('vi-VN') + '₫');
+          
+          $('#cart-count').text(response.cart_count);
+        } else {
+          alert(response.message);
+        }
+      }
+    });
+  }
+  
+  function removeItem(productId) {
+    if (!confirm('Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?')) return;
+    
+    $.ajax({
+      url: '<?= base_url('cart/remove') ?>',
+      type: 'POST',
+      data: {
+        product_id: productId
+      },
+      success: function(response) {
+        if (response.success) {
+          $('#cart-item-' + productId).remove();
+          $('#cart-subtotal').text(response.subtotal + '₫');
+          
+          // Tính lại tổng cộng với phí vận chuyển
+          const subtotal = parseInt(response.subtotal.replace(/\./g, ''));
+          const shipping = subtotal >= 500000 ? 0 : 30000;
+          const total = subtotal + shipping;
+          $('#cart-total').text(total.toLocaleString('vi-VN') + '₫');
+          
+          $('#cart-count').text(response.cart_count);
+          
+          // Nếu giỏ hàng trống
+          if ($('#cart-items tr').length <= 4) { // 4 là số hàng cố định (tạm tính, phí vận chuyển, tổng cộng)
+            $('#cart-items').html('<tr><td colspan="5" class="text-center">Giỏ hàng của bạn đang trống</td></tr>');
+            $('.checkout_btn_1').hide();
+          }
+        } else {
+          alert(response.message);
+        }
+      }
+    });
+  }
+  </script>
 <?= $this->endSection() ?>
-
-
-
-
-
-
-
-
- 
