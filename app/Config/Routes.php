@@ -14,19 +14,76 @@ $routes->get('/blog', 'Home::blog',['as'=>'home_blog']);
 $routes->get('/contact', 'Home::contact',['as'=>'home_contact']);
 $routes->get('/single-blog', 'Home::single_blog',['as'=>'home_single_blog']);
 $routes->get('/single-product', 'Home::single_product',['as'=>'home_single_product']);
-$routes->get('/cart', 'Home::cart',['as'=>'home_cart']);
+// $routes->get('/cart', 'Home::cart',['as'=>'home_cart']);
 $routes->get('/checkout', 'Home::checkout',['as'=>'home_checkout']);
 // $routes->get('/category', 'Home::category',['as'=>'home_category']);
 $routes->get('/tracking', 'Home::tracking',['as'=>'home_tracking']);
 $routes->get('/confirmation', 'Home::confirmation',['as'=>'home_confirmation']);
 $routes->get('/elements', 'Home::elements',['as'=>'home_elements']);
 $routes->get('/feature', 'Home::feature',['as'=>'home_feature']);
+$routes->get('/cart', 'CartController::index',['as'=>'home_cart']);
 
 
-// Routes cho Wishlist
-$routes->get('wishlist', 'WishlistController::index', ['as' => 'wishlist']);
+// Thêm các routes sau vào file app/Config/Routes.php
+
+// Category và Product routes
+$routes->get('/category', 'TableCategoryController::index', ['as' => 'category']);
+$routes->post('api/products/filter', 'TableCategoryController::getProducts', ['as' => 'api_products_filter']);
+
+// Wishlist API routes  
+$routes->post('api/wishlist/add', 'TableCategoryController::addToWishlist', ['as' => 'api_wishlist_add']);
+$routes->get('api/wishlist/status', 'TableCategoryController::getWishlistStatus', ['as' => 'api_wishlist_status']);
+$routes->post('api/wishlist/remove', 'WishlistController::remove', ['as' => 'api_wishlist_remove']);
+$routes->post('api/wishlist/move-to-cart', 'WishlistController::moveToCart', ['as' => 'api_wishlist_move_to_cart']);
+$routes->post('api/wishlist/clear', 'WishlistController::clear', ['as' => 'api_wishlist_clear']);
+$routes->post('api/wishlist/add-multiple', 'WishlistController::addMultiple', ['as' => 'api_wishlist_add_multiple']);
+$routes->get('api/wishlist/data', 'WishlistController::getWishlistData', ['as' => 'api_wishlist_data']);
+
+// Wishlist page route
+$routes->get('/wishlist', 'WishlistController::index', ['as' => 'wishlist']);
+
+// Legacy wishlist routes for compatibility
 $routes->post('wishlist/add', 'WishlistController::add', ['as' => 'wishlist_add']);
 $routes->post('wishlist/remove', 'WishlistController::remove', ['as' => 'wishlist_remove']);
+
+// Cart page and API routes  
+$routes->get('/cart', 'CartController::index', ['as' => 'cart']);
+$routes->post('api/cart/add', 'TableCategoryController::addToCart', ['as' => 'api_cart_add']);
+$routes->get('api/cart/count', 'CartController::getCartCount', ['as' => 'api_cart_count']);
+$routes->post('api/cart/update', 'CartController::updateQuantity', ['as' => 'api_cart_update']);
+$routes->post('/cart/update', 'CartController::update', ['as' => 'cart_update']); // For form submission
+$routes->post('api/cart/remove', 'CartController::remove', ['as' => 'api_cart_remove']);
+$routes->post('api/cart/clear', 'CartController::clear', ['as' => 'api_cart_clear']);
+$routes->get('api/cart/validate', 'CartController::validateCart', ['as' => 'api_cart_validate']);
+$routes->get('api/cart/data', 'CartController::getCartData', ['as' => 'api_cart_data']);
+$routes->post('api/cart/add-multiple', 'CartController::addMultiple', ['as' => 'api_cart_add_multiple']);
+$routes->get('api/cart/summary', 'CartController::getCartSummary', ['as' => 'api_cart_summary']);
+$routes->get('api/cart/widget', 'CartController::getCartWidget', ['as' => 'api_cart_widget']);
+$routes->post('api/cart/apply-promo', 'CartController::applyCoupon', ['as' => 'api_cart_apply_promo']);
+$routes->post('api/cart/remove-coupon', 'CartController::removeCoupon', ['as' => 'api_cart_remove_coupon']);
+$routes->post('api/cart/estimate-shipping', 'CartController::estimateShipping', ['as' => 'api_cart_estimate_shipping']);
+$routes->get('/cart/checkout', 'CartController::checkout', ['as' => 'api_cart_checkout']);
+// Trong app/Config/Routes.php
+$routes->post('api/cart/update-quantity', 'CartController::updateQuantity', ['as' => 'api_cart_update_quantity']);
+// Category filter routes (có thể dùng để SEO friendly URLs)
+$routes->get('/category/(:segment)', 'TableCategoryController::index/$1', ['as' => 'category_slug']);
+$routes->get('/category/(:segment)/page/(:num)', 'TableCategoryController::index/$1/$2', ['as' => 'category_page']);
+
+// Brand filter routes
+$routes->get('/brand/(:segment)', 'TableCategoryController::index', ['as' => 'brand_slug']);
+
+// Search routes
+$routes->get('/search', 'TableCategoryController::index', ['as' => 'search']);
+$routes->post('api/search/suggestions', 'SearchController::getSuggestions', ['as' => 'api_search_suggestions']);
+
+// Filter routes với parameters
+$routes->get('/products', 'TableCategoryController::index', ['as' => 'products']);
+$routes->get('/products/category/(:num)', 'TableCategoryController::index', ['as' => 'products_by_category']);
+
+// Routes cho Wishlist
+// $routes->get('wishlist', 'WishlistController::index', ['as' => 'wishlist']);
+// $routes->post('wishlist/add', 'WishlistController::add', ['as' => 'wishlist_add']);
+// $routes->post('wishlist/remove', 'WishlistController::remove', ['as' => 'wishlist_remove']);
 // Xây các trang website cho khách hàng
 // Xử lý phần API cho khách hàng
 $routes->group('api_Customers',function($routes) {

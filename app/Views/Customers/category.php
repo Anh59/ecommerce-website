@@ -2,10 +2,35 @@
 
 <?= $this->section('styles') ?>
     <link rel="stylesheet" href="<?= base_url('aranoz-master/css/price_rangs.css'); ?>">
+    <style>
+    .wishlist-btn { position: relative; }
+    .wishlist-btn.active i { color: #red !important; }
+    .loading { opacity: 0.6; pointer-events: none; }
+    .product-item { transition: all 0.3s ease; }
+    .out-of-stock { opacity: 0.7; }
+    .out-of-stock .add_cart { 
+        background: #ccc !important; 
+        cursor: not-allowed; 
+        pointer-events: none;
+    }
+    .cart-count {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: #ff6b35;
+        color: white;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    </style>
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
-
 
     <!--================Home Banner Area =================-->
     <!-- breadcrumb start-->
@@ -37,101 +62,41 @@
                             </div>
                             <div class="widgets_inner">
                                 <ul class="list">
+                                    <?php foreach ($categories as $category): ?>
                                     <li>
-                                        <a href="#">Frozen Fish</a>
-                                        <span>(250)</span>
+                                        <a href="#" class="category-filter" data-category="<?= $category['id'] ?>">
+                                            <?= esc($category['name']) ?>
+                                        </a>
+                                        <span>(<?= $category['product_count'] ?? 0 ?>)</span>
                                     </li>
-                                    <li>
-                                        <a href="#">Dried Fish</a>
-                                        <span>(250)</span>
-                                    </li>
-                                    <li>
-                                        <a href="#">Fresh Fish</a>
-                                        <span>(250)</span>
-                                    </li>
-                                    <li>
-                                        <a href="#">Meat Alternatives</a>
-                                        <span>(250)</span>
-                                    </li>
-                                    <li>
-                                        <a href="#">Fresh Fish</a>
-                                        <span>(250)</span>
-                                    </li>
-                                    <li>
-                                        <a href="#">Meat Alternatives</a>
-                                        <span>(250)</span>
-                                    </li>
-                                    <li>
-                                        <a href="#">Meat</a>
-                                        <span>(250)</span>
-                                    </li>
+                                    <?php if (!empty($category['children'])): ?>
+                                        <?php foreach ($category['children'] as $child): ?>
+                                        <li style="margin-left: 20px;">
+                                            <a href="#" class="category-filter" data-category="<?= $child['id'] ?>">
+                                                - <?= esc($child['name']) ?>
+                                            </a>
+                                            <span>(<?= $child['product_count'] ?? 0 ?>)</span>
+                                        </li>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                    <?php endforeach; ?>
                                 </ul>
                             </div>
                         </aside>
 
                         <aside class="left_widgets p_filter_widgets">
                             <div class="l_w_title">
-                                <h3>Product filters</h3>
+                                <h3>Brand Filter</h3>
                             </div>
                             <div class="widgets_inner">
                                 <ul class="list">
+                                    <?php foreach ($brands as $brand): ?>
                                     <li>
-                                        <a href="#">Apple</a>
+                                        <a href="#" class="brand-filter" data-brand="<?= $brand['id'] ?>">
+                                            <?= esc($brand['name']) ?>
+                                        </a>
                                     </li>
-                                    <li>
-                                        <a href="#">Asus</a>
-                                    </li>
-                                    <li class="active">
-                                        <a href="#">Gionee</a>
-                                    </li>
-                                    <li>
-                                        <a href="#">Micromax</a>
-                                    </li>
-                                    <li>
-                                        <a href="#">Samsung</a>
-                                    </li>
-                                </ul>
-                                <ul class="list">
-                                    <li>
-                                        <a href="#">Apple</a>
-                                    </li>
-                                    <li>
-                                        <a href="#">Asus</a>
-                                    </li>
-                                    <li class="active">
-                                        <a href="#">Gionee</a>
-                                    </li>
-                                    <li>
-                                        <a href="#">Micromax</a>
-                                    </li>
-                                    <li>
-                                        <a href="#">Samsung</a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </aside>
-
-                        <aside class="left_widgets p_filter_widgets">
-                            <div class="l_w_title">
-                                <h3>Color Filter</h3>
-                            </div>
-                            <div class="widgets_inner">
-                                <ul class="list">
-                                    <li>
-                                        <a href="#">Black</a>
-                                    </li>
-                                    <li>
-                                        <a href="#">Black Leather</a>
-                                    </li>
-                                    <li class="active">
-                                        <a href="#">Black with red</a>
-                                    </li>
-                                    <li>
-                                        <a href="#">Gold</a>
-                                    </li>
-                                    <li>
-                                        <a href="#">Spacegrey</a>
-                                    </li>
+                                    <?php endforeach; ?>
                                 </ul>
                             </div>
                         </aside>
@@ -142,16 +107,15 @@
                             </div>
                             <div class="widgets_inner">
                                 <div class="range_item">
-                                    <!-- <div id="slider-range"></div> -->
                                     <input type="text" class="js-range-slider" value="" />
                                     <div class="d-flex">
                                         <div class="price_text">
                                             <p>Price :</p>
                                         </div>
                                         <div class="price_value d-flex justify-content-center">
-                                            <input type="text" class="js-input-from" id="amount" readonly />
+                                            <input type="text" class="js-input-from" id="min_price" readonly />
                                             <span>to</span>
-                                            <input type="text" class="js-input-to" id="amount" readonly />
+                                            <input type="text" class="js-input-to" id="max_price" readonly />
                                         </div>
                                     </div>
                                 </div>
@@ -164,33 +128,35 @@
                         <div class="col-lg-12">
                             <div class="product_top_bar d-flex justify-content-between align-items-center">
                                 <div class="single_product_menu">
-                                    <p><span>10000 </span> Prodict Found</p>
+                                    <p><span id="product-count"><?= number_format($totalProducts) ?></span> Products Found</p>
                                 </div>
                                 <div class="single_product_menu d-flex">
-                                    <h5>short by : </h5>
-                                    <select>
-                                        <option data-display="Select">name</option>
-                                        <option value="1">price</option>
-                                        <option value="2">product</option>
+                                    <h5>Sort by : </h5>
+                                    <select id="sort-select">
+                                        <option value="name" <?= ($filters['sort'] == 'name') ? 'selected' : '' ?>>Name</option>
+                                        <option value="price_asc" <?= ($filters['sort'] == 'price_asc') ? 'selected' : '' ?>>Price: Low to High</option>
+                                        <option value="price_desc" <?= ($filters['sort'] == 'price_desc') ? 'selected' : '' ?>>Price: High to Low</option>
                                     </select>
                                 </div>
                                 <div class="single_product_menu d-flex">
-                                    <h5>show :</h5>
+                                    <h5>Show :</h5>
                                     <div class="top_pageniation">
-                                        <ul>
-                                            <li>1</li>
-                                            <li>2</li>
-                                            <li>3</li>
-                                        </ul>
+                                        <select id="per-page-select">
+                                            <option value="9" <?= ($perPage == 9) ? 'selected' : '' ?>>9</option>
+                                            <option value="18" <?= ($perPage == 18) ? 'selected' : '' ?>>18</option>
+                                            <option value="36" <?= ($perPage == 36) ? 'selected' : '' ?>>36</option>
+                                        </select>
                                     </div>
                                 </div>
                                 <div class="single_product_menu d-flex">
                                     <div class="input-group">
-                                        <input type="text" class="form-control" placeholder="search"
-                                            aria-describedby="inputGroupPrepend">
+                                        <input type="text" class="form-control" id="search-input" placeholder="Search products..." 
+                                               value="<?= esc($filters['search']) ?>"
+                                               aria-describedby="inputGroupPrepend">
                                         <div class="input-group-prepend">
-                                            <span class="input-group-text" id="inputGroupPrepend"><i
-                                                    class="ti-search"></i></span>
+                                            <span class="input-group-text" id="inputGroupPrepend">
+                                                <i class="ti-search"></i>
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -198,120 +164,55 @@
                         </div>
                     </div>
 
-                    <div class="row align-items-center latest_product_inner">
-                        <div class="col-lg-4 col-sm-6">
-                            <div class="single_product_item">
-                                <img src="<?= base_url('aranoz-master/img/product/product_1.png'); ?>" alt="">
-                                <div class="single_product_text">
-                                    <h4>Quartz Belt Watch</h4>
-                                    <h3>$150.00</h3>
-                                    <a href="#" class="add_cart">+ add to cart<i class="ti-heart"></i></a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-4 col-sm-6">
-                            <div class="single_product_item">
-                                <img src="<?= base_url('aranoz-master/img/product/product_2.png'); ?>" alt="">
-                                <div class="single_product_text">
-                                    <h4>Quartz Belt Watch</h4>
-                                    <h3>$150.00</h3>
-                                    <a href="#" class="add_cart">+ add to cart<i class="ti-heart"></i></a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-4 col-sm-6">
-                            <div class="single_product_item">
-                                <img src="<?= base_url('aranoz-master/img/product/product_3.png'); ?>" alt="">
-                                <div class="single_product_text">
-                                    <h4>Quartz Belt Watch</h4>
-                                    <h3>$150.00</h3>
-                                    <a href="#" class="add_cart">+ add to cart<i class="ti-heart"></i></a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-4 col-sm-6">
-                            <div class="single_product_item">
-                                <img src="<?= base_url('aranoz-master/img/product/product_4.png'); ?>" alt="">
-                                <div class="single_product_text">
-                                    <h4>Quartz Belt Watch</h4>
-                                    <h3>$150.00</h3>
-                                    <a href="#" class="add_cart">+ add to cart<i class="ti-heart"></i></a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-4 col-sm-6">
-                            <div class="single_product_item">
-                                <img src="<?= base_url('aranoz-master/img/product/product_5.png'); ?>" alt="">
-                                <div class="single_product_text">
-                                    <h4>Quartz Belt Watch</h4>
-                                    <h3>$150.00</h3>
-                                    <a href="#" class="add_cart">+ add to cart<i class="ti-heart"></i></a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-4 col-sm-6">
-                            <div class="single_product_item">
-                                <img src="<?= base_url('aranoz-master/img/product/product_6.png'); ?>" alt="">
-                                <div class="single_product_text">
-                                    <h4>Quartz Belt Watch</h4>
-                                    <h3>$150.00</h3>
-                                    <a href="#" class="add_cart">+ add to cart<i class="ti-heart"></i></a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-4 col-sm-6">
-                            <div class="single_product_item">
-                                <img src="<?= base_url('aranoz-master/img/product/product_7.png'); ?>" alt="">
-                                <div class="single_product_text">
-                                    <h4>Quartz Belt Watch</h4>
-                                    <h3>$150.00</h3>
-                                    <a href="#" class="add_cart">+ add to cart<i class="ti-heart"></i></a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-4 col-sm-6">
-                            <div class="single_product_item">
-                                <img src="<?= base_url('aranoz-master/img/product/product_8.png'); ?>" alt="">
-                                <div class="single_product_text">
-                                    <h4>Quartz Belt Watch</h4>
-                                    <h3>$150.00</h3>
-                                    <a href="#" class="add_cart">+ add to cart<i class="ti-heart"></i></a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-4 col-sm-6">
-                            <div class="single_product_item">
-                                <img src="<?= base_url('aranoz-master/img/product/product_2.png'); ?>" alt="">
-                                <div class="single_product_text">
-                                    <h4>Quartz Belt Watch</h4>
-                                    <h3>$150.00</h3>
-                                    <a href="#" class="add_cart">+ add to cart<i class="ti-heart"></i></a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-12">
-                            <div class="pageination">
-                                <nav aria-label="Page navigation example">
-                                    <ul class="pagination justify-content-center">
-                                        <li class="page-item">
-                                            <a class="page-link" href="#" aria-label="Previous">
-                                                <i class="ti-angle-double-left"></i>
+                    <div id="products-container">
+                        <div class="row align-items-center latest_product_inner">
+                            <?php foreach ($products as $product): ?>
+                            <div class="col-lg-4 col-sm-6">
+                                <div class="single_product_item product-item <?= $product['stock_status'] == 'out_of_stock' ? 'out-of-stock' : '' ?>" 
+                                     data-product-id="<?= $product['id'] ?>">
+                                    <img src="<?= base_url($product['main_image'] ?? 'aranoz-master/img/product/product_1.png') ?>" alt="<?= esc($product['name']) ?>">
+                                    <div class="single_product_text">
+                                        <h4><?= esc($product['name']) ?></h4>
+                                        <div class="price-section">
+                                            <?php if ($product['sale_price'] && $product['sale_price'] < $product['price']): ?>
+                                                <h3 class="sale-price"><?= number_format($product['sale_price']) ?>₫</h3>
+                                                <span class="original-price"><?= number_format($product['price']) ?>₫</span>
+                                            <?php else: ?>
+                                                <h3><?= number_format($product['price']) ?>₫</h3>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="product-actions">
+                                            <a href="#" class="add_cart add-to-cart-btn" data-product-id="<?= $product['id'] ?>">
+                                                <?= $product['stock_status'] == 'out_of_stock' ? 'Out of Stock' : '+ Add to cart' ?>
                                             </a>
-                                        </li>
-                                        <li class="page-item"><a class="page-link" href="#">1</a></li>
-                                        <li class="page-item"><a class="page-link" href="#">2</a></li>
-                                        <li class="page-item"><a class="page-link" href="#">3</a></li>
-                                        <li class="page-item"><a class="page-link" href="#">4</a></li>
-                                        <li class="page-item"><a class="page-link" href="#">5</a></li>
-                                        <li class="page-item"><a class="page-link" href="#">6</a></li>
-                                        <li class="page-item">
-                                            <a class="page-link" href="#" aria-label="Next">
-                                                <i class="ti-angle-double-right"></i>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </nav>
+                                            <button class="wishlist-btn" data-product-id="<?= $product['id'] ?>" title="Add to Wishlist">
+                                                <i class="ti-heart"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <?php if ($product['stock_status'] == 'low_stock'): ?>
+                                        <div class="stock-indicator">Only <?= $product['stock_quantity'] ?> left!</div>
+                                    <?php endif; ?>
+                                </div>
                             </div>
+                            <?php endforeach; ?>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div id="pagination-container">
+                                    <?= $pagerLinks ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Loading overlay -->
+                    <div id="loading-overlay" style="display: none;">
+                        <div class="text-center">
+                            <i class="fa fa-spinner fa-spin fa-3x"></i>
+                            <p>Loading products...</p>
                         </div>
                     </div>
                 </div>
@@ -320,7 +221,7 @@
     </section>
     <!--================End Category Product Area =================-->
 
-    <!-- product_list part start-->
+    <!-- Best Sellers Section (unchanged) -->
     <section class="product_list best_seller">
         <div class="container">
             <div class="row justify-content-center">
@@ -333,54 +234,429 @@
             <div class="row align-items-center justify-content-between">
                 <div class="col-lg-12">
                     <div class="best_product_slider owl-carousel">
+                        <?php for($i = 1; $i <= 5; $i++): ?>
                         <div class="single_product_item">
-                            <img src="<?= base_url('aranoz-master/img/product/product_1.png'); ?>" alt="">
+                            <img src="<?= base_url("aranoz-master/img/product/product_{$i}.png") ?>" alt="">
                             <div class="single_product_text">
-                                <h4>Quartz Belt Watch</h4>
-                                <h3>$150.00</h3>
+                                <h4>Best Seller Product <?= $i ?></h4>
+                                <h3><?= number_format(150000 * $i) ?>₫</h3>
                             </div>
                         </div>
-                        <div class="single_product_item">
-                            <img src="<?= base_url('aranoz-master/img/product/product_2.png'); ?>" alt="">
-                            <div class="single_product_text">
-                                <h4>Quartz Belt Watch</h4>
-                                <h3>$150.00</h3>
-                            </div>
-                        </div>
-                        <div class="single_product_item">
-                            <img src="<?= base_url('aranoz-master/img/product/product_3.png'); ?>" alt="">
-                            <div class="single_product_text">
-                                <h4>Quartz Belt Watch</h4>
-                                <h3>$150.00</h3>
-                            </div>
-                        </div>
-                        <div class="single_product_item">
-                            <img src="<?= base_url('aranoz-master/img/product/product_4.png'); ?>" alt="">
-                            <div class="single_product_text">
-                                <h4>Quartz Belt Watch</h4>
-                                <h3>$150.00</h3>
-                            </div>
-                        </div>
-                        <div class="single_product_item">
-                            <img src="<?= base_url('aranoz-master/img/product/product_5.png'); ?>" alt="">
-                            <div class="single_product_text">
-                                <h4>Quartz Belt Watch</h4>
-                                <h3>$150.00</h3>
-                            </div>
-                        </div>
+                        <?php endfor; ?>
                     </div>
                 </div>
             </div>
         </div>
     </section>
-    <!-- product_list part end-->
-
 
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
- 
     <script src="<?= base_url('aranoz-master/js/stellar.js'); ?>"></script>
     <script src="<?= base_url('aranoz-master/js/price_rangs.js'); ?>"></script>
+    
+    <script>
+    $(document).ready(function() {
+        let currentFilters = {
+            category_id: <?= $filters['category_id'] ?? 'null' ?>,
+            brand_id: <?= $filters['brand_id'] ?? 'null' ?>,
+            min_price: <?= $filters['min_price'] ?? 'null' ?>,
+            max_price: <?= $filters['max_price'] ?? 'null' ?>,
+            sort_by: '<?= $filters['sort'] ?? 'name' ?>',
+            per_page: <?= $perPage ?>,
+            page: 1,
+            search: '<?= $filters['search'] ?? '' ?>'
+        };
+
+        let wishlistItems = [];
+
+        // Load wishlist status on page load
+        loadWishlistStatus();
+
+        // Category filter click
+        $('.category-filter').click(function(e) {
+            e.preventDefault();
+            let categoryId = $(this).data('category');
+            
+            // Toggle category
+            if (currentFilters.category_id == categoryId) {
+                currentFilters.category_id = null;
+                $(this).removeClass('active');
+            } else {
+                $('.category-filter').removeClass('active');
+                $(this).addClass('active');
+                currentFilters.category_id = categoryId;
+            }
+            
+            currentFilters.page = 1;
+            loadProducts();
+        });
+
+        // Brand filter click
+        $('.brand-filter').click(function(e) {
+            e.preventDefault();
+            let brandId = $(this).data('brand');
+            
+            // Toggle brand
+            if (currentFilters.brand_id == brandId) {
+                currentFilters.brand_id = null;
+                $(this).removeClass('active');
+            } else {
+                $('.brand-filter').removeClass('active');
+                $(this).addClass('active');
+                currentFilters.brand_id = brandId;
+            }
+            
+            currentFilters.page = 1;
+            loadProducts();
+        });
+
+        // Sort change
+        $('#sort-select').change(function() {
+            currentFilters.sort_by = $(this).val();
+            currentFilters.page = 1;
+            loadProducts();
+        });
+
+        // Per page change
+        $('#per-page-select').change(function() {
+            currentFilters.per_page = $(this).val();
+            currentFilters.page = 1;
+            loadProducts();
+        });
+
+        // Search functionality
+        let searchTimeout;
+        $('#search-input').on('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(function() {
+                currentFilters.search = $('#search-input').val();
+                currentFilters.page = 1;
+                loadProducts();
+            }, 500);
+        });
+
+        // Price range change (assuming you have price range slider)
+        $('.js-range-slider').on('change', function() {
+            let fromVal = $('.js-input-from').val().replace(/[^\d]/g, '');
+            let toVal = $('.js-input-to').val().replace(/[^\d]/g, '');
+            
+            currentFilters.min_price = fromVal ? parseInt(fromVal) : null;
+            currentFilters.max_price = toVal ? parseInt(toVal) : null;
+            currentFilters.page = 1;
+            loadProducts();
+        });
+
+        // Add to cart functionality
+        $(document).on('click', '.add-to-cart-btn', function(e) {
+            e.preventDefault();
+            let productId = $(this).data('product-id');
+            let $btn = $(this);
+            
+            if ($btn.hasClass('loading')) return;
+            
+            $btn.addClass('loading').text('Adding...');
+            
+            $.ajax({
+                url: '<?= route_to('api_cart_add') ?>',
+                type: 'POST',
+                data: {
+                    product_id: productId,
+                    quantity: 1,
+                    <?= csrf_token() ?>: '<?= csrf_hash() ?>'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showToast('success', response.message);
+                        updateCartCount(response.cart_count);
+                    } else {
+                        showToast('error', response.message);
+                    }
+                },
+                error: function() {
+                    showToast('error', 'Có lỗi xảy ra, vui lòng thử lại');
+                },
+                complete: function() {
+                    $btn.removeClass('loading').text('+ Add to cart');
+                }
+            });
+        });
+
+        // Wishlist functionality
+        $(document).on('click', '.wishlist-btn', function(e) {
+            e.preventDefault();
+            let productId = $(this).data('product-id');
+            let $btn = $(this);
+            
+            if ($btn.hasClass('loading')) return;
+            
+            $btn.addClass('loading');
+            
+            $.ajax({
+                url: '<?= route_to('api_wishlist_add') ?>',
+                type: 'POST',
+                data: {
+                    product_id: productId,
+                    <?= csrf_token() ?>: '<?= csrf_hash() ?>'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        if (response.action === 'added') {
+                            $btn.addClass('active');
+                            wishlistItems.push(productId);
+                            showToast('success', response.message);
+                        } else {
+                            $btn.removeClass('active');
+                            wishlistItems = wishlistItems.filter(id => id != productId);
+                            showToast('info', response.message);
+                        }
+                        updateWishlistCount();
+                    } else {
+                        showToast('error', response.message);
+                    }
+                },
+                error: function() {
+                    showToast('error', 'Có lỗi xảy ra, vui lòng thử lại');
+                },
+                complete: function() {
+                    $btn.removeClass('loading');
+                }
+            });
+        });
+
+        // Pagination click handler
+        $(document).on('click', '.pagination a', function(e) {
+            e.preventDefault();
+            let url = $(this).attr('href');
+            let page = new URL(url).searchParams.get('page');
+            if (page) {
+                currentFilters.page = parseInt(page);
+                loadProducts();
+            }
+        });
+
+        // Load products via AJAX
+        function loadProducts() {
+            $('#loading-overlay').show();
+            $('#products-container').addClass('loading');
+
+            $.ajax({
+                url: '<?= route_to('api_products_filter') ?>',
+                type: 'POST',
+                data: {
+                    ...currentFilters,
+                    <?= csrf_token() ?>: '<?= csrf_hash() ?>'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        updateProductsDisplay(response);
+                        updateProductCount(response.total);
+                        updatePagination(response);
+                        updateWishlistButtons();
+                    } else {
+                        showToast('error', 'Không thể tải sản phẩm');
+                    }
+                },
+                error: function() {
+                    showToast('error', 'Có lỗi xảy ra khi tải sản phẩm');
+                },
+                complete: function() {
+                    $('#loading-overlay').hide();
+                    $('#products-container').removeClass('loading');
+                }
+            });
+        }
+
+        function updateProductsDisplay(response) {
+            let html = '<div class="row align-items-center latest_product_inner">';
+            
+            if (response.products && response.products.length > 0) {
+                response.products.forEach(function(product) {
+                    let outOfStockClass = product.stock_status === 'out_of_stock' ? 'out-of-stock' : '';
+                    let addToCartText = product.stock_status === 'out_of_stock' ? 'Out of Stock' : '+ Add to cart';
+                    let stockIndicator = '';
+                    
+                    if (product.stock_status === 'low_stock') {
+                        stockIndicator = `<div class="stock-indicator">Only ${product.stock_quantity} left!</div>`;
+                    }
+
+                    let priceSection = '';
+                    if (product.sale_price && product.sale_price < product.price) {
+                        priceSection = `
+                            <h3 class="sale-price">${formatCurrency(product.sale_price)}₫</h3>
+                            <span class="original-price">${formatCurrency(product.price)}₫</span>
+                        `;
+                    } else {
+                        priceSection = `<h3>${formatCurrency(product.price)}₫</h3>`;
+                    }
+
+                    html += `
+                        <div class="col-lg-4 col-sm-6">
+                            <div class="single_product_item product-item ${outOfStockClass}" data-product-id="${product.id}">
+                                <img src="${product.main_image || '<?= base_url('aranoz-master/img/product/product_1.png') ?>'}" 
+                                     alt="${escapeHtml(product.name)}">
+                                <div class="single_product_text">
+                                    <h4>${escapeHtml(product.name)}</h4>
+                                    <div class="price-section">${priceSection}</div>
+                                    <div class="product-actions">
+                                        <a href="#" class="add_cart add-to-cart-btn" data-product-id="${product.id}">
+                                            ${addToCartText}
+                                        </a>
+                                        <button class="wishlist-btn" data-product-id="${product.id}" title="Add to Wishlist">
+                                            <i class="ti-heart"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                ${stockIndicator}
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                html += `
+                    <div class="col-12">
+                        <div class="text-center py-5">
+                            <h4>Không tìm thấy sản phẩm nào</h4>
+                            <p>Hãy thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            $('.latest_product_inner').replaceWith(html);
+        }
+
+        function updateProductCount(total) {
+            $('#product-count').text(formatNumber(total));
+        }
+
+        function updatePagination(response) {
+            let paginationHtml = '';
+            if (response.total_pages > 1) {
+                paginationHtml = '<nav aria-label="Page navigation"><ul class="pagination justify-content-center">';
+                
+                // Previous button
+                if (response.page > 1) {
+                    paginationHtml += `<li class="page-item"><a class="page-link" href="?page=${response.page - 1}"><i class="ti-angle-double-left"></i></a></li>`;
+                }
+                
+                // Page numbers
+                for (let i = 1; i <= response.total_pages; i++) {
+                    let activeClass = i === response.page ? 'active' : '';
+                    paginationHtml += `<li class="page-item ${activeClass}"><a class="page-link" href="?page=${i}">${i}</a></li>`;
+                }
+                
+                // Next button
+                if (response.page < response.total_pages) {
+                    paginationHtml += `<li class="page-item"><a class="page-link" href="?page=${response.page + 1}"><i class="ti-angle-double-right"></i></a></li>`;
+                }
+                
+                paginationHtml += '</ul></nav>';
+            }
+            
+            $('#pagination-container').html(paginationHtml);
+        }
+
+        function loadWishlistStatus() {
+            $.ajax({
+                url: '<?= route_to('api_wishlist_status') ?>',
+                type: 'GET',
+                success: function(response) {
+                    if (response.wishlist) {
+                        wishlistItems = response.wishlist;
+                        updateWishlistButtons();
+                    }
+                }
+            });
+        }
+
+        function updateWishlistButtons() {
+            $('.wishlist-btn').each(function() {
+                let productId = parseInt($(this).data('product-id'));
+                if (wishlistItems.includes(productId)) {
+                    $(this).addClass('active');
+                } else {
+                    $(this).removeClass('active');
+                }
+            });
+        }
+
+        function updateWishlistCount() {
+            // Update wishlist count in header if exists
+            $('.wishlist-count').text(wishlistItems.length);
+        }
+
+        function updateCartCount(count) {
+            // Update cart count in header if exists
+            $('.cart-count').text(count);
+        }
+
+        function showToast(type, message) {
+            // Simple toast implementation
+            let toastClass = type === 'success' ? 'alert-success' : 
+                           type === 'error' ? 'alert-danger' : 'alert-info';
+            
+            let toast = `
+                <div class="alert ${toastClass} alert-dismissible fade show position-fixed" 
+                     style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+                    ${message}
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span>&times;</span>
+                    </button>
+                </div>
+            `;
+            
+            $('body').append(toast);
+            
+            setTimeout(function() {
+                $('.alert').fadeOut(function() {
+                    $(this).remove();
+                });
+            }, 3000);
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN').format(amount);
+        }
+
+        function formatNumber(num) {
+            return new Intl.NumberFormat('vi-VN').format(num);
+        }
+
+        function escapeHtml(text) {
+            let map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        // Initialize filters based on URL parameters
+        function initializeFromURL() {
+            let urlParams = new URLSearchParams(window.location.search);
+            
+            if (urlParams.get('category')) {
+                currentFilters.category_id = parseInt(urlParams.get('category'));
+                $(`.category-filter[data-category="${currentFilters.category_id}"]`).addClass('active');
+            }
+            
+            if (urlParams.get('brand')) {
+                currentFilters.brand_id = parseInt(urlParams.get('brand'));
+                $(`.brand-filter[data-brand="${currentFilters.brand_id}"]`).addClass('active');
+            }
+            
+            if (urlParams.get('search')) {
+                currentFilters.search = urlParams.get('search');
+                $('#search-input').val(currentFilters.search);
+            }
+        }
+
+        initializeFromURL();
+    });
+    </script>
 
 <?= $this->endSection() ?>
