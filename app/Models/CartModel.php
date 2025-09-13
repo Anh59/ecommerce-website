@@ -132,6 +132,7 @@ class CartModel extends Model
      */
     public function updateQuantity($customerId, $productId, $quantity)
     {
+        // FIXED: Nếu quantity <= 0 thì xóa sản phẩm khỏi giỏ hàng
         if ($quantity <= 0) {
             return $this->removeFromCart($customerId, $productId);
         }
@@ -174,43 +175,40 @@ class CartModel extends Model
 
     /**
      * Add or update cart item
+     * FIXED: Logic kiểm tra giá sale
      */
-    public function addToCart($customerId, $productId, $quantity, $price = null)
+  public function addToCart($customerId, $productId, $quantity, $price = null)
 {
-    // Get product info if price not provided
     if (!$price) {
         $productModel = new ProductModel();
         $product = $productModel->find($productId);
         if (!$product) {
             return false;
         }
-        // Sửa lỗi: Kiểm tra nếu sale_price tồn tại và lớn hơn 0
-        if (isset($product['sale_price']) && $product['sale_price'] > 0) {
+        
+        // FIXED: Logic kiểm tra giá chính xác
+        if (isset($product['sale_price']) && is_numeric($product['sale_price']) && $product['sale_price'] > 0) {
             $price = $product['sale_price'];
         } else {
-            $price = $product['price']; // Sử dụng giá gốc nếu không có sale_price
+            $price = $product['price'] ?? 0;
         }
     }
 
-    // Check if item already exists
+    // Check existing item
     $existingItem = $this->where([
         'customer_id' => $customerId,
         'product_id' => $productId
     ])->first();
 
     if ($existingItem) {
-        // Update quantity
         $newQuantity = $existingItem['quantity'] + $quantity;
         return $this->updateQuantity($customerId, $productId, $newQuantity);
     } else {
-        // Insert new item
         return $this->insert([
             'customer_id' => $customerId,
             'product_id' => $productId,
             'quantity' => $quantity,
-            'price' => $price,
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s')
+            'price' => $price
         ]);
     }
 }
@@ -315,5 +313,4 @@ class CartModel extends Model
             );
         }
     }
-    
 }

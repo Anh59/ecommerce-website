@@ -37,38 +37,67 @@ class CartController extends BaseController
         ]);
     }
 
+    /**
+     * FIXED: Phương thức updateQuantity - xử lý đúng quantity = 0
+     */
     public function updateQuantity()
-    {
-        if (!$this->request->isAJAX()) {
-            return $this->response->setStatusCode(404);
-        }
+{
+    // Bật debug
+    log_message('info', 'updateQuantity called');
+    log_message('info', 'POST data: ' . json_encode($this->request->getPost()));
+    
+    if (!$this->request->isAJAX()) {
+        log_message('error', 'Not AJAX request');
+        return $this->response->setStatusCode(404);
+    }
 
-        $session = session();
-        $customerId = $session->get('customer_id');
+    $session = session();
+    $customerId = $session->get('customer_id');
 
-        if (!$customerId) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Vui lòng đăng nhập'
-            ]);
-        }
+    if (!$customerId) {
+        log_message('error', 'No customer ID in session');
+        return $this->response->setJSON([
+            'success' => false,
+            'message' => 'Vui lòng đăng nhập'
+        ]);
+    }
 
-        $productId = $this->request->getPost('product_id');
-        $quantity = (int)$this->request->getPost('quantity');
+    $productId = (int)$this->request->getPost('product_id');
+    $quantity = (int)$this->request->getPost('quantity');
 
-        if (!$productId || $quantity < 0) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Thông tin không hợp lệ'
-            ]);
-        }
+    log_message('info', "Processing: customer={$customerId}, product={$productId}, quantity={$quantity}");
 
-        // If quantity is 0, remove item
+    if (!$productId || $quantity < 0) {
+        return $this->response->setJSON([
+            'success' => false,
+            'message' => 'Thông tin không hợp lệ'
+        ]);
+    }
+
+    try {
+        // Nếu quantity = 0, xóa sản phẩm
         if ($quantity === 0) {
-            return $this->remove();
+            $result = $this->cartModel->removeFromCart($customerId, $productId);
+            if ($result) {
+                $cartTotals = $this->cartModel->getCartTotals($customerId);
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Đã xóa sản phẩm khỏi giỏ hàng',
+                    'action' => 'removed',
+                    'cart_count' => $cartTotals['total_items'],
+                    'subtotal' => $cartTotals['subtotal'],
+                    'total' => $cartTotals['total'],
+                    'shipping_fee' => $cartTotals['shipping_fee']
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Không thể xóa sản phẩm'
+                ]);
+            }
         }
 
-        // Check product availability
+        // Check stock
         $product = $this->productModel->find($productId);
         if (!$product || !$product['is_active']) {
             return $this->response->setJSON([
@@ -84,33 +113,20 @@ class CartController extends BaseController
             ]);
         }
 
+        // Update quantity
         $result = $this->cartModel->updateQuantity($customerId, $productId, $quantity);
 
         if ($result) {
-            $cartItems = $this->cartModel->getCartWithProducts($customerId);
             $cartTotals = $this->cartModel->getCartTotals($customerId);
-
-            // Format items for summary (limit to essential info)
-            $summaryItems = [];
-            foreach ($cartItems as $item) {
-                $summaryItems[] = [
-                    'id' => $item['id'],
-                    'product_id' => $item['product_id'],
-                    'name' => $item['name'],
-                    'quantity' => $item['quantity'],
-                    'price' => $item['price'],
-                    'total' => $item['price'] * $item['quantity'],
-                    'image' => $item['main_image']
-                ];
-            }
 
             return $this->response->setJSON([
                 'success' => true,
+                'message' => 'Đã cập nhật số lượng',
+                'action' => 'updated',
                 'cart_count' => $cartTotals['total_items'],
                 'subtotal' => $cartTotals['subtotal'],
                 'total' => $cartTotals['total'],
-                'shipping_fee' => $cartTotals['shipping_fee'],
-                'items' => $summaryItems
+                'shipping_fee' => $cartTotals['shipping_fee']
             ]);
         } else {
             return $this->response->setJSON([
@@ -118,7 +134,15 @@ class CartController extends BaseController
                 'message' => 'Không thể cập nhật số lượng'
             ]);
         }
+
+    } catch (Exception $e) {
+        log_message('error', 'updateQuantity error: ' . $e->getMessage());
+        return $this->response->setJSON([
+            'success' => false,
+            'message' => 'Có lỗi hệ thống: ' . $e->getMessage()
+        ]);
     }
+}
 
     public function applyPromoCode()
     {
@@ -248,6 +272,9 @@ class CartController extends BaseController
         return view('Customers/cart', $data);
     }
 
+    /**
+     * FIXED: Xử lý update quantity trong batch
+     */
     public function update()
     {
         $session = session();
@@ -276,6 +303,7 @@ class CartController extends BaseController
         }
 
         $updated = 0;
+        $removed = 0;
         $errors = [];
 
         foreach ($updates as $productId => $quantity) {
@@ -284,27 +312,29 @@ class CartController extends BaseController
 
             if ($quantity < 0) continue;
 
+            // FIXED: Nếu quantity = 0 thì xóa sản phẩm
             if ($quantity == 0) {
                 if ($this->cartModel->removeFromCart($customerId, $productId)) {
-                    $updated++;
+                    $removed++;
                 }
+                continue;
+            }
+
+            $product = $this->productModel->find($productId);
+            if (!$product || !$product['is_active']) {
+                $errors[] = "Sản phẩm ID {$productId} không tồn tại";
+                continue;
+            }
+
+            if ($product['stock_quantity'] < $quantity) {
+                $errors[] = "Sản phẩm {$product['name']} chỉ còn {$product['stock_quantity']} trong kho";
+                continue;
+            }
+
+            if ($this->cartModel->updateQuantity($customerId, $productId, $quantity)) {
+                $updated++;
             } else {
-                $product = $this->productModel->find($productId);
-                if (!$product || !$product['is_active']) {
-                    $errors[] = "Sản phẩm ID {$productId} không tồn tại";
-                    continue;
-                }
-
-                if ($product['stock_quantity'] < $quantity) {
-                    $errors[] = "Sản phẩm {$product['name']} chỉ còn {$product['stock_quantity']} trong kho";
-                    continue;
-                }
-
-                if ($this->cartModel->updateQuantity($customerId, $productId, $quantity)) {
-                    $updated++;
-                } else {
-                    $errors[] = "Không thể cập nhật sản phẩm {$product['name']}";
-                }
+                $errors[] = "Không thể cập nhật sản phẩm {$product['name']}";
             }
         }
 
@@ -312,19 +342,31 @@ class CartController extends BaseController
             $cartTotals = $this->cartModel->getCartTotals($customerId);
             $cartItems = $this->cartModel->getCartWithProducts($customerId);
             
+            $totalChanges = $updated + $removed;
+            $message = '';
+            if ($updated > 0) $message .= "Đã cập nhật {$updated} sản phẩm. ";
+            if ($removed > 0) $message .= "Đã xóa {$removed} sản phẩm. ";
+            if ($totalChanges == 0) $message = 'Không có sản phẩm nào được cập nhật.';
+            
             return $this->response->setJSON([
-                'success' => $updated > 0,
-                'message' => $updated > 0 ? "Đã cập nhật {$updated} sản phẩm" : 'Không có sản phẩm nào được cập nhật',
+                'success' => $totalChanges > 0,
+                'message' => trim($message),
                 'errors' => $errors,
                 'cart_totals' => $cartTotals,
                 'cart_items' => $cartItems,
-                'updated_count' => $updated
+                'updated_count' => $updated,
+                'removed_count' => $removed
             ]);
         }
 
-        $message = $updated > 0 ? "Đã cập nhật {$updated} sản phẩm" : 'Không có sản phẩm nào được cập nhật';
+        $totalChanges = $updated + $removed;
+        $message = '';
+        if ($updated > 0) $message .= "Đã cập nhật {$updated} sản phẩm. ";
+        if ($removed > 0) $message .= "Đã xóa {$removed} sản phẩm. ";
+        if ($totalChanges == 0) $message = 'Không có sản phẩm nào được cập nhật.';
+        
         if (!empty($errors)) {
-            $message .= '. Có một số lỗi: ' . implode(', ', $errors);
+            $message .= ' Có một số lỗi: ' . implode(', ', $errors);
         }
 
         return redirect()->back()->with('success', $message);
@@ -574,7 +616,7 @@ class CartController extends BaseController
             ]);
         }
 
-        $productId = $this->request->getPost('product_id');
+        $productId = (int)$this->request->getPost('product_id');
 
         if (!$productId) {
             return $this->response->setJSON([
@@ -738,7 +780,14 @@ class CartController extends BaseController
                 continue;
             }
 
-            $price = $product['sale_price'] ?? $product['price'];
+            // FIXED: Sử dụng logic tính giá đúng
+            $price = null;
+            if (!empty($product['sale_price']) && $product['sale_price'] > 0) {
+                $price = $product['sale_price'];
+            } else {
+                $price = $product['price'];
+            }
+            
             $result = $this->cartModel->addToCart($customerId, $productId, $quantity, $price);
 
             if ($result) {
