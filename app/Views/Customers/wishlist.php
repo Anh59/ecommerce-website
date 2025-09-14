@@ -43,34 +43,34 @@
               </tr>
               <?php else: ?>
                 <?php foreach ($wishlistItems as $item): ?>
-                <tr id="wishlist-item-<?= $item->product_id ?>">
+                <tr id="wishlist-item-<?= $item['product_id'] ?>">
                   <td>
                     <div class="media">
                       <div class="d-flex">
-                        <img src="<?= base_url('uploads/products/' . $item->main_image) ?>" alt="<?= $item->name ?>" width="100" />
+                        <img src="<?= base_url( $item['main_image']) ?>" alt="<?= $item['name'] ?>" width="100" />
                       </div>
                       <div class="media-body">
-                        <h4><a href="<?= base_url('product/' . $item->slug) ?>"><?= $item->name ?></a></h4>
+                        <h4><a href="<?= base_url('product/' . $item['slug']) ?>"><?= $item['name'] ?></a></h4>
                       </div>
                     </div>
                   </td>
                   <td>
                     <h5>
-                      <?php if ($item->sale_price && $item->sale_price < $item->price): ?>
-                        <span class="text-danger"><?= number_format($item->sale_price, 0, ',', '.') ?>₫</span>
-                        <span class="text-muted text-decoration-line-through"><?= number_format($item->price, 0, ',', '.') ?>₫</span>
+                      <?php if ($item['sale_price'] && $item['sale_price'] < $item['price']): ?>
+                        <span class="text-danger"><?= number_format($item['sale_price'], 0, ',', '.') ?>₫</span>
+                        <span class="text-muted text-decoration-line-through"><?= number_format($item['price'], 0, ',', '.') ?>₫</span>
                       <?php else: ?>
-                        <?= number_format($item->price, 0, ',', '.') ?>₫
+                        <?= number_format($item['price'], 0, ',', '.') ?>₫
                       <?php endif; ?>
                     </h5>
                   </td>
                   <td>
                     <h5>
-                      <?php if ($item->stock_status == 'in_stock'): ?>
+                      <?php if ($item['stock_status'] == 'in_stock'): ?>
                         <span class="text-success">Còn hàng</span>
-                      <?php elseif ($item->stock_status == 'out_of_stock'): ?>
+                      <?php elseif ($item['stock_status'] == 'out_of_stock'): ?>
                         <span class="text-danger">Hết hàng</span>
-                      <?php elseif ($item->stock_status == 'pre_order'): ?>
+                      <?php elseif ($item['stock_status'] == 'pre_order'): ?>
                         <span class="text-warning">Đặt trước</span>
                       <?php else: ?>
                         <span class="text-info">Liên hệ</span>
@@ -79,10 +79,10 @@
                   </td>
                   <td>
                     <div class="d-flex flex-column">
-                      <button class="btn btn-sm btn-primary mb-2 add-to-cart" data-product-id="<?= $item->product_id ?>">
+                      <button class="btn btn-sm btn-primary mb-2 add-to-cart" data-product-id="<?= $item['product_id'] ?>">
                         <i class="ti-shopping-cart"></i> Thêm vào giỏ
                       </button>
-                      <button class="btn btn-sm btn-danger" onclick="removeFromWishlist(<?= $item->product_id ?>)">
+                      <button class="btn btn-sm btn-danger" onclick="removeFromWishlist(<?= $item['product_id'] ?>)">
                         <i class="ti-trash"></i> Xóa
                       </button>
                     </div>
@@ -135,7 +135,7 @@
     const productId = $(this).data('product-id');
     
     $.ajax({
-      url: '<?= base_url('cart/add') ?>',
+      url: '<?= base_url('api/cart/add') ?>',
       type: 'POST',
       data: { product_id: productId },
       success: function(response) {

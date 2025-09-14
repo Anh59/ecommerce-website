@@ -10,9 +10,7 @@
 .cart-success { background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
 .out-of-stock { opacity: 0.7; }
 .out-of-stock .product-name { text-decoration: line-through; }
-.quantity-controls { display: flex; align-items: center; }
-.remove-item { color: #dc3545; cursor: pointer; margin-left: 10px; }
-.remove-item:hover { color: #c82333; }
+
 .coupon-section { background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0; }
 .shipping-calculator { background: #f8f9fa; padding: 15px; border-radius: 5px; }
 .empty-cart { text-align: center; padding: 60px 20px; }
@@ -24,6 +22,7 @@
 .loading-content { 
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; 
 }
+
 </style>
 <?= $this->endSection() ?>
 
@@ -77,7 +76,7 @@
 
         <div class="cart_inner">
             <?php if (!empty($cartItems)): ?>
-                <form id="cart-form" action="<?= route_to('api_cart_update') ?>" method="POST">
+                <form id="cart-form" action="<?= route_to('cart_update') ?>" method="POST">
                     <?= csrf_field() ?>
                     <div class="table-responsive">
                         <table class="table" id="cart-table">
@@ -118,12 +117,12 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <h5 class="item-price"><?= number_format($item['price']) ?>₫</h5>
+                                        <h5 class="item-price" data-price="<?= $item['price'] ?>"><?= number_format($item['price']) ?>₫</h5>
                                     </td>
                                     <td>
                                         <div class="product_count quantity-controls">
                                             <span class="input-number-decrement decrease-qty" data-product-id="<?= $item['product_id'] ?>">
-                                                <i class="ti-angle-down"></i>
+                                                <i class="ti-minus"></i>
                                             </span>
                                             <input class="input-number quantity-input" 
                                                    type="number" 
@@ -135,7 +134,7 @@
                                                    data-price="<?= $item['price'] ?>"
                                                    <?= $item['stock_status'] === 'out_of_stock' ? 'disabled' : '' ?>>
                                             <span class="input-number-increment increase-qty" data-product-id="<?= $item['product_id'] ?>">
-                                                <i class="ti-angle-up"></i>
+                                                <i class="ti-plus"></i>
                                             </span>
                                         </div>
                                     </td>
@@ -302,6 +301,9 @@
     </div>
 </div>
 
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
 <!--================End Cart Area =================-->
 <?= $this->endSection() ?>
 
@@ -317,49 +319,212 @@
 $(document).ready(function() {
     let isUpdating = false;
 
-    // Quantity controls
-    $('.increase-qty').click(function() {
-        const productId = $(this).data('product-id');
-        const input = $(`.quantity-input[data-product-id="${productId}"]`);
-        const currentValue = parseInt(input.val());
-        const maxValue = parseInt(input.attr('max'));
+    function debugLog(message) {
+        console.log('[CART DEBUG] ' + message);
+    }
+    
+    // ============= FIXED QUANTITY CONTROLS - KHÔNG GHI ĐÈ CÁC HANDLERS KHÁC =============
+    
+    // Xóa chỉ quantity handlers (không làm mất coupon, shipping handlers)
+    $(document).off('click', '.increase-qty.cart-fixed');
+    $(document).off('click', '.decrease-qty.cart-fixed');
+    $(document).off('change', '.quantity-input.cart-fixed');
+    
+    // Add class để phân biệt với handlers khác
+    $('.increase-qty, .decrease-qty, .quantity-input').addClass('cart-fixed');
+    
+    debugLog('Cart quantity fix initialized');
+
+    // FIXED: Increase quantity - đọc từ server
+    $(document).on('click', '.increase-qty.cart-fixed', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
         
-        if (currentValue < maxValue) {
-            input.val(currentValue + 1);
-            updateItemTotal(productId);
-            
-        }
+        if (isUpdating) return;
+        
+        const $row = $(this).closest('.cart-item'); // chỉ lấy đúng row
+    const productId = $row.data('product-id');
+    const $input = $row.find('.quantity-input');
+    const maxValue = parseInt($input.attr('max')) || 999;
+        
+        debugLog(`Increase clicked for product ${productId}`);
+        
+        // Lấy quantity hiện tại từ server
+        $.ajax({
+            url: '<?= base_url() ?>api/cart/data',
+            type: 'GET',
+            success: function(response) {
+                if (response.success && response.data.items) {
+                    const item = response.data.items.find(i => i.product_id == productId);
+                    if (item) {
+                        const currentQuantity = parseInt(item.quantity);
+                        
+                        if (currentQuantity < maxValue) {
+                            const newQuantity = currentQuantity + 1;
+                            debugLog(`Server says ${currentQuantity}, increasing to ${newQuantity}`);
+                            updateQuantityServer(productId, newQuantity);
+                        } else {
+                            showToast('warning', `Chỉ có ${maxValue} sản phẩm trong kho`);
+                        }
+                    }
+                }
+            }
+        });
     });
 
-    $('.decrease-qty').click(function() {
-        const productId = $(this).data('product-id');
-        const input = $(`.quantity-input[data-product-id="${productId}"]`);
-        const currentValue = parseInt(input.val());
+    // FIXED: Decrease quantity - đọc từ server
+    $(document).on('click', '.decrease-qty.cart-fixed', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
         
-        if (currentValue > 0) {
-            input.val(currentValue - 1);
-            updateItemTotal(productId);
-        }
+        if (isUpdating) return;
+        
+        const $row = $(this).closest('.cart-item');
+    const productId = $row.data('product-id');
+    const $input = $row.find('.quantity-input');
+        
+        debugLog(`Decrease clicked for product ${productId}`);
+        
+        // Lấy quantity hiện tại từ server
+        $.ajax({
+            url: '<?= base_url() ?>api/cart/data',
+            type: 'GET',
+            success: function(response) {
+                if (response.success && response.data.items) {
+                    const item = response.data.items.find(i => i.product_id == productId);
+                    if (item) {
+                        const currentQuantity = parseInt(item.quantity);
+                        
+                        if (currentQuantity > 1) {
+                            const newQuantity = currentQuantity - 1;
+                            debugLog(`Server says ${currentQuantity}, decreasing to ${newQuantity}`);
+                            updateQuantityServer(productId, newQuantity);
+                        } else if (currentQuantity === 1) {
+                            if (confirm('Bạn có muốn xóa sản phẩm này khỏi giỏ hàng không?')) {
+                                updateQuantityServer(productId, 0);
+                            }
+                        }
+                    }
+                }
+            }
+        });
     });
 
-    // Quantity input change
-    $('.quantity-input').on('change', function() {
-        const productId = $(this).data('product-id');
-        const value = parseInt($(this).val());
-        const maxValue = parseInt($(this).attr('max'));
+    // FIXED: Input change - chỉ khi thực sự thay đổi
+    $(document).on('change', '.quantity-input.cart-fixed', function(e) {
+        if (isUpdating) return;
         
-        if (value > maxValue) {
-            $(this).val(maxValue);
+        const $input = $(this);
+        const productId = $input.data('product-id');
+        let value = parseInt($input.val()) || 0;
+        const maxValue = parseInt($input.attr('max')) || 999;
+        
+        debugLog(`Input changed: product=${productId}, value=${value}`);
+        
+        // Validate
+        if (value < 0) {
+            value = 1;
+            $input.val(1);
+        } else if (value > maxValue) {
+            value = maxValue;
+            $input.val(maxValue);
             showToast('warning', `Chỉ có ${maxValue} sản phẩm trong kho`);
-        } else if (value < 0) {
-            $(this).val(0);
         }
         
-        updateItemTotal(productId);
+        if (value === 0) {
+            if (confirm('Bạn có muốn xóa sản phẩm này khỏi giỏ hàng không?')) {
+                updateQuantityServer(productId, 0);
+            } else {
+                // Reset về 1
+                $input.val(1);
+            }
+        } else {
+            updateQuantityServer(productId, value);
+        }
     });
+
+    function updateQuantityServer(productId, quantity) {
+        if (isUpdating) return;
+        
+        isUpdating = true;
+        debugLog(`Updating server: product=${productId}, quantity=${quantity}`);
+        
+        showLoading();
+        
+        $.ajax({
+            url: '<?= base_url() ?>api/cart/update-quantity',
+            type: 'POST',
+            data: {
+                product_id: productId,
+                quantity: quantity,
+                '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+            },
+            success: function(response) {
+                debugLog('Server response: ' + JSON.stringify(response));
+                
+                if (response.success) {
+                    if (response.action === 'removed') {
+                        // Remove item from DOM
+                        $(`.cart-item[data-product-id="${productId}"]`).fadeOut(function() {
+                            $(this).remove();
+                            checkEmptyCart();
+                        });
+                        showToast('success', response.message);
+                    } else {
+                        // Update UI
+                        const $input = $(`.quantity-input[data-product-id="${productId}"]`);
+                        $input.val(quantity);
+                        
+                        updateItemDisplay(productId, quantity);
+                        showToast('success', response.message);
+                    }
+                    
+                    updateTotalsFromResponse(response);
+                } else {
+                    showToast('error', response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                debugLog(`Error: ${status} - ${error}`);
+                showToast('error', 'Có lỗi xảy ra: ' + error);
+            },
+            complete: function() {
+                isUpdating = false;
+                hideLoading();
+            }
+        });
+    }
+
+    function updateItemDisplay(productId, quantity) {
+    const $row = $(`.cart-item[data-product-id="${productId}"]`); // chỉ lấy đúng row
+    const $input = $row.find('.quantity-input');
+    const price = parseInt($input.data('price')) || 0;
+    const total = quantity * price;
+
+    // Update chỉ trong row này
+    $input.val(quantity);
+    $row.find('.item-total').text(formatCurrency(total) + '₫');
+}
+
+
+    function updateTotalsFromResponse(response) {
+        if (response.subtotal !== undefined) {
+            $('#cart-subtotal').text(formatCurrency(response.subtotal) + '₫');
+        }
+        if (response.shipping_fee !== undefined) {
+            $('#shipping-fee').text(formatCurrency(response.shipping_fee) + '₫');
+        }
+        if (response.total !== undefined) {
+            $('#cart-total').text(formatCurrency(response.total) + '₫');
+        }
+    }
+
+    // ============= GIỮ NGUYÊN TẤT CẢ HANDLERS CŨ =============
 
     // Remove item
     $('.remove-item').click(function() {
+        if (!$(this).data('product-id')) return; // Skip coupon remove
+        
         const productId = $(this).data('product-id');
         if (confirm('Bạn có chắc muốn xóa sản phẩm này?')) {
             removeItem(productId);
@@ -420,34 +585,6 @@ $(document).ready(function() {
         loadDistricts($(this).val());
     });
 
-    function updateItemTotal(productId) {
-        const input = $(`.quantity-input[data-product-id="${productId}"]`);
-        const quantity = parseInt(input.val());
-        const price = parseInt(input.data('price'));
-        const total = quantity * price;
-        
-        $(`.cart-item[data-product-id="${productId}"] .item-total`).text(formatCurrency(total) + '₫');
-        updateCartTotals();
-    }
-
-    function updateCartTotals() {
-        let subtotal = 0;
-        
-        $('.quantity-input').each(function() {
-            const quantity = parseInt($(this).val());
-            const price = parseInt($(this).data('price'));
-            subtotal += quantity * price;
-        });
-        
-        $('#cart-subtotal').text(formatCurrency(subtotal) + '₫');
-        
-        const shippingFee = parseInt($('#shipping-fee').text().replace(/[^\d]/g, '')) || 0;
-        const discount = parseInt($('#applied-coupon-row .text-success').text().replace(/[^\d]/g, '')) || 0;
-        const total = subtotal + shippingFee - discount;
-        
-        $('#cart-total').text(formatCurrency(total) + '₫');
-    }
-
     function removeItem(productId) {
         showLoading();
         
@@ -456,22 +593,26 @@ $(document).ready(function() {
             type: 'POST',
             data: {
                 product_id: productId,
-                <?= csrf_token() ?>: '<?= csrf_hash() ?>'
+                '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
             },
             success: function(response) {
                 if (response.success) {
                     $(`.cart-item[data-product-id="${productId}"]`).fadeOut(function() {
                         $(this).remove();
                         checkEmptyCart();
-                        updateCartTotals();
                     });
+                    
+                    if (response.cart_totals) {
+                        updateTotalsDisplay(response.cart_totals);
+                    }
+                    
                     showToast('success', response.message);
                 } else {
                     showToast('error', response.message);
                 }
             },
             error: function() {
-                showToast('error', 'Có lỗi xảy ra, vui lòng thử lại');
+                showToast('error', 'Có lỗi xảy ra khi xóa sản phẩm');
             },
             complete: function() {
                 hideLoading();
@@ -486,17 +627,12 @@ $(document).ready(function() {
         const formData = $('#cart-form').serialize();
         
         $.ajax({
-            url: '<?= route_to('api_cart_update') ?>',
+            url: '<?= route_to('cart_update') ?>',
             type: 'POST',
             data: formData,
             success: function(response) {
                 if (response.success) {
                     showToast('success', response.message);
-                    
-                    // Update UI with new data
-                    if (response.cart_items) {
-                        updateCartDisplay(response.cart_items);
-                    }
                     
                     if (response.cart_totals) {
                         updateTotalsDisplay(response.cart_totals);
@@ -506,6 +642,11 @@ $(document).ready(function() {
                         response.errors.forEach(error => {
                             showToast('warning', error);
                         });
+                    }
+                    
+                    // Reload if items were removed
+                    if (response.removed_count > 0) {
+                        setTimeout(() => location.reload(), 2000);
                     }
                 } else {
                     showToast('error', response.message);
@@ -528,7 +669,7 @@ $(document).ready(function() {
             url: '<?= route_to('api_cart_clear') ?>',
             type: 'POST',
             data: {
-                <?= csrf_token() ?>: '<?= csrf_hash() ?>'
+                '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
             },
             success: function(response) {
                 if (response.success) {
@@ -562,7 +703,7 @@ $(document).ready(function() {
             type: 'POST',
             data: {
                 coupon_code: couponCode,
-                <?= csrf_token() ?>: '<?= csrf_hash() ?>'
+                '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
             },
             success: function(response) {
                 if (response.success) {
@@ -588,7 +729,7 @@ $(document).ready(function() {
             url: '<?= route_to('api_cart_remove_coupon') ?>',
             type: 'POST',
             data: {
-                <?= csrf_token() ?>: '<?= csrf_hash() ?>'
+                '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
             },
             success: function(response) {
                 if (response.success) {
@@ -626,7 +767,7 @@ $(document).ready(function() {
                 city: province,
                 district: district,
                 postal_code: postalCode,
-                <?= csrf_token() ?>: '<?= csrf_hash() ?>'
+                '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
             },
             success: function(response) {
                 if (response.success) {
@@ -647,7 +788,16 @@ $(document).ready(function() {
 
     function updateShippingFee(fee) {
         $('#shipping-fee').text(formatCurrency(fee) + '₫');
-        updateCartTotals();
+        updateCartTotalsFromDOM();
+    }
+
+    function updateCartTotalsFromDOM() {
+        const subtotal = parseInt($('#cart-subtotal').text().replace(/[^\d]/g, '')) || 0;
+        const shippingFee = parseInt($('#shipping-fee').text().replace(/[^\d]/g, '')) || 0;
+        const discount = parseInt($('#applied-coupon-row .text-success').text().replace(/[^\d]/g, '')) || 0;
+        const total = subtotal + shippingFee - discount;
+        
+        $('#cart-total').text(formatCurrency(total) + '₫');
     }
 
     function loadDistricts(provinceCode) {
@@ -674,12 +824,6 @@ $(document).ready(function() {
         }
     }
 
-    function updateCartDisplay(cartItems) {
-        // Update cart items display with new data
-        // This is a complex update - for simplicity, we reload the page
-        // In production, you might want to update individual elements
-    }
-
     function updateTotalsDisplay(totals) {
         $('#cart-subtotal').text(formatCurrency(totals.subtotal) + '₫');
         $('#shipping-fee').text(formatCurrency(totals.shipping_fee) + '₫');
@@ -700,8 +844,8 @@ $(document).ready(function() {
                           type === 'warning' ? 'alert-warning' : 'alert-info';
         
         const toast = `
-            <div class="alert ${toastClass} alert-dismissible fade show position-fixed" 
-                 style="top: 20px; right: 20px; z-index: 10000; min-width: 300px; max-width: 400px;">
+            <div class="alert ${toastClass} alert-dismissible fade show" 
+                 style="min-width: 300px; max-width: 400px; margin-bottom: 10px;">
                 <strong>${type.charAt(0).toUpperCase() + type.slice(1)}!</strong> ${message}
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
@@ -709,10 +853,10 @@ $(document).ready(function() {
             </div>
         `;
         
-        $('body').append(toast);
+        $('#toast-container').append(toast);
         
         setTimeout(() => {
-            $('.alert').fadeOut(() => $('.alert').remove());
+            $('.alert').first().fadeOut(() => $('.alert').first().remove());
         }, 5000);
     }
 
@@ -720,21 +864,10 @@ $(document).ready(function() {
         return new Intl.NumberFormat('vi-VN').format(amount);
     }
 
-    // Auto-save cart changes (debounced)
-    let saveTimeout;
-    $('.quantity-input').on('input', function() {
-        clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(() => {
-            if (!isUpdating) {
-                updateCart();
-            }
-        }, 2000);
-    });
-
     // Checkout validation
     $('#checkout-btn').click(function(e) {
         const hasOutOfStock = $('.out-of-stock').length > 0;
-        const hasEmptyQuantity = $('.quantity-input').filter(function() {
+        const hasZeroQuantity = $('.quantity-input').filter(function() {
             return parseInt($(this).val()) === 0;
         }).length > 0;
         
@@ -744,14 +877,36 @@ $(document).ready(function() {
             return false;
         }
         
-        if (hasEmptyQuantity) {
+        if (hasZeroQuantity) {
             e.preventDefault();
             showToast('error', 'Giỏ hàng có sản phẩm với số lượng 0. Vui lòng cập nhật số lượng.');
             return false;
         }
     });
-});
 
+    // Đồng bộ quantities từ server khi load trang
+    $.ajax({
+        url: '<?= base_url() ?>api/cart/data',
+        type: 'GET',
+        success: function(response) {
+            if (response.success && response.data.items) {
+                response.data.items.forEach(item => {
+                    const $input = $(`.quantity-input[data-product-id="${item.product_id}"]`);
+                    if ($input.length) {
+                        $input.val(item.quantity);
+                        debugLog(`Synced product ${item.product_id}: ${item.quantity}`);
+                    }
+                });
+                debugLog('All quantities synced from server on page load');
+            }
+        },
+        error: function() {
+            debugLog('Failed to sync quantities from server on page load');
+        }
+    });
+
+    debugLog('Perfect Cart JavaScript initialized - UI preserved, quantity fixed');
+});
 </script>
 
 <?= $this->endSection() ?>
