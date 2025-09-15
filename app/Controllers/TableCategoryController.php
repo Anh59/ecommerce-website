@@ -22,14 +22,14 @@ class TableCategoryController extends BaseController
     public function index()
     {
         // Lấy parameters từ URL
-        $categoryId = $this->request->getGet('category');
-        $brandId = $this->request->getGet('brand');
-        $minPrice = $this->request->getGet('min_price');
-        $maxPrice = $this->request->getGet('max_price');
-        $color = $this->request->getGet('color');
+        $categoryId = $this->request->getGet('category') ?: null;
+        $brandId = $this->request->getGet('brand') ?: null;
+        $minPrice = $this->request->getGet('min_price') ?: null;
+        $maxPrice = $this->request->getGet('max_price') ?: null;
+        $color = $this->request->getGet('color') ?: null;
         $sortBy = $this->request->getGet('sort') ?? 'name';
         $perPage = $this->request->getGet('per_page') ?? 9;
-        $search = $this->request->getGet('search');
+        $search = $this->request->getGet('search') ?: null;
         $page = $this->request->getGet('page') ?? 1;
 
         // Lấy dữ liệu categories và brands
@@ -57,6 +57,10 @@ class TableCategoryController extends BaseController
 
         if ($maxPrice) {
             $builder->where('products.price <=', $maxPrice);
+        }
+
+        if ($color) {
+            $builder->like('products.color', $color);
         }
 
         if ($search) {
@@ -89,6 +93,11 @@ class TableCategoryController extends BaseController
         // Count total products
         $totalProducts = $builder->countAllResults(false);
 
+        // Get min and max prices for slider
+        $priceRange = $this->productModel->select('MIN(price) as min_price, MAX(price) as max_price')
+                                       ->where('is_active', 1)
+                                       ->first();
+
         $data = [
             'products' => $products,
             'categories' => $categories,
@@ -97,6 +106,8 @@ class TableCategoryController extends BaseController
             'totalProducts' => $totalProducts,
             'currentPage' => $page,
             'perPage' => $perPage,
+            'minPrice' => $priceRange['min_price'] ?? 0,
+            'maxPrice' => $priceRange['max_price'] ?? 1000000,
             'filters' => [
                 'category_id' => $categoryId,
                 'brand_id' => $brandId,
@@ -112,79 +123,85 @@ class TableCategoryController extends BaseController
     }
 
     public function getProducts()
-    {
-        if (!$this->request->isAJAX()) {
-            return $this->response->setStatusCode(404);
-        }
-
-        $categoryId = $this->request->getPost('category_id');
-        $brandId = $this->request->getPost('brand_id');
-        $minPrice = $this->request->getPost('min_price');
-        $maxPrice = $this->request->getPost('max_price');
-        $sortBy = $this->request->getPost('sort_by') ?? 'name';
-        $page = $this->request->getPost('page') ?? 1;
-        $perPage = $this->request->getPost('per_page') ?? 9;
-        $search = $this->request->getPost('search');
-
-        $builder = $this->productModel->select('products.*, categories.name as category_name, brands.name as brand_name')
-                                     ->join('categories', 'categories.id = products.category_id', 'left')
-                                     ->join('brands', 'brands.id = products.brand_id', 'left')
-                                     ->where('products.is_active', 1);
-
-        // Apply filters
-        if ($categoryId) {
-            $builder->where('products.category_id', $categoryId);
-        }
-
-        if ($brandId) {
-            $builder->where('products.brand_id', $brandId);
-        }
-
-        if ($minPrice) {
-            $builder->where('products.price >=', $minPrice);
-        }
-
-        if ($maxPrice) {
-            $builder->where('products.price <=', $maxPrice);
-        }
-
-        if ($search) {
-            $builder->groupStart()
-                   ->like('products.name', $search)
-                   ->orLike('products.description', $search)
-                   ->orLike('products.short_description', $search)
-                   ->groupEnd();
-        }
-
-        // Apply sorting
-        switch ($sortBy) {
-            case 'price_asc':
-                $builder->orderBy('products.price', 'ASC');
-                break;
-            case 'price_desc':
-                $builder->orderBy('products.price', 'DESC');
-                break;
-            case 'name':
-            default:
-                $builder->orderBy('products.name', 'ASC');
-                break;
-        }
-
-        $offset = ($page - 1) * $perPage;
-        $products = $builder->limit($perPage, $offset)->findAll();
-        $totalProducts = $builder->countAllResults(false);
-
-        $response = [
-            'success' => true,
-            'products' => $products,
-            'total' => $totalProducts,
-            'page' => $page,
-            'per_page' => $perPage,
-            'total_pages' => ceil($totalProducts / $perPage)
-        ];
-
-        return $this->response->setJSON($response);
+{
+    if (!$this->request->isAJAX()) {
+        return $this->response->setStatusCode(404);
     }
+
+    $categoryId = $this->request->getPost('category_id');
+    $brandId = $this->request->getPost('brand_id');
+    $minPrice = $this->request->getPost('min_price');
+    $maxPrice = $this->request->getPost('max_price');
+    $color = $this->request->getPost('color');
+    $sortBy = $this->request->getPost('sort_by') ?? 'name';
+    $page = $this->request->getPost('page') ?? 1;
+    $perPage = $this->request->getPost('per_page') ?? 9;
+    $search = $this->request->getPost('search');
+
+    $builder = $this->productModel->select('products.*, categories.name as category_name, brands.name as brand_name')
+                                 ->join('categories', 'categories.id = products.category_id', 'left')
+                                 ->join('brands', 'brands.id = products.brand_id', 'left')
+                                 ->where('products.is_active', 1);
+
+    // Apply filters
+    if ($categoryId && $categoryId !== 'null') {
+        $builder->where('products.category_id', $categoryId);
+    }
+
+    if ($brandId && $brandId !== 'null') {
+        $builder->where('products.brand_id', $brandId);
+    }
+
+    if ($minPrice && $minPrice !== 'null') {
+        $builder->where('products.price >=', $minPrice);
+    }
+
+    if ($maxPrice && $maxPrice !== 'null') {
+        $builder->where('products.price <=', $maxPrice);
+    }
+
+    if ($color && $color !== 'null') {
+        $builder->like('products.color', $color);
+    }
+
+    if ($search && $search !== 'null') {
+        $builder->groupStart()
+               ->like('products.name', $search)
+               ->orLike('products.description', $search)
+               ->orLike('products.short_description', $search)
+               ->groupEnd();
+    }
+
+    // Apply sorting
+    switch ($sortBy) {
+        case 'price_asc':
+            $builder->orderBy('products.price', 'ASC');
+            break;
+        case 'price_desc':
+            $builder->orderBy('products.price', 'DESC');
+            break;
+        case 'name':
+        default:
+            $builder->orderBy('products.name', 'ASC');
+            break;
+    }
+
+    // Sử dụng paginate thay vì limit
+    $pager = \Config\Services::pager();
+    $products = $builder->paginate($perPage, 'default', $page);
+    $totalProducts = $builder->countAllResults(false);
+
+    $response = [
+        'success' => true,
+        'products' => $products,
+        'total' => $totalProducts,
+        'page' => $page,
+        'per_page' => $perPage,
+        'total_pages' => $pager->getPageCount()
+    ];
+
+    return $this->response->setJSON($response);
+}
 
     public function addToWishlist()
     {

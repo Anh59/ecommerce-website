@@ -2,9 +2,10 @@
 
 <?= $this->section('styles') ?>
     <link rel="stylesheet" href="<?= base_url('aranoz-master/css/price_rangs.css'); ?>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ion-rangeslider/2.3.1/css/ion.rangeSlider.min.css"/>
     <style>
     .wishlist-btn { position: relative; }
-    .wishlist-btn.active i { color: #red !important; }
+    .wishlist-btn.active i { color: #ff0000 !important; }
     .loading { opacity: 0.6; pointer-events: none; }
     .product-item { transition: all 0.3s ease; }
     .out-of-stock { opacity: 0.7; }
@@ -27,13 +28,193 @@
         align-items: center;
         justify-content: center;
     }
+    
+    /* Dropdown styles */
+    .nice-select {
+        -webkit-tap-highlight-color: transparent;
+        background-color: #fff;
+        border-radius: 0px;
+        border: 1px solid #eeeeee;
+        box-sizing: border-box;
+        clear: both;
+        cursor: pointer;
+        display: block;
+        float: left;
+        font-family: "Poppins", sans-serif;
+        font-size: 14px;
+        font-weight: normal;
+        height: 40px;
+        line-height: 40px;
+        outline: none;
+        padding-left: 20px;
+        padding-right: 40px;
+        position: relative;
+        text-align: left !important;
+        transition: all 0.2s ease-in-out;
+        user-select: none;
+        white-space: nowrap;
+        width: auto;
+        margin-left: 10px;
+    }
+
+    .nice-select:hover {
+        border-color: #dbdbdb;
+    }
+
+    .nice-select:active, .nice-select.open, .nice-select:focus {
+        border-color: #999;
+    }
+
+    .nice-select:after {
+        content: "\f0d7";
+        font: normal normal normal 14px/1 FontAwesome;
+        transform: rotate(0);
+        border: none;
+        color: #555555;
+        margin-top: -6px;
+        right: 20px;
+        position: absolute;
+        top: 50%;
+    }
+
+    .nice-select.open:after {
+        transform: rotate(180deg);
+    }
+
+    .nice-select .list {
+        background-color: #fff;
+        border-radius: 0px;
+        box-shadow: 0 0 0 1px rgba(68, 68, 68, 0.11);
+        box-sizing: border-box;
+        margin-top: 4px;
+        opacity: 0;
+        overflow: hidden;
+        padding: 0;
+        pointer-events: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        transform-origin: 50% 0;
+        transform: scale(0.75) translateY(-21px);
+        transition: all 0.2s cubic-bezier(0.5, 0, 0, 1.25), opacity 0.15s ease-out;
+        z-index: 9;
+        width: 100%;
+    }
+
+    .nice-select.open .list {
+        opacity: 1;
+        pointer-events: auto;
+        transform: scale(1) translateY(0);
+    }
+
+    .nice-select .option {
+        cursor: pointer;
+        font-weight: 400;
+        line-height: 40px;
+        list-style: none;
+        min-height: 40px;
+        outline: none;
+        padding-left: 20px;
+        padding-right: 20px;
+        text-align: left;
+        transition: all 0.2s;
+    }
+
+    .nice-select .option:hover, .nice-select .option.focus, .nice-select .option.selected.focus {
+        background-color: #f6f6f6;
+    }
+
+    .nice-select .option.selected {
+        font-weight: bold;
+    }
+    
+    /* Filter active state */
+    .category-filter.active, .brand-filter.active {
+        color: #ff6b35 !important;
+        font-weight: bold;
+    }
+    
+    /* Product item styles */
+    .single_product_item img {
+        width: 100%;
+        height: 250px;
+        object-fit: cover;
+        object-position: center;
+    }
+    
+    .product-item {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .single_product_text {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .price-section {
+        margin: 10px 0;
+    }
+    
+    .product-actions {
+        margin-top: auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .add_cart {
+        flex-grow: 1;
+        margin-right: 10px;
+    }
+    
+    .wishlist-btn {
+        background: none;
+        border: none;
+        padding: 5px;
+        cursor: pointer;
+    }
+    
+    .stock-indicator {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: #ff6b35;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 3px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+    
+    .out-of-stock .single_product_text {
+        opacity: 0.7;
+    }
+    
+    .filter-actions {
+        margin-top: 15px;
+    }
+    
+    .irs--flat .irs-bar {
+        background: #ff6b35;
+    }
+    
+    .irs--flat .irs-from, .irs--flat .irs-to, .irs--flat .irs-single {
+        background: #ff6b35;
+    }
+    
+    .irs--flat .irs-handle>i:first-child {
+        background: #ff6b35;
+    }
+    
     </style>
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
 
     <!--================Home Banner Area =================-->
-    <!-- breadcrumb start-->
     <section class="breadcrumb breadcrumb_bg">
         <div class="container">
             <div class="row justify-content-center">
@@ -64,7 +245,8 @@
                                 <ul class="list">
                                     <?php foreach ($categories as $category): ?>
                                     <li>
-                                        <a href="#" class="category-filter" data-category="<?= $category['id'] ?>">
+                                        <a href="#" class="category-filter <?= ($filters['category_id'] == $category['id']) ? 'active' : '' ?>" 
+                                           data-category="<?= $category['id'] ?>">
                                             <?= esc($category['name']) ?>
                                         </a>
                                         <span>(<?= $category['product_count'] ?? 0 ?>)</span>
@@ -72,7 +254,8 @@
                                     <?php if (!empty($category['children'])): ?>
                                         <?php foreach ($category['children'] as $child): ?>
                                         <li style="margin-left: 20px;">
-                                            <a href="#" class="category-filter" data-category="<?= $child['id'] ?>">
+                                            <a href="#" class="category-filter <?= ($filters['category_id'] == $child['id']) ? 'active' : '' ?>" 
+                                               data-category="<?= $child['id'] ?>">
                                                 - <?= esc($child['name']) ?>
                                             </a>
                                             <span>(<?= $child['product_count'] ?? 0 ?>)</span>
@@ -81,6 +264,9 @@
                                     <?php endif; ?>
                                     <?php endforeach; ?>
                                 </ul>
+                            </div>
+                            <div class="filter-actions">
+                                <button class="btn btn-sm btn-outline-secondary clear-filters">Clear Category Filter</button>
                             </div>
                         </aside>
 
@@ -92,12 +278,16 @@
                                 <ul class="list">
                                     <?php foreach ($brands as $brand): ?>
                                     <li>
-                                        <a href="#" class="brand-filter" data-brand="<?= $brand['id'] ?>">
+                                        <a href="#" class="brand-filter <?= ($filters['brand_id'] == $brand['id']) ? 'active' : '' ?>" 
+                                           data-brand="<?= $brand['id'] ?>">
                                             <?= esc($brand['name']) ?>
                                         </a>
                                     </li>
                                     <?php endforeach; ?>
                                 </ul>
+                            </div>
+                            <div class="filter-actions">
+                                <button class="btn btn-sm btn-outline-secondary clear-filters">Clear Brand Filter</button>
                             </div>
                         </aside>
 
@@ -120,11 +310,14 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="filter-actions">
+                                <button class="btn btn-sm btn-outline-secondary clear-filters">Clear Price Filter</button>
+                            </div>
                         </aside>
                     </div>
                 </div>
                 <div class="col-lg-9">
-                    <div class="row">
+                   <div class="row">
                         <div class="col-lg-12">
                             <div class="product_top_bar d-flex justify-content-between align-items-center">
                                 <div class="single_product_menu">
@@ -132,20 +325,31 @@
                                 </div>
                                 <div class="single_product_menu d-flex">
                                     <h5>Sort by : </h5>
-                                    <select id="sort-select">
-                                        <option value="name" <?= ($filters['sort'] == 'name') ? 'selected' : '' ?>>Name</option>
-                                        <option value="price_asc" <?= ($filters['sort'] == 'price_asc') ? 'selected' : '' ?>>Price: Low to High</option>
-                                        <option value="price_desc" <?= ($filters['sort'] == 'price_desc') ? 'selected' : '' ?>>Price: High to Low</option>
-                                    </select>
+                                    <div class="left_dorp">
+                                        <div class="nice-select sorting" tabindex="0">
+                                            <span class="current" id="sort-current">
+                                                <?= $filters['sort'] == 'price_asc' ? 'Price: Low to High' : 
+                                                   ($filters['sort'] == 'price_desc' ? 'Price: High to Low' : 'Name') ?>
+                                            </span>
+                                            <ul class="list">
+                                                <li data-value="name" class="option <?= $filters['sort'] == 'name' ? 'selected' : '' ?>">Name</li>
+                                                <li data-value="price_asc" class="option <?= $filters['sort'] == 'price_asc' ? 'selected' : '' ?>">Price: Low to High</li>
+                                                <li data-value="price_desc" class="option <?= $filters['sort'] == 'price_desc' ? 'selected' : '' ?>">Price: High to Low</li>
+                                            </ul>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="single_product_menu d-flex">
                                     <h5>Show :</h5>
-                                    <div class="top_pageniation">
-                                        <select id="per-page-select">
-                                            <option value="9" <?= ($perPage == 9) ? 'selected' : '' ?>>9</option>
-                                            <option value="18" <?= ($perPage == 18) ? 'selected' : '' ?>>18</option>
-                                            <option value="36" <?= ($perPage == 36) ? 'selected' : '' ?>>36</option>
-                                        </select>
+                                    <div class="left_dorp">
+                                        <div class="nice-select show" tabindex="0">
+                                            <span class="current" id="show-current"><?= $perPage ?></span>
+                                            <ul class="list">
+                                                <li data-value="9" class="option <?= $perPage == 9 ? 'selected' : '' ?>">9</li>
+                                                <li data-value="18" class="option <?= $perPage == 18 ? 'selected' : '' ?>">18</li>
+                                                <li data-value="36" class="option <?= $perPage == 36 ? 'selected' : '' ?>">36</li>
+                                            </ul>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="single_product_menu d-flex">
@@ -210,7 +414,7 @@
 
                     <!-- Loading overlay -->
                     <div id="loading-overlay" style="display: none;">
-                        <div class="text-center">
+                        <div class="text-center py-5">
                             <i class="fa fa-spinner fa-spin fa-3x"></i>
                             <p>Loading products...</p>
                         </div>
@@ -221,7 +425,7 @@
     </section>
     <!--================End Category Product Area =================-->
 
-    <!-- Best Sellers Section (unchanged) -->
+    <!-- Best Sellers Section -->
     <section class="product_list best_seller">
         <div class="container">
             <div class="row justify-content-center">
@@ -253,15 +457,15 @@
 
 <?= $this->section('scripts') ?>
     <script src="<?= base_url('aranoz-master/js/stellar.js'); ?>"></script>
-    <script src="<?= base_url('aranoz-master/js/price_rangs.js'); ?>"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ion-rangeslider/2.3.1/js/ion.rangeSlider.min.js"></script>
     
     <script>
     $(document).ready(function() {
         let currentFilters = {
-            category_id: <?= $filters['category_id'] ?? 'null' ?>,
-            brand_id: <?= $filters['brand_id'] ?? 'null' ?>,
-            min_price: <?= $filters['min_price'] ?? 'null' ?>,
-            max_price: <?= $filters['max_price'] ?? 'null' ?>,
+            category_id: <?= $filters['category_id'] ? $filters['category_id'] : 'null' ?>,
+            brand_id: <?= $filters['brand_id'] ? $filters['brand_id'] : 'null' ?>,
+            min_price: <?= $filters['min_price'] ? $filters['min_price'] : 'null' ?>,
+            max_price: <?= $filters['max_price'] ? $filters['max_price'] : 'null' ?>,
             sort_by: '<?= $filters['sort'] ?? 'name' ?>',
             per_page: <?= $perPage ?>,
             page: 1,
@@ -270,8 +474,35 @@
 
         let wishlistItems = [];
 
+        // Initialize price range slider
+        function initPriceRangeSlider() {
+            let minPrice = <?= $filters['min_price'] ?? $minPrice ?? 0 ?>;
+            let maxPrice = <?= $filters['max_price'] ?? $maxPrice ?? 1000000 ?>;
+            
+            $(".js-range-slider").ionRangeSlider({
+                type: "double",
+                min: 0,
+                max: <?= $maxPrice ?? 1000000 ?>,
+                from: minPrice,
+                to: maxPrice,
+                grid: true,
+                prefix: "₫",
+                onFinish: function(data) {
+                    $('#min_price').val(data.from);
+                    $('#max_price').val(data.to);
+                    currentFilters.min_price = data.from;
+                    currentFilters.max_price = data.to;
+                    currentFilters.page = 1;
+                    loadProducts();
+                }
+            });
+        }
+
         // Load wishlist status on page load
         loadWishlistStatus();
+
+        // Initialize price slider
+        initPriceRangeSlider();
 
         // Category filter click
         $('.category-filter').click(function(e) {
@@ -312,15 +543,17 @@
         });
 
         // Sort change
-        $('#sort-select').change(function() {
-            currentFilters.sort_by = $(this).val();
+        $(document).on('click', '.sorting .option', function() {
+            currentFilters.sort_by = $(this).data('value');
+            $('.sorting .current').text($(this).text());
             currentFilters.page = 1;
             loadProducts();
         });
 
         // Per page change
-        $('#per-page-select').change(function() {
-            currentFilters.per_page = $(this).val();
+        $(document).on('click', '.show .option', function() {
+            currentFilters.per_page = $(this).data('value');
+            $('.show .current').text($(this).text());
             currentFilters.page = 1;
             loadProducts();
         });
@@ -336,13 +569,31 @@
             }, 500);
         });
 
-        // Price range change (assuming you have price range slider)
-        $('.js-range-slider').on('change', function() {
-            let fromVal = $('.js-input-from').val().replace(/[^\d]/g, '');
-            let toVal = $('.js-input-to').val().replace(/[^\d]/g, '');
+        // Clear filters
+        $(document).on('click', '.clear-filters', function() {
+            let filterType = $(this).closest('aside').find('.l_w_title h3').text();
             
-            currentFilters.min_price = fromVal ? parseInt(fromVal) : null;
-            currentFilters.max_price = toVal ? parseInt(toVal) : null;
+            if (filterType.includes('Category')) {
+                currentFilters.category_id = null;
+                $('.category-filter').removeClass('active');
+            } else if (filterType.includes('Brand')) {
+                currentFilters.brand_id = null;
+                $('.brand-filter').removeClass('active');
+            } else if (filterType.includes('Price')) {
+                currentFilters.min_price = null;
+                currentFilters.max_price = null;
+                
+                // Reset price slider
+                let slider = $(".js-range-slider").data("ionRangeSlider");
+                slider.update({
+                    from: 0,
+                    to: <?= $maxPrice ?? 1000000 ?>
+                });
+                
+                $('#min_price').val('0');
+                $('#max_price').val('<?= $maxPrice ?? 1000000 ?>');
+            }
+            
             currentFilters.page = 1;
             loadProducts();
         });
@@ -353,7 +604,7 @@
             let productId = $(this).data('product-id');
             let $btn = $(this);
             
-            if ($btn.hasClass('loading')) return;
+            if ($btn.hasClass('loading') || $btn.closest('.out-of-stock').length) return;
             
             $btn.addClass('loading').text('Adding...');
             
@@ -428,7 +679,7 @@
         $(document).on('click', '.pagination a', function(e) {
             e.preventDefault();
             let url = $(this).attr('href');
-            let page = new URL(url).searchParams.get('page');
+            let page = new URL(url, window.location.origin).searchParams.get('page');
             if (page) {
                 currentFilters.page = parseInt(page);
                 loadProducts();
@@ -524,7 +775,7 @@
             }
             
             html += '</div>';
-            $('.latest_product_inner').replaceWith(html);
+            $('#products-container').html(html);
         }
 
         function updateProductCount(total) {
@@ -532,31 +783,48 @@
         }
 
         function updatePagination(response) {
-            let paginationHtml = '';
-            if (response.total_pages > 1) {
-                paginationHtml = '<nav aria-label="Page navigation"><ul class="pagination justify-content-center">';
-                
-                // Previous button
-                if (response.page > 1) {
-                    paginationHtml += `<li class="page-item"><a class="page-link" href="?page=${response.page - 1}"><i class="ti-angle-double-left"></i></a></li>`;
-                }
-                
-                // Page numbers
-                for (let i = 1; i <= response.total_pages; i++) {
-                    let activeClass = i === response.page ? 'active' : '';
-                    paginationHtml += `<li class="page-item ${activeClass}"><a class="page-link" href="?page=${i}">${i}</a></li>`;
-                }
-                
-                // Next button
-                if (response.page < response.total_pages) {
-                    paginationHtml += `<li class="page-item"><a class="page-link" href="?page=${response.page + 1}"><i class="ti-angle-double-right"></i></a></li>`;
-                }
-                
-                paginationHtml += '</ul></nav>';
-            }
-            
-            $('#pagination-container').html(paginationHtml);
+    let paginationHtml = '';
+    if (response.total_pages > 1) {
+        paginationHtml = '<nav aria-label="Page navigation"><ul class="pagination justify-content-center">';
+        
+        // Previous button
+        if (response.page > 1) {
+            paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${response.page - 1}"><i class="ti-angle-double-left"></i></a></li>`;
         }
+        
+        // Page numbers
+        let startPage = Math.max(1, response.page - 2);
+        let endPage = Math.min(response.total_pages, startPage + 4);
+        
+        if (endPage - startPage < 4) {
+            startPage = Math.max(1, endPage - 4);
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+            let activeClass = i === response.page ? 'active' : '';
+            paginationHtml += `<li class="page-item ${activeClass}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+        }
+        
+        // Next button
+        if (response.page < response.total_pages) {
+            paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${response.page + 1}"><i class="ti-angle-double-right"></i></a></li>`;
+        }
+        
+        paginationHtml += '</ul></nav>';
+    }
+    
+    $('#pagination-container').html(paginationHtml);
+}
+
+// Cập nhật sự kiện pagination
+$(document).on('click', '.pagination a', function(e) {
+    e.preventDefault();
+    let page = $(this).data('page');
+    if (page) {
+        currentFilters.page = parseInt(page);
+        loadProducts();
+    }
+});
 
         function loadWishlistStatus() {
             $.ajax({
@@ -653,10 +921,23 @@
                 currentFilters.search = urlParams.get('search');
                 $('#search-input').val(currentFilters.search);
             }
+            
+            // Update sort dropdown
+            if (urlParams.get('sort')) {
+                currentFilters.sort_by = urlParams.get('sort');
+                let sortText = currentFilters.sort_by === 'price_asc' ? 'Price: Low to High' : 
+                              currentFilters.sort_by === 'price_desc' ? 'Price: High to Low' : 'Name';
+                $('.sorting .current').text(sortText);
+            }
+            
+            // Update per page dropdown
+            if (urlParams.get('per_page')) {
+                currentFilters.per_page = parseInt(urlParams.get('per_page'));
+                $('.show .current').text(currentFilters.per_page);
+            }
         }
 
         initializeFromURL();
     });
     </script>
-
 <?= $this->endSection() ?>
