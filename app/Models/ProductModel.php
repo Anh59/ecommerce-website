@@ -375,4 +375,31 @@ class ProductModel extends Model
             return false;
         }
     }
+    public function getProductBySlug($slug)
+{
+    return $this->where('slug', $slug)
+                ->where('is_active', 1)
+                ->where('deleted_at IS NULL')
+                ->first();
+}
+
+public function getProductImages($productId)
+{
+    return $this->db->table('product_images')
+                    ->where('product_id', $productId)
+                    ->orderBy('sort_order', 'ASC')
+                    ->get()
+                    ->getResultArray();
+}
+
+public function getRelatedProducts($productId, $categoryId, $limit = 8)
+{
+    return $this->where('category_id', $categoryId)
+                ->where('id !=', $productId)
+                ->where('is_active', 1)
+                ->where('deleted_at IS NULL')
+                ->orderBy('RAND()')
+                ->limit($limit)
+                ->findAll();
+}
 }

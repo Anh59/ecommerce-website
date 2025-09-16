@@ -2,319 +2,226 @@
 
 namespace App\Controllers;
 
+use App\Controllers\BaseController;
 use App\Models\ProductModel;
-use App\Models\ProductImageModel;
 use App\Models\CategoryModel;
 use App\Models\BrandModel;
-use App\Models\ReviewModel;
+use App\Models\ProductReviewModel;
+use App\Models\ProductCommentModel;
+use App\Models\WishlistModel;
 
 class SingleProductController extends BaseController
 {
     protected $productModel;
-    protected $productImageModel;
     protected $categoryModel;
     protected $brandModel;
     protected $reviewModel;
+    protected $commentModel;
+    protected $wishlistModel;
 
     public function __construct()
     {
         $this->productModel = new ProductModel();
-        $this->productImageModel = new ProductImageModel();
         $this->categoryModel = new CategoryModel();
         $this->brandModel = new BrandModel();
-        $this->reviewModel = new ReviewModel();
+        $this->reviewModel = new ProductReviewModel();
+        $this->commentModel = new ProductCommentModel();
+        $this->wishlistModel = new WishlistModel();
     }
 
-    public function index($productId = null, $slug = null)
+    public function detail($slug = null)
     {
-        // Nếu có slug, tìm theo slug, không thì tìm theo ID
-        if ($slug) {
-            $product = $this->productModel->where('slug', $slug)->first();
-        } elseif ($productId) {
-            $product = $this->productModel->find($productId);
-        } else {
-            throw new \CodeIgniter\Exceptions\PageNotFoundException('Product not found');
+        if (!$slug) {
+            return redirect()->to('/shop');
         }
 
-        if (!$product || !$product['is_active']) {
-            throw new \CodeIgniter\Exceptions\PageNotFoundException('Product not found');
+        $product = $this->productModel->getProductBySlug($slug);
+        
+        if (!$product) {
+            return redirect()->to('/shop')->with('error', 'Product not found');
         }
 
         // Lấy thông tin category và brand
-        $category = null;
-        $brand = null;
+        $category = $this->categoryModel->find($product['category_id']);
+        $brand = $this->brandModel->find($product['brand_id']);
         
-        if ($product['category_id']) {
-            $category = $this->categoryModel->find($product['category_id']);
+        // Lấy hình ảnh sản phẩm
+        $productImages = $this->productModel->getProductImages($product['id']);
+        
+        // Lấy đánh giá sản phẩm
+        $reviews = $this->reviewModel->getProductReviews($product['id']);
+        $reviewStats = $this->reviewModel->getReviewStats($product['id']);
+        
+        // Lấy bình luận sản phẩm
+        $comments = $this->commentModel->getProductComments($product['id']);
+        
+        // Kiểm tra xem sản phẩm có trong wishlist không
+        $isInWishlist = false;
+        if (session()->has('customer_id')) {
+            $isInWishlist = $this->wishlistModel->isInWishlist(session('customer_id'), $product['id']);
         }
         
-        if ($product['brand_id']) {
-            $brand = $this->brandModel->find($product['brand_id']);
-        }
-
-        // Lấy các hình ảnh sản phẩm
-        $productImages = $this->productImageModel->where('product_id', $product['id'])
-                                                 ->orderBy('sort_order', 'ASC')
-                                                 ->findAll();
-
-        // Nếu không có hình ảnh phụ, sử dụng hình ảnh chính
-        if (empty($productImages) && !empty($product['main_image'])) {
-            $productImages = [
-                [
-                    'id' => 0,
-                    'image_url' => $product['main_image'],
-                    'alt_text' => $product['name'],
-                    'is_main' => 1
-                ]
-            ];
-        }
-
-        // Lấy reviews cho sản phẩm
-        $reviews = $this->getProductReviews($product['id']);
-        $reviewSummary = $this->getReviewSummary($product['id']);
-
-        // Lấy sản phẩm liên quan (cùng category)
-        $relatedProducts = $this->getRelatedProducts($product['id'], $product['category_id'], 5);
-
-        // Lấy sản phẩm bán chạy
-        $bestSellers = $this->getBestSellerProducts(5);
-
-        // Tăng view count (optional)
-        $this->incrementViewCount($product['id']);
+        // Lấy sản phẩm liên quan
+        $relatedProducts = $this->productModel->getRelatedProducts($product['id'], $product['category_id'], 8);
 
         $data = [
+            'title' => $product['name'] . ' | Shop Single',
             'product' => $product,
             'category' => $category,
             'brand' => $brand,
             'productImages' => $productImages,
             'reviews' => $reviews,
-            'reviewSummary' => $reviewSummary,
-            'relatedProducts' => $relatedProducts,
-            'bestSellers' => $bestSellers,
-            'metaTitle' => $product['meta_title'] ?: $product['name'],
-            'metaDescription' => $product['meta_description'] ?: $product['short_description']
+            'reviewStats' => $reviewStats,
+            'comments' => $comments,
+            'isInWishlist' => $isInWishlist,
+            'relatedProducts' => $relatedProducts
         ];
 
         return view('Customers/single-product', $data);
     }
 
-    private function getProductReviews($productId, $limit = 10)
-    {
-        return $this->reviewModel->select('reviews.*, customers.first_name, customers.last_name')
-                                ->join('customers', 'customers.id = reviews.customer_id')
-                                ->where('reviews.product_id', $productId)
-                                ->where('reviews.status', 'approved')
-                                ->orderBy('reviews.created_at', 'DESC')
-                                ->limit($limit)
-                                ->findAll();
-    }
-
-    private function getReviewSummary($productId)
-    {
-        $db = \Config\Database::connect();
-        
-        $query = $db->query("
-            SELECT 
-                COUNT(*) as total_reviews,
-                AVG(rating) as average_rating,
-                SUM(CASE WHEN rating = 5 THEN 1 ELSE 0 END) as five_star,
-                SUM(CASE WHEN rating = 4 THEN 1 ELSE 0 END) as four_star,
-                SUM(CASE WHEN rating = 3 THEN 1 ELSE 0 END) as three_star,
-                SUM(CASE WHEN rating = 2 THEN 1 ELSE 0 END) as two_star,
-                SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) as one_star
-            FROM reviews 
-            WHERE product_id = ? AND status = 'approved'
-        ", [$productId]);
-
-        $result = $query->getRow('array');
-        
-        if ($result && $result['total_reviews'] > 0) {
-            $result['average_rating'] = round($result['average_rating'], 1);
-        } else {
-            $result = [
-                'total_reviews' => 0,
-                'average_rating' => 0,
-                'five_star' => 0,
-                'four_star' => 0,
-                'three_star' => 0,
-                'two_star' => 0,
-                'one_star' => 0
-            ];
-        }
-
-        return $result;
-    }
-
-    private function getRelatedProducts($currentProductId, $categoryId, $limit = 5)
-    {
-        if (!$categoryId) {
-            return [];
-        }
-
-        return $this->productModel->where('category_id', $categoryId)
-                                 ->where('id !=', $currentProductId)
-                                 ->where('is_active', 1)
-                                 ->where('stock_quantity >', 0)
-                                 ->orderBy('RAND()')
-                                 ->limit($limit)
-                                 ->findAll();
-    }
-
-    private function getBestSellerProducts($limit = 5)
-    {
-        // Giả sử có bảng order_items để tính best seller
-        $db = \Config\Database::connect();
-        
-        $query = $db->query("
-            SELECT p.*, SUM(oi.quantity) as total_sold
-            FROM products p
-            LEFT JOIN order_items oi ON p.id = oi.product_id
-            LEFT JOIN orders o ON oi.order_id = o.id
-            WHERE p.is_active = 1 
-            AND p.stock_quantity > 0
-            AND (o.status IS NULL OR o.status = 'completed')
-            GROUP BY p.id
-            ORDER BY total_sold DESC, p.created_at DESC
-            LIMIT ?
-        ", [$limit]);
-
-        $result = $query->getResult('array');
-        
-        // Nếu không có dữ liệu order, lấy featured products
-        if (empty($result)) {
-            $result = $this->productModel->where('is_featured', 1)
-                                        ->where('is_active', 1)
-                                        ->where('stock_quantity >', 0)
-                                        ->limit($limit)
-                                        ->findAll();
-        }
-
-        return $result;
-    }
-
-    private function incrementViewCount($productId)
-    {
-        // Tăng view count cho sản phẩm (optional feature)
-        $db = \Config\Database::connect();
-        $db->query("UPDATE products SET view_count = IFNULL(view_count, 0) + 1 WHERE id = ?", [$productId]);
-    }
-
-    // API method để lấy thông tin sản phẩm qua AJAX
-    public function getProductInfo()
-    {
-        if (!$this->request->isAJAX()) {
-            return $this->response->setStatusCode(404);
-        }
-
-        $productId = $this->request->getPost('product_id');
-        
-        if (!$productId) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Product ID is required'
-            ]);
-        }
-
-        $product = $this->productModel->find($productId);
-        
-        if (!$product) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Product not found'
-            ]);
-        }
-
-        // Lấy hình ảnh
-        $images = $this->productImageModel->where('product_id', $productId)
-                                         ->orderBy('sort_order', 'ASC')
-                                         ->findAll();
-
-        return $this->response->setJSON([
-            'success' => true,
-            'product' => $product,
-            'images' => $images
-        ]);
-    }
-
-    // Add review
     public function addReview()
     {
         if (!$this->request->isAJAX()) {
-            return $this->response->setStatusCode(404);
+            return $this->response->setJSON(['success' => false, 'message' => 'Invalid request']);
         }
 
-        $session = session();
-        $customerId = $session->get('customer_id');
+        // Kiểm tra đăng nhập
+        if (!session()->has('customer_id')) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Please login to review']);
+        }
 
-        if (!$customerId) {
+        $validation = \Config\Services::validation();
+        $validation->setRules([
+            'product_id' => 'required|numeric',
+            'rating' => 'required|numeric|greater_than[0]|less_than[6]',
+            'title' => 'required|min_length[5]|max_length[255]',
+            'comment' => 'required|min_length[10]'
+        ]);
+
+        if (!$validation->withRequest($this->request)->run()) {
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Vui lòng đăng nhập để đánh giá sản phẩm'
+                'message' => 'Validation failed',
+                'errors' => $validation->getErrors()
             ]);
+        }
+
+        $data = [
+            'product_id' => $this->request->getPost('product_id'),
+            'customer_id' => session('customer_id'),
+            'rating' => $this->request->getPost('rating'),
+            'title' => $this->request->getPost('title'),
+            'comment' => $this->request->getPost('comment'),
+            'is_verified' => true
+        ];
+
+        try {
+            $this->reviewModel->insert($data);
+            
+            // Cập nhật thống kê đánh giá
+            $reviewStats = $this->reviewModel->getReviewStats($data['product_id']);
+            
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Review added successfully',
+                'reviewStats' => $reviewStats
+            ]);
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Failed to add review: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function addComment()
+    {
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Invalid request']);
+        }
+
+        // Kiểm tra đăng nhập
+        if (!session()->has('customer_id')) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Please login to comment']);
+        }
+
+        $validation = \Config\Services::validation();
+        $validation->setRules([
+            'product_id' => 'required|numeric',
+            'comment' => 'required|min_length[5]|max_length[1000]',
+            'parent_id' => 'permit_empty|numeric'
+        ]);
+
+        if (!$validation->withRequest($this->request)->run()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validation->getErrors()
+            ]);
+        }
+
+        $data = [
+            'product_id' => $this->request->getPost('product_id'),
+            'customer_id' => session('customer_id'),
+            'parent_id' => $this->request->getPost('parent_id') ?: null,
+            'comment' => $this->request->getPost('comment')
+        ];
+
+        try {
+            $commentId = $this->commentModel->insert($data);
+            $newComment = $this->commentModel->getCommentWithCustomer($commentId);
+            
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Comment added successfully',
+                'comment' => $newComment
+            ]);
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Failed to add comment: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function toggleWishlist()
+    {
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Invalid request']);
+        }
+
+        if (!session()->has('customer_id')) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Please login to add to wishlist']);
         }
 
         $productId = $this->request->getPost('product_id');
-        $rating = $this->request->getPost('rating');
-        $comment = $this->request->getPost('comment');
-        $title = $this->request->getPost('title');
+        $customerId = session('customer_id');
 
-        // Validate input
-        if (!$productId || !$rating || $rating < 1 || $rating > 5) {
+        try {
+            $isInWishlist = $this->wishlistModel->isInWishlist($customerId, $productId);
+            
+            if ($isInWishlist) {
+                // Xóa khỏi wishlist
+                $this->wishlistModel->removeFromWishlist($customerId, $productId);
+                return $this->response->setJSON([
+                    'success' => true,
+                    'action' => 'removed',
+                    'message' => 'Removed from wishlist'
+                ]);
+            } else {
+                // Thêm vào wishlist
+                $this->wishlistModel->addToWishlist($customerId, $productId);
+                return $this->response->setJSON([
+                    'success' => true,
+                    'action' => 'added',
+                    'message' => 'Added to wishlist'
+                ]);
+            }
+        } catch (\Exception $e) {
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Thông tin đánh giá không hợp lệ'
-            ]);
-        }
-
-        // Check if customer already reviewed this product
-        $existingReview = $this->reviewModel->where([
-            'customer_id' => $customerId,
-            'product_id' => $productId
-        ])->first();
-
-        if ($existingReview) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Bạn đã đánh giá sản phẩm này rồi'
-            ]);
-        }
-
-        // Check if customer bought this product (optional)
-        $orderModel = new \App\Models\OrderModel();
-        $hasPurchased = $orderModel->select('orders.id')
-                                  ->join('order_items', 'order_items.order_id = orders.id')
-                                  ->where('orders.customer_id', $customerId)
-                                  ->where('order_items.product_id', $productId)
-                                  ->where('orders.status', 'completed')
-                                  ->first();
-
-        if (!$hasPurchased) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Bạn cần mua sản phẩm này trước khi đánh giá'
-            ]);
-        }
-
-        // Add review
-        $reviewData = [
-            'customer_id' => $customerId,
-            'product_id' => $productId,
-            'rating' => $rating,
-            'title' => $title,
-            'comment' => $comment,
-            'status' => 'pending', // Requires admin approval
-            'created_at' => date('Y-m-d H:i:s')
-        ];
-
-        if ($this->reviewModel->insert($reviewData)) {
-            return $this->response->setJSON([
-                'success' => true,
-                'message' => 'Đánh giá của bạn đã được gửi và đang chờ duyệt'
-            ]);
-        } else {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Có lỗi xảy ra, vui lòng thử lại'
+                'message' => 'Failed to update wishlist: ' . $e->getMessage()
             ]);
         }
     }

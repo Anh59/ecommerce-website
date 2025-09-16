@@ -25,6 +25,8 @@ $routes->get('/cart', 'CartController::index',['as'=>'home_cart']);
 
 
 // Thêm các routes sau vào file app/Config/Routes.php
+// Single product AJAX (trả JSON)
+$routes->get('/single-product/(:segment)', 'SingleProductController::detail/$1', ['as' => 'product_detail']);
 
 // Category và Product routes
 $routes->get('/category', 'TableCategoryController::index', ['as' => 'category']);

@@ -164,7 +164,29 @@
         justify-content: space-between;
         align-items: center;
     }
-    
+    /* ===== Fix: luôn hiển thị tên sản phẩm và link bên trong ===== */
+.single_product_item .single_product_text h4,
+.single_product_item .single_product_text h4 a,
+.single_product_item .single_product_text a {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+    display: block !important;
+    pointer-events: auto !important;
+}
+
+/* giữ style link hợp lý */
+.single_product_item .single_product_text h4 a {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* nếu muốn hover đổi màu link */
+.single_product_item .single_product_text h4 a:hover {
+    color: #e40da7ff;   
+    text-decoration: underline;
+}
+
     .add_cart {
         flex-grow: 1;
         margin-right: 10px;
@@ -376,7 +398,12 @@
                                      data-product-id="<?= $product['id'] ?>">
                                     <img src="<?= base_url($product['main_image'] ?? 'aranoz-master/img/product/product_1.png') ?>" alt="<?= esc($product['name']) ?>">
                                     <div class="single_product_text">
-                                        <h4><?= esc($product['name']) ?></h4>
+                                        <h4>
+    <a href="<?= route_to('product_detail', $product['slug']) ?>">
+        <?= esc($product['name']) ?>
+    </a>
+</h4>
+
                                         <div class="price-section">
                                             <?php if ($product['sale_price'] && $product['sale_price'] < $product['price']): ?>
                                                 <h3 class="sale-price"><?= number_format($product['sale_price']) ?>₫</h3>
