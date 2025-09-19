@@ -15,19 +15,33 @@ $routes->get('/contact', 'Home::contact',['as'=>'home_contact']);
 $routes->get('/single-blog', 'Home::single_blog',['as'=>'home_single_blog']);
 $routes->get('/single-product', 'Home::single_product',['as'=>'home_single_product']);
 // $routes->get('/cart', 'Home::cart',['as'=>'home_cart']);
-$routes->get('/checkout', 'Home::checkout',['as'=>'home_checkout']);
+// $routes->get('/checkout', 'Home::checkout',['as'=>'home_checkout']);
 // $routes->get('/category', 'Home::category',['as'=>'home_category']);
 $routes->get('/tracking', 'Home::tracking',['as'=>'home_tracking']);
 $routes->get('/confirmation', 'Home::confirmation',['as'=>'home_confirmation']);
 $routes->get('/elements', 'Home::elements',['as'=>'home_elements']);
 $routes->get('/feature', 'Home::feature',['as'=>'home_feature']);
-$routes->get('/cart', 'CartController::index',['as'=>'home_cart']);
+// $routes->get('/cart', 'CartController::index',['as'=>'home_cart']);
 
 
 // Thêm các routes sau vào file app/Config/Routes.php
 // Single product AJAX (trả JSON)
 $routes->get('/single-product/(:segment)', 'SingleProductController::detail/$1', ['as' => 'product_detail']);
+$routes->post('api/single-product/wishlist', 'SingleProductController::toggleWishlist', ['as' => 'api_product_wishlist']);
+$routes->post('api/single-product/review', 'SingleProductController::addReview', ['as' => 'api_product_review']);
+$routes->post('api/single-product/comment', 'SingleProductController::addComment', ['as' => 'api_product_comment']);
 
+$routes->post('api/single-product/buy-now', 'SingleProductController::buyNow', ['as' => 'api_buy_now']);
+//
+$routes->get('checkout', 'CheckoutController::index');
+$routes->post('checkout/process', 'CheckoutController::processOrder', ['as' => 'checkout_process']);
+$routes->get('checkout/success/(:segment)', 'CheckoutController::orderSuccess/$1');
+
+$routes->post('apply-coupon', 'CouponController::applyCoupon', ['as' => 'apply_coupon']);
+$routes->post('remove-coupon', 'CouponController::removeCoupon', ['as' => 'remove_coupon']);
+
+$routes->get('payment/momo-callback', 'PaymentController::momoCallback');
+$routes->post('payment/momo-ipn', 'PaymentController::momoIPN');
 // Category và Product routes
 $routes->get('/category', 'TableCategoryController::index', ['as' => 'category']);
 $routes->post('api/products/filter', 'TableCategoryController::getProducts', ['as' => 'api_products_filter']);
@@ -279,7 +293,13 @@ $routes->group('Dashboard', function (RouteCollection $routes) {// ['filter' => 
     // $routes->match(['post', 'delete'], 'products/delete/(:num)', 'ProductsController::delete/$1');
 
     // (Tương tự thêm routes cho posts, invoices, reviews...)
-
+    $routes->get('orders', 'OrderController::index', ['as' => 'Table_orders', 'filter' => 'Perermissions:Table_orders']);
+    $routes->get('orders/list', 'OrderController::list');
+    $routes->get('orders/(:num)/details', 'OrderController::details/$1');
+    $routes->post('orders/(:num)/update', 'OrderController::update/$1');
+    $routes->get('orders/(:num)/print', 'OrderController::print/$1');
+    $routes->get('orders/stats', 'OrderController::stats');
+    $routes->get('orders/export', 'OrderController::export');
 
 
 

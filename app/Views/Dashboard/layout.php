@@ -369,11 +369,11 @@
                       <?php endif; ?>
 
                     
-                    <?php if ($session->get('Table_Tours') === true ): ?>
+                    <?php if ($session->get('Table_orders') === true ): ?>
                       <li class="nav-item">
-                          <a href="<?= route_to('Table_Tours') ?>" class="nav-link">
+                          <a href="<?= route_to('Table_orders') ?>" class="nav-link">
                           <i class="fas fa-suitcase nav-icon"></i>
-                              <p>Chuyến Du lịch</p>
+                              <p>Danh sách đơn hàng</p>
                           </a>
                       </li>
                       <?php endif; ?>

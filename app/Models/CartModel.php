@@ -65,7 +65,7 @@ class CartModel extends Model
      */
     public function getCartWithProducts($customerId)
     {
-        return $this->select('shopping_cart.*, products.name, products.slug, products.main_image, products.stock_quantity, products.stock_status, products.weight, categories.name as category_name, brands.name as brand_name')
+        return $this->select('shopping_cart.*, products.name, products.slug, products.main_image, products.stock_quantity, products.stock_status, products.weight, products.sku, categories.name as category_name, brands.name as brand_name')
                     ->join('products', 'products.id = shopping_cart.product_id', 'left')
                     ->join('categories', 'categories.id = products.category_id', 'left')
                     ->join('brands', 'brands.id = products.brand_id', 'left')
@@ -73,6 +73,16 @@ class CartModel extends Model
                     ->where('products.is_active', 1)
                     ->orderBy('shopping_cart.updated_at', 'DESC')
                     ->findAll();
+    }
+
+    /**
+     * Get cart item for specific customer and product
+     */
+    public function getCartItem($customerId, $productId)
+    {
+        return $this->where('customer_id', $customerId)
+                   ->where('product_id', $productId)
+                   ->first();
     }
 
     /**
@@ -104,18 +114,19 @@ class CartModel extends Model
         
         $subtotal = 0;
         $totalItems = 0;
+        $totalQuantity = 0;
         $totalWeight = 0;
         
         foreach ($cartItems as $item) {
             $itemTotal = $item['price'] * $item['quantity'];
             $subtotal += $itemTotal;
-            $totalItems += $item['quantity'];
+            $totalItems++;
+            $totalQuantity += $item['quantity'];
             $totalWeight += ($item['weight'] ?? 0) * $item['quantity'];
         }
         
-        // Calculate shipping (example logic)
+        // Calculate shipping
         $shippingFee = $this->calculateShippingFee($totalWeight, $subtotal);
-        
         $total = $subtotal + $shippingFee;
         
         return [
@@ -123,6 +134,7 @@ class CartModel extends Model
             'shipping_fee' => $shippingFee,
             'total' => $total,
             'total_items' => $totalItems,
+            'total_quantity' => $totalQuantity,
             'total_weight' => $totalWeight
         ];
     }
@@ -132,7 +144,6 @@ class CartModel extends Model
      */
     public function updateQuantity($customerId, $productId, $quantity)
     {
-        // FIXED: Nếu quantity <= 0 thì xóa sản phẩm khỏi giỏ hàng
         if ($quantity <= 0) {
             return $this->removeFromCart($customerId, $productId);
         }
@@ -175,43 +186,41 @@ class CartModel extends Model
 
     /**
      * Add or update cart item
-     * FIXED: Logic kiểm tra giá sale
      */
-  public function addToCart($customerId, $productId, $quantity, $price = null)
-{
-    if (!$price) {
-        $productModel = new ProductModel();
-        $product = $productModel->find($productId);
-        if (!$product) {
-            return false;
+    public function addToCart($customerId, $productId, $quantity, $price = null)
+    {
+        if (!$price) {
+            $productModel = new ProductModel();
+            $product = $productModel->find($productId);
+            if (!$product) {
+                return false;
+            }
+            
+            // Use sale price if available, otherwise use regular price
+            if (isset($product['sale_price']) && is_numeric($product['sale_price']) && $product['sale_price'] > 0) {
+                $price = $product['sale_price'];
+            } else {
+                $price = $product['price'] ?? 0;
+            }
         }
-        
-        // FIXED: Logic kiểm tra giá chính xác
-        if (isset($product['sale_price']) && is_numeric($product['sale_price']) && $product['sale_price'] > 0) {
-            $price = $product['sale_price'];
+
+        // Check existing item
+        $existingItem = $this->getCartItem($customerId, $productId);
+
+        if ($existingItem) {
+            $newQuantity = $existingItem['quantity'] + $quantity;
+            return $this->updateQuantity($customerId, $productId, $newQuantity);
         } else {
-            $price = $product['price'] ?? 0;
+            return $this->insert([
+                'customer_id' => $customerId,
+                'product_id' => $productId,
+                'quantity' => $quantity,
+                'price' => $price,
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s')
+            ]);
         }
     }
-
-    // Check existing item
-    $existingItem = $this->where([
-        'customer_id' => $customerId,
-        'product_id' => $productId
-    ])->first();
-
-    if ($existingItem) {
-        $newQuantity = $existingItem['quantity'] + $quantity;
-        return $this->updateQuantity($customerId, $productId, $newQuantity);
-    } else {
-        return $this->insert([
-            'customer_id' => $customerId,
-            'product_id' => $productId,
-            'quantity' => $quantity,
-            'price' => $price
-        ]);
-    }
-}
 
     /**
      * Validate cart items (check stock, active products)
@@ -225,7 +234,7 @@ class CartModel extends Model
             $issue = [];
             
             // Check if product is still active
-            if (!$item['name']) { // Product not found or inactive
+            if (!$item['name']) {
                 $issue['type'] = 'inactive';
                 $issue['message'] = 'Sản phẩm không còn bán';
             }

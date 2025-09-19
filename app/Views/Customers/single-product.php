@@ -10,6 +10,45 @@
         .rating i.active { color: #ffc107; }
         .reply-form { margin-left: 50px; margin-top: 10px; display: none; }
         .reply-form.active { display: block; }
+        
+        /* NEW: Buy Now Button Styles */
+        .buy-now-section { 
+            border-top: 1px solid #eee; 
+            padding-top: 20px; 
+            margin-top: 20px; 
+        }
+        .btn-buy-now { 
+            background: #ff6b35; 
+            color: white; 
+            border: none; 
+            padding: 12px 30px; 
+            font-size: 16px; 
+            font-weight: 600; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            transition: all 0.3s ease; 
+        }
+        .btn-buy-now:hover { 
+            background: #e55a2e; 
+            color: white; 
+            transform: translateY(-2px); 
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3); 
+        }
+        .quantity-buy-section { 
+            display: flex; 
+            align-items: center; 
+            gap: 15px; 
+            margin-bottom: 15px; 
+        }
+        .buy-actions { 
+            display: flex; 
+            gap: 10px; 
+            flex-wrap: wrap; 
+        }
+        @media (max-width: 768px) {
+            .buy-actions { flex-direction: column; }
+            .buy-actions .btn { margin-bottom: 10px; }
+        }
     </style>
 <?= $this->endSection() ?>
 
@@ -98,23 +137,38 @@
                     
                     <p><?= esc($product['short_description']) ?></p>
                     
-                    <div class="card_area d-flex justify-content-between align-items-center">
-                        <div class="product_count">
-                            <span class="inumber-decrement"> <i class="ti-minus"></i></span>
-                            <input class="input-number" type="text" value="1" min="1" max="<?= $product['stock_quantity'] ?>" id="quantity">
-                            <span class="number-increment"> <i class="ti-plus"></i></span>
+                    <div class="card_area">
+                        <!-- Quantity Selection -->
+                        <div class="quantity-buy-section">
+                            <div class="product_count">
+                                <span class="inumber-decrement"> <i class="ti-minus"></i></span>
+                                <input class="input-number" type="text" value="1" min="1" max="<?= $product['stock_quantity'] ?>" id="quantity">
+                                <span class="number-increment"> <i class="ti-plus"></i></span>
+                            </div>
+                            
+                            <button class="like_us wishlist-btn <?= $isInWishlist ? 'active' : '' ?>" 
+                                    data-product-id="<?= $product['id'] ?>" title="Add to Wishlist">
+                                <i class="ti-heart"></i>
+                            </button>
                         </div>
                         
+                        <!-- Action Buttons -->
                         <?php if ($product['stock_status'] != 'out_of_stock'): ?>
-                            <a href="#" class="btn_3 add-to-cart-btn" data-product-id="<?= $product['id'] ?>">add to cart</a>
+                            <div class="buy-actions">
+                                <a href="#" class="btn_3 add-to-cart-btn" data-product-id="<?= $product['id'] ?>">
+                                    <i class="ti-shopping-cart"></i> Add to Cart
+                                </a>
+                                
+                                <!-- NEW: Buy Now Button -->
+                                <button class="btn btn-buy-now buy-now-btn" data-product-id="<?= $product['id'] ?>">
+                                    <i class="ti-bolt"></i> Buy Now
+                                </button>
+                            </div>
                         <?php else: ?>
-                            <a href="#" class="btn_3 disabled">Out of Stock</a>
+                            <div class="buy-actions">
+                                <a href="#" class="btn_3 disabled">Out of Stock</a>
+                            </div>
                         <?php endif; ?>
-                        
-                        <button class="like_us wishlist-btn <?= $isInWishlist ? 'active' : '' ?>" 
-                                data-product-id="<?= $product['id'] ?>" title="Add to Wishlist">
-                            <i class="ti-heart"></i>
-                        </button>
                     </div>
                 </div>
             </div>
@@ -123,6 +177,7 @@
 </div>
 <!--================End Single Product Area =================-->
 
+<!-- [REST OF THE ORIGINAL CODE REMAINS THE SAME] -->
 <!--================Product Description Area =================-->
 <section class="product_description_area">
     <div class="container">
@@ -417,6 +472,62 @@ $(document).ready(function() {
         });
     });
 
+    // NEW: Buy Now functionality
+    $('.buy-now-btn').click(function(e) {
+        e.preventDefault();
+        
+        var productId = $(this).data('product-id');
+        var quantity = $('#quantity').val();
+        
+        // Validate quantity
+        if (!quantity || quantity < 1) {
+            showToast('error', 'Vui lòng chọn số lượng hợp lệ');
+            return;
+        }
+        
+        // Check if user is logged in
+        <?php if (!session()->has('customer_id')): ?>
+            showToast('error', 'Vui lòng đăng nhập để mua hàng');
+            setTimeout(function() {
+                window.location.href = '<?= base_url('/api_Customers/customers_sign') ?>';
+            }, 1500);
+            return;
+        <?php endif; ?>
+        
+        // Show loading
+        $(this).prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Processing...');
+        
+        // Add to cart first, then redirect to checkout
+        $.ajax({
+            url: '<?= route_to('api_buy_now') ?>',
+            type: 'POST',
+            data: {
+                product_id: productId,
+                quantity: quantity,
+                action: 'buy_now',
+                <?= csrf_token() ?>: '<?= csrf_hash() ?>'
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Clear any existing cart items (optional - for buy now only this item)
+                    showToast('success', 'Redirecting to checkout...');
+                    
+                    // Redirect to checkout with buy_now parameter
+                    setTimeout(function() {
+                        window.location.href = '<?= base_url('/checkout') ?>?buy_now=1&product_id=' + productId;
+                    }, 1000);
+                } else {
+                    showToast('error', response.message);
+                    $('.buy-now-btn').prop('disabled', false).html('<i class="ti-bolt"></i> Buy Now');
+                }
+            },
+            error: function() {
+                showToast('error', 'Có lỗi xảy ra, vui lòng thử lại');
+                $('.buy-now-btn').prop('disabled', false).html('<i class="ti-bolt"></i> Buy Now');
+            }
+        });
+    });
+
     // Wishlist toggle
     $('.wishlist-btn').click(function(e) {
         e.preventDefault();
@@ -449,6 +560,7 @@ $(document).ready(function() {
         });
     });
 
+    // [REST OF THE ORIGINAL JAVASCRIPT REMAINS THE SAME]
     // Rating stars
     $('#rating-stars i').hover(function() {
         var rating = $(this).data('rating');

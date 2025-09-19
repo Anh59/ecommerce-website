@@ -9,6 +9,7 @@ use App\Models\BrandModel;
 use App\Models\ProductReviewModel;
 use App\Models\ProductCommentModel;
 use App\Models\WishlistModel;
+use App\Models\CartModel;
 
 class SingleProductController extends BaseController
 {
@@ -18,6 +19,7 @@ class SingleProductController extends BaseController
     protected $reviewModel;
     protected $commentModel;
     protected $wishlistModel;
+    protected $cartModel;
 
     public function __construct()
     {
@@ -27,6 +29,7 @@ class SingleProductController extends BaseController
         $this->reviewModel = new ProductReviewModel();
         $this->commentModel = new ProductCommentModel();
         $this->wishlistModel = new WishlistModel();
+        $this->cartModel = new CartModel();
     }
 
     public function detail($slug = null)
@@ -64,6 +67,10 @@ class SingleProductController extends BaseController
         // Lấy sản phẩm liên quan
         $relatedProducts = $this->productModel->getRelatedProducts($product['id'], $product['category_id'], 8);
 
+        // Lấy sản phẩm trước/sau (optional)
+        $previousProduct = $this->getPreviousProduct($product['id'], $product['category_id']);
+        $nextProduct = $this->getNextProduct($product['id'], $product['category_id']);
+
         $data = [
             'title' => $product['name'] . ' | Shop Single',
             'product' => $product,
@@ -74,10 +81,121 @@ class SingleProductController extends BaseController
             'reviewStats' => $reviewStats,
             'comments' => $comments,
             'isInWishlist' => $isInWishlist,
-            'relatedProducts' => $relatedProducts
+            'relatedProducts' => $relatedProducts,
+            'previousProduct' => $previousProduct,
+            'nextProduct' => $nextProduct
         ];
 
         return view('Customers/single-product', $data);
+    }
+
+    /**
+     * NEW: Buy Now API - Thêm sản phẩm vào giỏ hàng và chuẩn bị checkout
+     */
+    public function buyNow()
+    {
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Invalid request']);
+        }
+
+        // Kiểm tra đăng nhập
+        if (!session()->has('customer_id')) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Please login to buy']);
+        }
+
+        $validation = \Config\Services::validation();
+        $validation->setRules([
+            'product_id' => 'required|numeric',
+            'quantity' => 'required|numeric|greater_than[0]',
+            'action' => 'required|in_list[buy_now]'
+        ]);
+
+        if (!$validation->withRequest($this->request)->run()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Invalid data',
+                'errors' => $validation->getErrors()
+            ]);
+        }
+
+        $productId = (int)$this->request->getPost('product_id');
+        $quantity = (int)$this->request->getPost('quantity');
+        $customerId = session('customer_id');
+
+        try {
+            // Kiểm tra sản phẩm
+            $product = $this->productModel->find($productId);
+            if (!$product || !$product['is_active']) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Product not found or inactive'
+                ]);
+            }
+
+            // Kiểm tra stock
+            if ($product['stock_status'] === 'out_of_stock' || $product['stock_quantity'] < $quantity) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Not enough stock. Available: ' . $product['stock_quantity']
+                ]);
+            }
+
+            // Tính giá sản phẩm (sale_price nếu có, không thì price)
+            $price = !empty($product['sale_price']) && $product['sale_price'] > 0 
+                ? $product['sale_price'] 
+                : $product['price'];
+
+            // Tùy chọn: Xóa giỏ hàng hiện tại để Buy Now chỉ có 1 sản phẩm
+            // Uncomment dòng dưới nếu muốn buy now chỉ mua đúng sản phẩm đó
+            // $this->cartModel->clearCart($customerId);
+
+            // Thêm vào giỏ hàng hoặc cập nhật quantity
+            $existingCartItem = $this->cartModel->getCartItem($customerId, $productId);
+            
+            if ($existingCartItem) {
+                // Cập nhật quantity
+                $result = $this->cartModel->updateQuantity($customerId, $productId, $quantity);
+            } else {
+                // Thêm mới vào cart
+                $result = $this->cartModel->addToCart($customerId, $productId, $quantity, $price);
+            }
+
+            if ($result) {
+                // Lưu flag buy_now vào session để checkout page biết
+                session()->set('buy_now_mode', [
+                    'product_id' => $productId,
+                    'quantity' => $quantity,
+                    'timestamp' => time()
+                ]);
+
+                $cartTotals = $this->cartModel->getCartTotals($customerId);
+
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Product added for checkout',
+                    'buy_now' => true,
+                    'cart_totals' => $cartTotals,
+                    'product' => [
+                        'id' => $product['id'],
+                        'name' => $product['name'],
+                        'price' => $price,
+                        'quantity' => $quantity
+                    ]
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Failed to add product to cart'
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            log_message('error', 'Buy Now error: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'System error occurred: ' . $e->getMessage()
+            ]);
+        }
     }
 
     public function addReview()
@@ -224,5 +342,31 @@ class SingleProductController extends BaseController
                 'message' => 'Failed to update wishlist: ' . $e->getMessage()
             ]);
         }
+    }
+
+    /**
+     * Get previous product in same category
+     */
+    private function getPreviousProduct($currentId, $categoryId)
+    {
+        return $this->productModel
+            ->where('category_id', $categoryId)
+            ->where('id <', $currentId)
+            ->where('is_active', 1)
+            ->orderBy('id', 'DESC')
+            ->first();
+    }
+
+    /**
+     * Get next product in same category
+     */
+    private function getNextProduct($currentId, $categoryId)
+    {
+        return $this->productModel
+            ->where('category_id', $categoryId)
+            ->where('id >', $currentId)
+            ->where('is_active', 1)
+            ->orderBy('id', 'ASC')
+            ->first();
     }
 }
