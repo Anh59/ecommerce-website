@@ -42,42 +42,59 @@ class CheckoutController extends BaseController
                            ->with('error', 'Thông tin tài khoản không hợp lệ');
         }
 
-        // Determine checkout type and get items
+        // FIXED: Determine checkout type with correct priority
         $checkoutType = 'cart'; // Default
         $checkoutItems = [];
 
-        // Check for buy now mode
-        $buyNowMode = $session->get('buy_now_mode');
-        if ($buyNowMode && isset($buyNowMode['product_id'])) {
-            $checkoutType = 'buy_now';
-            // Get single product for buy now
-            $product = $this->productModel->find($buyNowMode['product_id']);
-            if ($product) {
-                $price = !empty($product['sale_price']) && $product['sale_price'] > 0 
-                    ? $product['sale_price'] 
-                    : $product['price'];
+        log_message('debug', 'CheckoutController - Session data: ' . json_encode([
+            'buy_now_mode' => $session->get('buy_now_mode'),
+            'checkout_selected_items' => $session->get('checkout_selected_items') ? 'exists' : 'not_exists'
+        ]));
+
+        // Priority 1: Check for selected items from cart (HIGHEST PRIORITY)
+        $selectedItems = $session->get('checkout_selected_items');
+        if ($selectedItems && !empty($selectedItems)) {
+            log_message('debug', 'CheckoutController - Using selected items from cart');
+            $checkoutType = 'selected';
+            $checkoutItems = $selectedItems;
+            
+            // Clear buy_now_mode if exists to avoid conflicts
+            if ($session->get('buy_now_mode')) {
+                $session->remove('buy_now_mode');
+                log_message('debug', 'CheckoutController - Cleared buy_now_mode due to selected items');
+            }
+        }
+        // Priority 2: Check for buy now mode (only if no selected items)
+        else {
+            $buyNowMode = $session->get('buy_now_mode');
+            if ($buyNowMode && isset($buyNowMode['product_id'])) {
+                log_message('debug', 'CheckoutController - Using buy now mode');
+                $checkoutType = 'buy_now';
                 
-                $checkoutItems = [[
-                    'product_id' => $product['id'],
-                    'name' => $product['name'],
-                    'quantity' => $buyNowMode['quantity'],
-                    'price' => $price,
-                    'total' => $price * $buyNowMode['quantity'],
-                    'main_image' => $product['main_image'],
-                    'slug' => $product['slug']
-                ]];
+                // Get single product for buy now
+                $product = $this->productModel->find($buyNowMode['product_id']);
+                if ($product) {
+                    $price = !empty($product['sale_price']) && $product['sale_price'] > 0 
+                        ? $product['sale_price'] 
+                        : $product['price'];
+                    
+                    $checkoutItems = [[
+                        'product_id' => $product['id'],
+                        'name' => $product['name'],
+                        'quantity' => $buyNowMode['quantity'],
+                        'price' => $price,
+                        'total' => $price * $buyNowMode['quantity'],
+                        'main_image' => $product['main_image'],
+                        'slug' => $product['slug'],
+                        'sku' => $product['sku'] ?? ''
+                    ]];
+                }
             }
         }
         
-        // Check for selected items from cart
-        $selectedItems = $session->get('checkout_selected_items');
-        if ($selectedItems && isset($selectedItems['items'])) {
-            $checkoutType = 'selected';
-            $checkoutItems = $selectedItems['items'];
-        }
-        
-        // Fallback to all cart items
+        // Priority 3: Fallback to all cart items
         if (empty($checkoutItems)) {
+            log_message('debug', 'CheckoutController - Using all cart items as fallback');
             $checkoutType = 'cart';
             $cartItems = $this->cartModel->getCartWithProducts($customerId);
             
@@ -96,10 +113,13 @@ class CheckoutController extends BaseController
                     'main_image' => $item['main_image'],
                     'slug' => $item['slug'],
                     'category_name' => $item['category_name'] ?? '',
-                    'brand_name' => $item['brand_name'] ?? ''
+                    'brand_name' => $item['brand_name'] ?? '',
+                    'sku' => $item['sku'] ?? ''
                 ];
             }
         }
+
+        log_message('debug', 'CheckoutController - Final checkout type: ' . $checkoutType . ', Items count: ' . count($checkoutItems));
 
         // Validate all checkout items
         $validatedItems = $this->validateCheckoutItems($checkoutItems);
@@ -150,6 +170,70 @@ class CheckoutController extends BaseController
         ];
 
         return view('Customers/checkout-test', $data);
+    }
+
+    // FIXED: Updated clearCheckoutData method with correct priority
+    private function clearCheckoutData($customerId)
+    {
+        $session = session();
+
+        // Determine what to clear based on what was used for checkout
+        $selectedItems = $session->get('checkout_selected_items');
+        $buyNowMode = $session->get('buy_now_mode');
+
+        log_message('debug', 'clearCheckoutData - Selected items: ' . ($selectedItems ? 'exists' : 'none') . 
+                             ', Buy now mode: ' . ($buyNowMode ? 'exists' : 'none'));
+
+        // Priority 1: If we had selected items, only clear those (don't clear entire cart)
+        if ($selectedItems && !empty($selectedItems)) {
+            log_message('debug', 'clearCheckoutData - Clearing selected items, keeping cart');
+            $session->remove('checkout_selected_items');
+            
+            // Optionally remove the selected items from cart
+            // Uncomment this if you want to remove purchased items from cart
+            /*
+            foreach ($selectedItems as $item) {
+                $this->cartModel->removeFromCart($customerId, $item['product_id']);
+            }
+            */
+        }
+        // Priority 2: If we had buy now mode, clear it
+        else if ($buyNowMode) {
+            log_message('debug', 'clearCheckoutData - Clearing buy now mode');
+            $session->remove('buy_now_mode');
+            
+            // For buy now, we typically don't want to clear the entire cart
+            // since buy now is separate from cart items
+        }
+        // Priority 3: Clear entire cart (fallback case)
+        else {
+            log_message('debug', 'clearCheckoutData - Clearing entire cart');
+            $this->cartModel->clearCart($customerId);
+        }
+        
+        // Always clear coupon after successful order
+        $session->remove('applied_coupon');
+        
+        log_message('debug', 'clearCheckoutData - Cleanup completed');
+    }
+
+    // Add new method to clear expired buy_now sessions
+    public function clearExpiredBuyNow()
+    {
+        $session = session();
+        $buyNowMode = $session->get('buy_now_mode');
+        
+        if ($buyNowMode && isset($buyNowMode['timestamp'])) {
+            // Clear buy_now_mode if older than 30 minutes
+            $thirtyMinutesAgo = time() - (30 * 60);
+            if ($buyNowMode['timestamp'] < $thirtyMinutesAgo) {
+                $session->remove('buy_now_mode');
+                log_message('debug', 'Cleared expired buy_now_mode session');
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     public function processOrder()
@@ -225,6 +309,8 @@ class CheckoutController extends BaseController
                 ]);
             }
 
+            log_message('debug', 'processOrder - Processing ' . count($checkoutItems) . ' items');
+
             // Validate items again
             $validatedItems = $this->validateCheckoutItems($checkoutItems);
             if (!$validatedItems['valid']) {
@@ -297,13 +383,9 @@ class CheckoutController extends BaseController
                 'delivered_at' => null
             ];
 
-            // Debug: Log order data
-            log_message('debug', 'Order data: ' . print_r($orderData, true));
-
             $orderId = $this->orderModel->insert($orderData);
 
             if (!$orderId) {
-                // Get more detailed error from model
                 $errors = $this->orderModel->errors();
                 log_message('error', 'Order creation failed. Validation errors: ' . print_r($errors, true));
                 
@@ -328,15 +410,10 @@ class CheckoutController extends BaseController
                     'total' => $item['quantity'] * $item['price']
                 ];
 
-                // Debug: Log order item data
-                log_message('debug', 'Order item ' . $index . ': ' . print_r($orderItemData, true));
-
                 $insertResult = $this->orderItemModel->insert($orderItemData);
                 if (!$insertResult) {
-                    // Get detailed error from model
                     $itemErrors = $this->orderItemModel->errors();
                     log_message('error', 'Order item creation failed for item ' . $index . '. Validation errors: ' . print_r($itemErrors, true));
-                    log_message('error', 'Failed order item data: ' . print_r($orderItemData, true));
                     
                     $db->transRollback();
                     return $this->response->setJSON([
@@ -345,22 +422,16 @@ class CheckoutController extends BaseController
                     ]);
                 }
 
-                log_message('debug', 'Order item created successfully for product: ' . $item['name']);
-
                 // Update product stock
                 $product = $this->productModel->find($item['product_id']);
                 if ($product) {
                     $newStock = max(0, $product['stock_quantity'] - $item['quantity']);
                     $stockStatus = $this->determineStockStatus($newStock, $product['min_stock_level'] ?? 0);
                     
-                    $updateResult = $this->productModel->update($item['product_id'], [
+                    $this->productModel->update($item['product_id'], [
                         'stock_quantity' => $newStock,
                         'stock_status' => $stockStatus
                     ]);
-                    
-                    if (!$updateResult) {
-                        log_message('warning', 'Failed to update stock for product ID: ' . $item['product_id']);
-                    }
                 }
             }
 
@@ -403,6 +474,56 @@ class CheckoutController extends BaseController
         }
     }
 
+    // FIXED: Updated getCheckoutItemsForProcessing with correct priority
+    private function getCheckoutItemsForProcessing($customerId)
+    {
+        $session = session();
+        $checkoutItems = [];
+
+        // Priority 1: Selected items from cart (HIGHEST PRIORITY)
+        $selectedItems = $session->get('checkout_selected_items');
+        if ($selectedItems && !empty($selectedItems)) {
+            log_message('debug', 'getCheckoutItemsForProcessing - Using selected items');
+            return $selectedItems;
+        }
+
+        // Priority 2: Buy now mode (only if no selected items)
+        $buyNowMode = $session->get('buy_now_mode');
+        if ($buyNowMode && isset($buyNowMode['product_id'])) {
+            log_message('debug', 'getCheckoutItemsForProcessing - Using buy now mode');
+            $product = $this->productModel->find($buyNowMode['product_id']);
+            if ($product) {
+                $price = !empty($product['sale_price']) && $product['sale_price'] > 0 
+                    ? $product['sale_price'] 
+                    : $product['price'];
+                
+                return [[
+                    'product_id' => $product['id'],
+                    'name' => $product['name'],
+                    'quantity' => $buyNowMode['quantity'],
+                    'price' => $price,
+                    'sku' => $product['sku'] ?? ''
+                ]];
+            }
+        }
+
+        // Priority 3: All cart items (fallback)
+        log_message('debug', 'getCheckoutItemsForProcessing - Using all cart items');
+        $cartItems = $this->cartModel->getCartWithProducts($customerId);
+        foreach ($cartItems as $item) {
+            $checkoutItems[] = [
+                'product_id' => $item['product_id'],
+                'name' => $item['name'],
+                'quantity' => $item['quantity'],
+                'price' => $item['price'],
+                'sku' => $item['sku'] ?? ''
+            ];
+        }
+
+        return $checkoutItems;
+    }
+
+    // Rest of the methods remain the same...
     private function validateCheckoutItems($items)
     {
         $errors = [];
@@ -440,73 +561,6 @@ class CheckoutController extends BaseController
             'errors' => $errors,
             'items' => $validItems
         ];
-    }
-
-    private function getCheckoutItemsForProcessing($customerId)
-    {
-        $session = session();
-        $checkoutItems = [];
-
-        // Priority 1: Buy now mode
-        $buyNowMode = $session->get('buy_now_mode');
-        if ($buyNowMode && isset($buyNowMode['product_id'])) {
-            $product = $this->productModel->find($buyNowMode['product_id']);
-            if ($product) {
-                $price = !empty($product['sale_price']) && $product['sale_price'] > 0 
-                    ? $product['sale_price'] 
-                    : $product['price'];
-                
-                return [[
-                    'product_id' => $product['id'],
-                    'name' => $product['name'],
-                    'quantity' => $buyNowMode['quantity'],
-                    'price' => $price,
-                    'sku' => $product['sku'] ?? ''
-                ]];
-            }
-        }
-
-        // Priority 2: Selected items
-        $selectedItems = $session->get('checkout_selected_items');
-        if ($selectedItems && isset($selectedItems['items'])) {
-            return $selectedItems['items'];
-        }
-
-        // Priority 3: All cart items
-        $cartItems = $this->cartModel->getCartWithProducts($customerId);
-        foreach ($cartItems as $item) {
-            $checkoutItems[] = [
-                'product_id' => $item['product_id'],
-                'name' => $item['name'],
-                'quantity' => $item['quantity'],
-                'price' => $item['price'],
-                'sku' => $item['sku'] ?? ''
-            ];
-        }
-
-        return $checkoutItems;
-    }
-
-    private function clearCheckoutData($customerId)
-    {
-        $session = session();
-
-        // Clear buy now mode
-        if ($session->get('buy_now_mode')) {
-            $session->remove('buy_now_mode');
-        }
-
-        // Clear selected items
-        if ($session->get('checkout_selected_items')) {
-            $session->remove('checkout_selected_items');
-            return; // Don't clear cart for selected items checkout
-        }
-
-        // Clear entire cart for normal checkout
-        $this->cartModel->clearCart($customerId);
-        
-        // Clear coupon
-        $session->remove('applied_coupon');
     }
 
     private function generateOrderNumber()

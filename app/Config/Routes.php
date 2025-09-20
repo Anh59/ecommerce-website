@@ -63,6 +63,7 @@ $routes->post('wishlist/add', 'WishlistController::add', ['as' => 'wishlist_add'
 $routes->post('wishlist/remove', 'WishlistController::remove', ['as' => 'wishlist_remove']);
 
 // Cart page and API routes  
+// Cart page and API routes  
 $routes->get('/cart', 'CartController::index', ['as' => 'cart']);
 $routes->post('api/cart/add', 'TableCategoryController::addToCart', ['as' => 'api_cart_add']);
 $routes->get('api/cart/count', 'CartController::getCartCount', ['as' => 'api_cart_count']);
@@ -72,13 +73,16 @@ $routes->post('api/cart/remove', 'CartController::remove', ['as' => 'api_cart_re
 $routes->post('api/cart/clear', 'CartController::clear', ['as' => 'api_cart_clear']);
 $routes->get('api/cart/validate', 'CartController::validateCart', ['as' => 'api_cart_validate']);
 $routes->get('api/cart/data', 'CartController::getCartData', ['as' => 'api_cart_data']);
-$routes->post('api/cart/add-multiple', 'CartController::addMultiple', ['as' => 'api_cart_add_multiple']);
 $routes->get('api/cart/summary', 'CartController::getCartSummary', ['as' => 'api_cart_summary']);
 $routes->get('api/cart/widget', 'CartController::getCartWidget', ['as' => 'api_cart_widget']);
-$routes->post('api/cart/apply-promo', 'CartController::applyCoupon', ['as' => 'api_cart_apply_promo']);
-$routes->post('api/cart/remove-coupon', 'CartController::removeCoupon', ['as' => 'api_cart_remove_coupon']);
-$routes->post('api/cart/estimate-shipping', 'CartController::estimateShipping', ['as' => 'api_cart_estimate_shipping']);
 $routes->get('/cart/checkout', 'CartController::checkout', ['as' => 'api_cart_checkout']);
+$routes->post('api/cart/update-quantity', 'CartController::updateQuantity', ['as' => 'api_cart_update_quantity']);
+
+// NEW: Selected items for checkout routes
+$routes->post('api/cart/set-checkout-items', 'CartController::setCheckoutItems', ['as' => 'api_cart_set_checkout_items']);
+$routes->get('api/cart/get-checkout-items', 'CartController::getCheckoutItems', ['as' => 'api_cart_get_checkout_items']);
+
+$routes->post('api/cart/clear-expired-buynow', 'CheckoutController::clearExpiredBuyNow', ['as' => 'api_clear_expired_buynow']);
 // Trong app/Config/Routes.php
 $routes->post('api/cart/update-quantity', 'CartController::updateQuantity', ['as' => 'api_cart_update_quantity']);
 // Category filter routes (có thể dùng để SEO friendly URLs)

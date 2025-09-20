@@ -90,7 +90,7 @@ class SingleProductController extends BaseController
     }
 
     /**
-     * NEW: Buy Now API - Thêm sản phẩm vào giỏ hàng và chuẩn bị checkout
+     * FIXED: Buy Now API - Improved session management
      */
     public function buyNow()
     {
@@ -145,34 +145,37 @@ class SingleProductController extends BaseController
                 ? $product['sale_price'] 
                 : $product['price'];
 
-            // Tùy chọn: Xóa giỏ hàng hiện tại để Buy Now chỉ có 1 sản phẩm
-            // Uncomment dòng dưới nếu muốn buy now chỉ mua đúng sản phẩm đó
-            // $this->cartModel->clearCart($customerId);
+            // FIXED: Clear any existing checkout_selected_items to avoid conflicts
+            session()->remove('checkout_selected_items');
+            
+            // FIXED: Set buy_now_mode with timestamp for expiration
+            session()->set('buy_now_mode', [
+                'product_id' => $productId,
+                'quantity' => $quantity,
+                'price' => $price,
+                'timestamp' => time()
+            ]);
 
-            // Thêm vào giỏ hàng hoặc cập nhật quantity
+            log_message('debug', 'SingleProduct - Set buy_now_mode for product: ' . $productId . ', quantity: ' . $quantity);
+
+            // Optionally also add to cart for inventory tracking
+            // But don't clear entire cart for buy now
             $existingCartItem = $this->cartModel->getCartItem($customerId, $productId);
             
             if ($existingCartItem) {
-                // Cập nhật quantity
+                // Update quantity
                 $result = $this->cartModel->updateQuantity($customerId, $productId, $quantity);
             } else {
-                // Thêm mới vào cart
+                // Add to cart
                 $result = $this->cartModel->addToCart($customerId, $productId, $quantity, $price);
             }
 
             if ($result) {
-                // Lưu flag buy_now vào session để checkout page biết
-                session()->set('buy_now_mode', [
-                    'product_id' => $productId,
-                    'quantity' => $quantity,
-                    'timestamp' => time()
-                ]);
-
                 $cartTotals = $this->cartModel->getCartTotals($customerId);
 
                 return $this->response->setJSON([
                     'success' => true,
-                    'message' => 'Product added for checkout',
+                    'message' => 'Product ready for checkout',
                     'buy_now' => true,
                     'cart_totals' => $cartTotals,
                     'product' => [
@@ -185,7 +188,7 @@ class SingleProductController extends BaseController
             } else {
                 return $this->response->setJSON([
                     'success' => false,
-                    'message' => 'Failed to add product to cart'
+                    'message' => 'Failed to prepare product for checkout'
                 ]);
             }
 

@@ -41,207 +41,232 @@ class CartController extends BaseController
      * FIXED: Phương thức updateQuantity - xử lý đúng quantity = 0
      */
     public function updateQuantity()
-{
-    // Bật debug
-    log_message('info', 'updateQuantity called');
-    log_message('info', 'POST data: ' . json_encode($this->request->getPost()));
-    
-    if (!$this->request->isAJAX()) {
-        log_message('error', 'Not AJAX request');
-        return $this->response->setStatusCode(404);
-    }
+    {
+        // Bật debug
+        log_message('info', 'updateQuantity called');
+        log_message('info', 'POST data: ' . json_encode($this->request->getPost()));
+        
+        if (!$this->request->isAJAX()) {
+            log_message('error', 'Not AJAX request');
+            return $this->response->setStatusCode(404);
+        }
 
-    $session = session();
-    $customerId = $session->get('customer_id');
+        $session = session();
+        $customerId = $session->get('customer_id');
 
-    if (!$customerId) {
-        log_message('error', 'No customer ID in session');
-        return $this->response->setJSON([
-            'success' => false,
-            'message' => 'Vui lòng đăng nhập'
-        ]);
-    }
+        if (!$customerId) {
+            log_message('error', 'No customer ID in session');
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập'
+            ]);
+        }
 
-    $productId = (int)$this->request->getPost('product_id');
-    $quantity = (int)$this->request->getPost('quantity');
+        $productId = (int)$this->request->getPost('product_id');
+        $quantity = (int)$this->request->getPost('quantity');
 
-    log_message('info', "Processing: customer={$customerId}, product={$productId}, quantity={$quantity}");
+        log_message('info', "Processing: customer={$customerId}, product={$productId}, quantity={$quantity}");
 
-    if (!$productId || $quantity < 0) {
-        return $this->response->setJSON([
-            'success' => false,
-            'message' => 'Thông tin không hợp lệ'
-        ]);
-    }
+        if (!$productId || $quantity < 0) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Thông tin không hợp lệ'
+            ]);
+        }
 
-    try {
-        // Nếu quantity = 0, xóa sản phẩm
-        if ($quantity === 0) {
-            $result = $this->cartModel->removeFromCart($customerId, $productId);
+        try {
+            // Nếu quantity = 0, xóa sản phẩm
+            if ($quantity === 0) {
+                $result = $this->cartModel->removeFromCart($customerId, $productId);
+                if ($result) {
+                    $cartTotals = $this->cartModel->getCartTotals($customerId);
+                    return $this->response->setJSON([
+                        'success' => true,
+                        'message' => 'Đã xóa sản phẩm khỏi giỏ hàng',
+                        'action' => 'removed',
+                        'cart_count' => $cartTotals['total_items'],
+                        'subtotal' => $cartTotals['subtotal'],
+                        'total' => $cartTotals['total']
+                    ]);
+                } else {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'Không thể xóa sản phẩm'
+                    ]);
+                }
+            }
+
+            // Check stock
+            $product = $this->productModel->find($productId);
+            if (!$product || !$product['is_active']) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Sản phẩm không tồn tại'
+                ]);
+            }
+
+            if ($product['stock_quantity'] < $quantity) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Không đủ hàng trong kho. Chỉ còn ' . $product['stock_quantity'] . ' sản phẩm'
+                ]);
+            }
+
+            // Update quantity
+            $result = $this->cartModel->updateQuantity($customerId, $productId, $quantity);
+
             if ($result) {
                 $cartTotals = $this->cartModel->getCartTotals($customerId);
+
                 return $this->response->setJSON([
                     'success' => true,
-                    'message' => 'Đã xóa sản phẩm khỏi giỏ hàng',
-                    'action' => 'removed',
+                    'message' => 'Đã cập nhật số lượng',
+                    'action' => 'updated',
                     'cart_count' => $cartTotals['total_items'],
                     'subtotal' => $cartTotals['subtotal'],
-                    'total' => $cartTotals['total'],
-                    'shipping_fee' => $cartTotals['shipping_fee']
+                    'total' => $cartTotals['total']
                 ]);
             } else {
                 return $this->response->setJSON([
                     'success' => false,
-                    'message' => 'Không thể xóa sản phẩm'
+                    'message' => 'Không thể cập nhật số lượng'
                 ]);
+            }
+
+        } catch (\Exception $e) {
+            log_message('error', 'updateQuantity error: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Có lỗi hệ thống: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * NEW: Set selected items for checkout - FIXED to clear buy_now_mode
+     */
+    public function setCheckoutItems()
+    {
+        if (!$this->request->isAJAX()) {
+            return $this->response->setStatusCode(404);
+        }
+
+        $session = session();
+        $customerId = $session->get('customer_id');
+
+        if (!$customerId) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập'
+            ]);
+        }
+
+        $selectedItems = $this->request->getPost('selected_items');
+        
+        if (!$selectedItems || !is_array($selectedItems)) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Vui lòng chọn ít nhất một sản phẩm'
+            ]);
+        }
+
+        // FIXED: Clear buy_now_mode when user selects items from cart
+        if ($session->get('buy_now_mode')) {
+            $session->remove('buy_now_mode');
+            log_message('debug', 'CartController - Cleared buy_now_mode due to cart selection');
+        }
+
+        // Validate selected items exist in cart and are available
+        $cartItems = $this->cartModel->getCartWithProducts($customerId);
+        $validItems = [];
+        
+        foreach ($selectedItems as $productId) {
+            foreach ($cartItems as $cartItem) {
+                if ($cartItem['product_id'] == $productId) {
+                    // Check if item is available
+                    if ($cartItem['stock_status'] === 'out_of_stock') {
+                        return $this->response->setJSON([
+                            'success' => false,
+                            'message' => "Sản phẩm {$cartItem['name']} đã hết hàng"
+                        ]);
+                    }
+                    
+                    if ($cartItem['stock_quantity'] < $cartItem['quantity']) {
+                        return $this->response->setJSON([
+                            'success' => false,
+                            'message' => "Sản phẩm {$cartItem['name']} không đủ số lượng trong kho"
+                        ]);
+                    }
+                    
+                    $validItems[] = [
+                        'product_id' => $cartItem['product_id'],
+                        'name' => $cartItem['name'],
+                        'quantity' => $cartItem['quantity'],
+                        'price' => $cartItem['price'],
+                        'total' => $cartItem['price'] * $cartItem['quantity'],
+                        'main_image' => $cartItem['main_image'],
+                        'slug' => $cartItem['slug'],
+                        'sku' => $cartItem['sku'] ?? '',
+                        'category_name' => $cartItem['category_name'] ?? '',
+                        'brand_name' => $cartItem['brand_name'] ?? ''
+                    ];
+                    break;
+                }
             }
         }
 
-        // Check stock
-        $product = $this->productModel->find($productId);
-        if (!$product || !$product['is_active']) {
+        if (empty($validItems)) {
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Sản phẩm không tồn tại'
+                'message' => 'Không tìm thấy sản phẩm hợp lệ'
             ]);
         }
 
-        if ($product['stock_quantity'] < $quantity) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Không đủ hàng trong kho. Chỉ còn ' . $product['stock_quantity'] . ' sản phẩm'
-            ]);
-        }
-
-        // Update quantity
-        $result = $this->cartModel->updateQuantity($customerId, $productId, $quantity);
-
-        if ($result) {
-            $cartTotals = $this->cartModel->getCartTotals($customerId);
-
-            return $this->response->setJSON([
-                'success' => true,
-                'message' => 'Đã cập nhật số lượng',
-                'action' => 'updated',
-                'cart_count' => $cartTotals['total_items'],
-                'subtotal' => $cartTotals['subtotal'],
-                'total' => $cartTotals['total'],
-                'shipping_fee' => $cartTotals['shipping_fee']
-            ]);
-        } else {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Không thể cập nhật số lượng'
-            ]);
-        }
-
-    } catch (Exception $e) {
-        log_message('error', 'updateQuantity error: ' . $e->getMessage());
+        // Store selected items in session
+        $session->set('checkout_selected_items', $validItems);
+        
+        log_message('debug', 'CartController - Set checkout_selected_items: ' . count($validItems) . ' items');
+        
         return $this->response->setJSON([
-            'success' => false,
-            'message' => 'Có lỗi hệ thống: ' . $e->getMessage()
+            'success' => true,
+            'message' => 'Đã chuẩn bị thanh toán cho ' . count($validItems) . ' sản phẩm',
+            'selected_count' => count($validItems)
         ]);
     }
-}
 
-    public function applyPromoCode()
+    /**
+     * NEW: Get selected items for checkout
+     */
+    public function getCheckoutItems()
     {
         if (!$this->request->isAJAX()) {
             return $this->response->setStatusCode(404);
         }
 
         $session = session();
-        $customerId = $session->get('customer_id');
+        $selectedItems = $session->get('checkout_selected_items');
 
-        if (!$customerId) {
+        if (!$selectedItems) {
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Vui lòng đăng nhập'
+                'message' => 'Không có sản phẩm nào được chọn'
             ]);
         }
 
-        $promoCode = $this->request->getPost('promo_code');
-        
-        if (!$promoCode) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Vui lòng nhập mã khuyến mãi'
-            ]);
+        // Calculate totals for selected items
+        $subtotal = 0;
+        foreach ($selectedItems as $item) {
+            $subtotal += $item['price'] * $item['quantity'];
         }
-
-        // TODO: Implement promo code logic
-        return $this->response->setJSON([
-            'success' => false,
-            'message' => 'Mã khuyến mãi không hợp lệ hoặc đã hết hạn'
-        ]);
-    }
-
-    public function estimateShipping()
-    {
-        if (!$this->request->isAJAX()) {
-            return $this->response->setStatusCode(404);
-        }
-
-        $session = session();
-        $customerId = $session->get('customer_id');
-
-        if (!$customerId) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Vui lòng đăng nhập'
-            ]);
-        }
-
-        $address = [
-            'city' => $this->request->getPost('city'),
-            'district' => $this->request->getPost('district'),
-            'ward' => $this->request->getPost('ward')
-        ];
-
-        if (!$address['city']) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Vui lòng chọn tỉnh/thành phố'
-            ]);
-        }
-
-        $cartTotals = $this->cartModel->getCartTotals($customerId);
-        
-        $shippingFee = $this->calculateShippingByAddress($address, $cartTotals);
 
         return $this->response->setJSON([
             'success' => true,
-            'shipping_fee' => $shippingFee,
-            'total' => $cartTotals['subtotal'] + $shippingFee,
-            'estimated_delivery' => $this->estimateDeliveryTime($address)
+            'data' => [
+                'items' => $selectedItems,
+                'subtotal' => $subtotal,
+                'count' => count($selectedItems)
+            ]
         ]);
-    }
-
-    private function calculateShippingByAddress($address, $cartTotals)
-    {
-        $baseShipping = 30000;
-        
-        if ($cartTotals['subtotal'] >= 500000) {
-            return 0;
-        }
-
-        $remoteCities = ['An Giang', 'Cà Mau', 'Kiên Giang', 'Bạc Liêu'];
-        if (in_array($address['city'], $remoteCities)) {
-            $baseShipping += 20000;
-        }
-
-        return $baseShipping;
-    }
-
-    private function estimateDeliveryTime($address)
-    {
-        $fastDeliveryCities = ['Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng'];
-        
-        if (in_array($address['city'], $fastDeliveryCities)) {
-            return '1-2 ngày làm việc';
-        } else {
-            return '3-5 ngày làm việc';
-        }
     }
 
     public function index()
@@ -253,14 +278,11 @@ class CartController extends BaseController
             'cartItems' => [],
             'cartTotals' => [
                 'subtotal' => 0,
-                'shipping_fee' => 0,
                 'total' => 0,
                 'total_items' => 0,
                 'total_weight' => 0
             ],
-            'cartIssues' => [],
-            'shippingOptions' => $this->getShippingOptions(),
-            'provinces' => $this->getProvinces()
+            'cartIssues' => []
         ];
 
         if ($customerId) {
@@ -372,234 +394,6 @@ class CartController extends BaseController
         return redirect()->back()->with('success', $message);
     }
 
-    private function getShippingOptions()
-    {
-        return [
-            'standard' => [
-                'name' => 'Standard Shipping',
-                'price' => 30000,
-                'time' => '3-5 ngày làm việc'
-            ],
-            'express' => [
-                'name' => 'Express Shipping', 
-                'price' => 50000,
-                'time' => '1-2 ngày làm việc'
-            ],
-            'same_day' => [
-                'name' => 'Same Day Delivery',
-                'price' => 80000,
-                'time' => 'Trong ngày'
-            ],
-            'free' => [
-                'name' => 'Free Shipping (Đơn hàng trên 500k)',
-                'price' => 0,
-                'time' => '3-7 ngày làm việc'
-            ]
-        ];
-    }
-
-    private function getProvinces()
-    {
-        return [
-            'HCM' => 'TP. Hồ Chí Minh',
-            'HN' => 'Hà Nội', 
-            'DN' => 'Đà Nẵng',
-            'CT' => 'Cần Thơ',
-            'HP' => 'Hải Phòng',
-            'BD' => 'Bình Dương',
-            'DNA' => 'Đồng Nai'
-        ];
-    }
-
-    public function applyCoupon()
-    {
-        if (!$this->request->isAJAX()) {
-            return $this->response->setStatusCode(404);
-        }
-
-        $session = session();
-        $customerId = $session->get('customer_id');
-
-        if (!$customerId) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Vui lòng đăng nhập'
-            ]);
-        }
-
-        $couponCode = trim($this->request->getPost('coupon_code'));
-
-        if (!$couponCode) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Vui lòng nhập mã giảm giá'
-            ]);
-        }
-
-        $validCoupons = [
-            'SAVE10' => ['type' => 'percent', 'value' => 10, 'min_order' => 100000],
-            'FLAT50K' => ['type' => 'fixed', 'value' => 50000, 'min_order' => 200000],
-            'FREESHIP' => ['type' => 'freeship', 'value' => 0, 'min_order' => 0]
-        ];
-
-        $cartTotals = $this->cartModel->getCartTotals($customerId);
-
-        if (!isset($validCoupons[$couponCode])) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Mã giảm giá không hợp lệ hoặc đã hết hạn'
-            ]);
-        }
-
-        $coupon = $validCoupons[$couponCode];
-
-        if ($cartTotals['subtotal'] < $coupon['min_order']) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => "Đơn hàng tối thiểu " . number_format($coupon['min_order']) . "đ để sử dụng mã này"
-            ]);
-        }
-
-        $discount = 0;
-        $freeShipping = false;
-
-        switch ($coupon['type']) {
-            case 'percent':
-                $discount = ($cartTotals['subtotal'] * $coupon['value']) / 100;
-                break;
-            case 'fixed':
-                $discount = $coupon['value'];
-                break;
-            case 'freeship':
-                $freeShipping = true;
-                break;
-        }
-
-        $session->set('applied_coupon', [
-            'code' => $couponCode,
-            'discount' => $discount,
-            'free_shipping' => $freeShipping
-        ]);
-
-        $newTotal = $cartTotals['subtotal'] - $discount;
-        $shippingFee = $freeShipping ? 0 : $cartTotals['shipping_fee'];
-        $finalTotal = $newTotal + $shippingFee;
-
-        return $this->response->setJSON([
-            'success' => true,
-            'message' => 'Áp dụng mã giảm giá thành công',
-            'discount' => $discount,
-            'free_shipping' => $freeShipping,
-            'new_subtotal' => $newTotal,
-            'shipping_fee' => $shippingFee,
-            'final_total' => $finalTotal
-        ]);
-    }
-
-    public function removeCoupon()
-    {
-        if (!$this->request->isAJAX()) {
-            return $this->response->setStatusCode(404);
-        }
-
-        $session = session();
-        $session->remove('applied_coupon');
-
-        $customerId = $session->get('customer_id');
-        if ($customerId) {
-            $cartTotals = $this->cartModel->getCartTotals($customerId);
-            
-            return $this->response->setJSON([
-                'success' => true,
-                'message' => 'Đã xóa mã giảm giá',
-                'cart_totals' => $cartTotals
-            ]);
-        }
-
-        return $this->response->setJSON([
-            'success' => true,
-            'message' => 'Đã xóa mã giảm giá'
-        ]);
-    }
-
-    public function getCartWidget()
-    {
-        if (!$this->request->isAJAX()) {
-            return $this->response->setStatusCode(404);
-        }
-
-        $session = session();
-        $customerId = $session->get('customer_id');
-
-        if (!$customerId) {
-            return $this->response->setJSON([
-                'success' => true,
-                'cart_count' => 0,
-                'cart_total' => 0,
-                'items' => []
-            ]);
-        }
-
-        $cartItems = $this->cartModel->getCartWithProducts($customerId);
-        $cartTotals = $this->cartModel->getCartTotals($customerId);
-
-        $widgetItems = array_slice($cartItems, 0, 5);
-        $formattedItems = [];
-
-        foreach ($widgetItems as $item) {
-            $formattedItems[] = [
-                'id' => $item['id'],
-                'product_id' => $item['product_id'],
-                'name' => $item['name'],
-                'quantity' => $item['quantity'],
-                'price' => $item['price'],
-                'total' => $item['price'] * $item['quantity'],
-                'image' => $item['main_image'],
-                'slug' => $item['slug']
-            ];
-        }
-
-        return $this->response->setJSON([
-            'success' => true,
-            'cart_count' => $cartTotals['total_items'],
-            'cart_total' => $cartTotals['total'],
-            'subtotal' => $cartTotals['subtotal'],
-            'shipping_fee' => $cartTotals['shipping_fee'],
-            'items' => $formattedItems,
-            'total_items_in_cart' => count($cartItems)
-        ]);
-    }
-
-    public function checkout()
-    {
-        $session = session();
-        $customerId = $session->get('customer_id');
-
-        if (!$customerId) {
-            return redirect()->to('/api_Customers/customers_sign')
-                           ->with('error', 'Vui lòng đăng nhập để thanh toán');
-        }
-
-        $cartItems = $this->cartModel->getCartWithProducts($customerId);
-        
-        if (empty($cartItems)) {
-            return redirect()->to('/cart')
-                           ->with('error', 'Giỏ hàng trống. Vui lòng thêm sản phẩm trước khi thanh toán');
-        }
-
-        $issues = $this->cartModel->validateCart($customerId);
-        if (!empty($issues)) {
-            $errorMessages = array_map(function($issue) {
-                return $issue['product_name'] . ': ' . $issue['message'];
-            }, $issues);
-            
-            return redirect()->to('/cart')
-                           ->with('error', 'Giỏ hàng có vấn đề: ' . implode(', ', $errorMessages));
-        }
-
-        return redirect()->to('/checkout');
-    }
-
     public function remove()
     {
         if (!$this->request->isAJAX()) {
@@ -677,6 +471,60 @@ class CartController extends BaseController
         }
     }
 
+    public function checkout()
+    {
+        $session = session();
+        $customerId = $session->get('customer_id');
+
+        if (!$customerId) {
+            return redirect()->to('/api_Customers/customers_sign')
+                           ->with('error', 'Vui lòng đăng nhập để thanh toán');
+        }
+
+        // FIXED: Check priority - selected items first, then buy_now, then all cart
+        $selectedItems = $session->get('checkout_selected_items');
+        $buyNowMode = $session->get('buy_now_mode');
+        
+        // Priority 1: Selected items from cart
+        if ($selectedItems && !empty($selectedItems)) {
+            log_message('debug', 'checkout() - Processing selected items from cart');
+            
+            // Validate selected items are still available
+            foreach ($selectedItems as $item) {
+                $product = $this->productModel->find($item['product_id']);
+                if (!$product || !$product['is_active'] || $product['stock_quantity'] < $item['quantity']) {
+                    $session->remove('checkout_selected_items');
+                    return redirect()->to('/cart')
+                                   ->with('error', 'Có sản phẩm trong danh sách đã chọn không còn khả dụng. Vui lòng kiểm tra lại.');
+                }
+            }
+        }
+        // Priority 2: Buy now mode (only if no selected items)
+        else if ($buyNowMode && isset($buyNowMode['product_id'])) {
+            log_message('debug', 'checkout() - Processing buy now mode');
+            
+            // Validate buy now product
+            $product = $this->productModel->find($buyNowMode['product_id']);
+            if (!$product || !$product['is_active'] || $product['stock_quantity'] < $buyNowMode['quantity']) {
+                $session->remove('buy_now_mode');
+                return redirect()->to('/cart')
+                               ->with('error', 'Sản phẩm mua ngay không còn khả dụng.');
+            }
+        }
+        // Priority 3: All cart items (fallback)
+        else {
+            log_message('debug', 'checkout() - Processing all cart items');
+            
+            $cartItems = $this->cartModel->getCartWithProducts($customerId);
+            if (empty($cartItems)) {
+                return redirect()->to('/cart')
+                               ->with('error', 'Giỏ hàng trống. Vui lòng thêm sản phẩm trước khi thanh toán');
+            }
+        }
+
+        return redirect()->to('/checkout');
+    }
+
     public function validateCart()
     {
         if (!$this->request->isAJAX()) {
@@ -733,7 +581,7 @@ class CartController extends BaseController
         ]);
     }
 
-    public function addMultiple()
+    public function getCartWidget()
     {
         if (!$this->request->isAJAX()) {
             return $this->response->setStatusCode(404);
@@ -744,69 +592,39 @@ class CartController extends BaseController
 
         if (!$customerId) {
             return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Vui lòng đăng nhập'
+                'success' => true,
+                'cart_count' => 0,
+                'cart_total' => 0,
+                'items' => []
             ]);
         }
 
-        $items = $this->request->getPost('items');
-        if (!is_array($items) || empty($items)) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Danh sách sản phẩm không hợp lệ'
-            ]);
-        }
-
-        $added = 0;
-        $errors = [];
-
-        foreach ($items as $item) {
-            $productId = $item['product_id'] ?? null;
-            $quantity = (int)($item['quantity'] ?? 1);
-
-            if (!$productId || $quantity <= 0) {
-                $errors[] = "Sản phẩm ID {$productId} không hợp lệ";
-                continue;
-            }
-
-            $product = $this->productModel->find($productId);
-            if (!$product || !$product['is_active']) {
-                $errors[] = "Sản phẩm ID {$productId} không tồn tại";
-                continue;
-            }
-
-            if ($product['stock_quantity'] < $quantity) {
-                $errors[] = "Sản phẩm {$product['name']} không đủ hàng";
-                continue;
-            }
-
-            // FIXED: Sử dụng logic tính giá đúng
-            $price = null;
-            if (!empty($product['sale_price']) && $product['sale_price'] > 0) {
-                $price = $product['sale_price'];
-            } else {
-                $price = $product['price'];
-            }
-            
-            $result = $this->cartModel->addToCart($customerId, $productId, $quantity, $price);
-
-            if ($result) {
-                $added++;
-            } else {
-                $errors[] = "Không thể thêm sản phẩm {$product['name']} vào giỏ hàng";
-            }
-        }
-
-        $cartCount = $this->cartModel->getCartCount($customerId);
+        $cartItems = $this->cartModel->getCartWithProducts($customerId);
         $cartTotals = $this->cartModel->getCartTotals($customerId);
 
+        $widgetItems = array_slice($cartItems, 0, 5);
+        $formattedItems = [];
+
+        foreach ($widgetItems as $item) {
+            $formattedItems[] = [
+                'id' => $item['id'],
+                'product_id' => $item['product_id'],
+                'name' => $item['name'],
+                'quantity' => $item['quantity'],
+                'price' => $item['price'],
+                'total' => $item['price'] * $item['quantity'],
+                'image' => $item['main_image'],
+                'slug' => $item['slug']
+            ];
+        }
+
         return $this->response->setJSON([
-            'success' => $added > 0,
-            'message' => "Đã thêm {$added} sản phẩm vào giỏ hàng",
-            'added' => $added,
-            'errors' => $errors,
-            'cart_count' => $cartCount,
-            'cart_totals' => $cartTotals
+            'success' => true,
+            'cart_count' => $cartTotals['total_items'],
+            'cart_total' => $cartTotals['total'],
+            'subtotal' => $cartTotals['subtotal'],
+            'items' => $formattedItems,
+            'total_items_in_cart' => count($cartItems)
         ]);
     }
 
@@ -846,7 +664,6 @@ class CartController extends BaseController
         return $this->response->setJSON([
             'cart_count' => $cartTotals['total_items'],
             'subtotal' => $cartTotals['subtotal'],
-            'shipping_fee' => $cartTotals['shipping_fee'],
             'total' => $cartTotals['total'],
             'items' => $summaryItems
         ]);

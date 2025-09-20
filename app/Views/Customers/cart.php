@@ -3,7 +3,6 @@
 <?= $this->section('styles') ?>
 <!-- CSS riêng cho cart -->
 <link rel="stylesheet" href="<?= base_url('aranoz-master/css/nice-select.css'); ?>">
-<link rel="stylesheet" href="<?= base_url('aranoz-master/css/price_rangs.css'); ?>">
 <style>
 .cart-item-loading { opacity: 0.6; pointer-events: none; }
 .cart-errors { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
@@ -11,8 +10,6 @@
 .out-of-stock { opacity: 0.7; }
 .out-of-stock .product-name { text-decoration: line-through; }
 
-.coupon-section { background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0; }
-.shipping-calculator { background: #f8f9fa; padding: 15px; border-radius: 5px; }
 .empty-cart { text-align: center; padding: 60px 20px; }
 .empty-cart i { font-size: 4rem; color: #ddd; margin-bottom: 20px; }
 .loading-overlay { 
@@ -23,6 +20,39 @@
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; 
 }
 
+/* Checkbox styles */
+.product-checkbox {
+    transform: scale(1.2);
+    margin-right: 10px;
+}
+
+.select-all-section {
+    background: #f8f9fa;
+    padding: 15px 20px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    border-left: 4px solid #007bff;
+}
+
+.select-all-checkbox {
+    transform: scale(1.3);
+    margin-right: 10px;
+}
+
+.selected-summary {
+    background: #e3f2fd;
+    padding: 15px;
+    border-radius: 5px;
+    margin: 20px 0;
+    border-left: 4px solid #2196f3;
+}
+
+.checkout-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 5px;
+    margin-top: 20px;
+}
 </style>
 <?= $this->endSection() ?>
 
@@ -36,8 +66,8 @@
             <div class="col-lg-8">
                 <div class="breadcrumb_iner">
                     <div class="breadcrumb_iner_item">
-                        <h2>Cart Products</h2>
-                        <p>Home <span>-</span> Cart Products</p>
+                        <h2>Shopping Cart</h2>
+                        <p>Home <span>-</span> Shopping Cart</p>
                     </div>
                 </div>
             </div>
@@ -76,12 +106,36 @@
 
         <div class="cart_inner">
             <?php if (!empty($cartItems)): ?>
+                
+                <!-- Select All Section -->
+                <div class="select-all-section">
+                    <label class="d-flex align-items-center mb-0">
+                        <input type="checkbox" id="select-all" class="select-all-checkbox">
+                        <strong>Chọn tất cả sản phẩm (<span id="total-items"><?= count($cartItems) ?></span>)</strong>
+                    </label>
+                </div>
+
+                <!-- Selected Items Summary -->
+                <div class="selected-summary" id="selected-summary" style="display: none;">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <strong>Đã chọn: <span id="selected-count">0</span> sản phẩm</strong>
+                        </div>
+                        <div class="col-md-6 text-right">
+                            <strong>Tổng tiền: <span id="selected-total">0₫</span></strong>
+                        </div>
+                    </div>
+                </div>
+
                 <form id="cart-form" action="<?= route_to('cart_update') ?>" method="POST">
                     <?= csrf_field() ?>
                     <div class="table-responsive">
                         <table class="table" id="cart-table">
                             <thead>
                                 <tr>
+                                    <th scope="col" width="50">
+                                        <input type="checkbox" id="header-select-all" class="product-checkbox">
+                                    </th>
                                     <th scope="col">Product</th>
                                     <th scope="col">Price</th>
                                     <th scope="col">Quantity</th>
@@ -94,6 +148,15 @@
                                 <tr class="cart-item <?= $item['stock_status'] === 'out_of_stock' ? 'out-of-stock' : '' ?>" 
                                     data-product-id="<?= $item['product_id'] ?>" 
                                     data-cart-id="<?= $item['id'] ?>">
+                                    <td>
+                                        <input type="checkbox" 
+                                               class="product-checkbox item-checkbox" 
+                                               data-product-id="<?= $item['product_id'] ?>"
+                                               data-price="<?= $item['price'] ?>"
+                                               data-quantity="<?= $item['quantity'] ?>"
+                                               value="<?= $item['product_id'] ?>"
+                                               <?= $item['stock_status'] === 'out_of_stock' ? 'disabled' : '' ?>>
+                                    </td>
                                     <td>
                                         <div class="media">
                                             <div class="d-flex">
@@ -152,130 +215,44 @@
                                 <?php endforeach; ?>
 
                                 <tr class="bottom_button">
-                                    <td>
+                                    <td colspan="2">
                                         <button type="submit" class="btn_1" id="update-cart-btn">Update Cart</button>
                                         <a class="btn btn-outline-danger" href="#" id="clear-cart-btn">Clear Cart</a>
                                     </td>
                                     <td></td>
                                     <td></td>
-                                    <td>
-                                        <div class="cupon_text float-right">
-                                            <a class="btn_1" href="#" id="toggle-coupon">Apply Coupon</a>
-                                        </div>
-                                    </td>
                                     <td></td>
-                                </tr>
-
-                                <!-- Coupon Section -->
-                                <tr id="coupon-section" style="display: none;">
-                                    <td colspan="5">
-                                        <div class="coupon-section">
-                                            <div class="row">
-                                                <div class="col-md-6">
-                                                    <div class="input-group">
-                                                        <input type="text" class="form-control" id="coupon-code" 
-                                                               placeholder="Nhập mã giảm giá">
-                                                        <div class="input-group-append">
-                                                            <button class="btn btn-primary" type="button" id="apply-coupon-btn">
-                                                                Apply
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <div id="coupon-info">
-                                                        <small class="text-muted">
-                                                            Available codes: SAVE10, FLAT50K, FREESHIP
-                                                        </small>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <!-- Applied Coupon Display -->
-                                <?php 
-                                $appliedCoupon = session()->get('applied_coupon');
-                                if ($appliedCoupon): 
-                                ?>
-                                <tr id="applied-coupon-row">
-                                    <td></td>
-                                    <td></td>
-                                    <td><h5>Discount (<?= esc($appliedCoupon['code']) ?>)</h5></td>
-                                    <td><h5 class="text-success">-<?= number_format($appliedCoupon['discount']) ?>₫</h5></td>
-                                    <td>
-                                        <span class="remove-item" id="remove-coupon" title="Xóa mã giảm giá">
-                                            <i class="ti-close"></i>
-                                        </span>
-                                    </td>
-                                </tr>
-                                <?php endif; ?>
-
-                                <tr>
-                                    <td></td>
-                                    <td></td>
-                                    <td><h5>Subtotal</h5></td>
-                                    <td><h5 id="cart-subtotal"><?= number_format($cartTotals['subtotal']) ?>₫</h5></td>
-                                    <td></td>
-                                </tr>
-
-                                <tr class="shipping_area">
-                                    <td></td>
-                                    <td></td>
-                                    <td><h5>Shipping</h5></td>
-                                    <td>
-                                        <div class="shipping_box">
-                                            <ul class="list">
-                                                <?php foreach ($shippingOptions as $key => $option): ?>
-                                                <li <?= $key === 'standard' ? 'class="active"' : '' ?>>
-                                                    <a href="#" data-shipping="<?= $key ?>" data-price="<?= $option['price'] ?>">
-                                                        <?= esc($option['name']) ?>: 
-                                                        <?= $option['price'] > 0 ? number_format($option['price']) . '₫' : 'Free' ?>
-                                                    </a>
-                                                </li>
-                                                <?php endforeach; ?>
-                                            </ul>
-                                            <div class="shipping-calculator">
-                                                <h6>Calculate Shipping <i class="fa fa-caret-down" aria-hidden="true"></i></h6>
-                                                <select class="shipping_select" id="province-select">
-                                                    <option value="">Chọn Tỉnh/Thành phố</option>
-                                                    <?php foreach ($provinces as $code => $name): ?>
-                                                        <option value="<?= $code ?>"><?= esc($name) ?></option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                                <select class="shipping_select section_bg" id="district-select">
-                                                    <option value="">Chọn Quận/Huyện</option>
-                                                </select>
-                                                <input type="text" id="postal-code" placeholder="Mã bưu điện (không bắt buộc)" />
-                                                <a class="btn_1" href="#" id="calculate-shipping">Update Shipping</a>
-                                            </div>
-                                        </div>
-                                    </td>
                                     <td></td>
                                 </tr>
 
                                 <tr>
                                     <td></td>
                                     <td></td>
-                                    <td><h5>Shipping Fee</h5></td>
-                                    <td><h5 id="shipping-fee"><?= number_format($cartTotals['shipping_fee']) ?>₫</h5></td>
                                     <td></td>
-                                </tr>
-
-                                <tr>
-                                    <td></td>
-                                    <td></td>
-                                    <td><h4>Total</h4></td>
-                                    <td><h4 id="cart-total"><?= number_format($cartTotals['total']) ?>₫</h4></td>
+                                    <td><h5>Cart Total</h5></td>
+                                    <td><h5 id="cart-total"><?= number_format($cartTotals['subtotal']) ?>₫</h5></td>
                                     <td></td>
                                 </tr>
                             </tbody>
                         </table>
                         
-                        <div class="checkout_btn_inner float-right">
-                            <a class="btn_1" href="<?= route_to('category') ?>">Continue Shopping</a>
-                            <a class="btn_1 checkout_btn_1" href="<?= route_to('api_cart_checkout') ?>" id="checkout-btn">Proceed to Checkout</a>
+                        <!-- Checkout Section -->
+                        <div class="checkout-section">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <div class="selected-info">
+                                        <h5>Thông tin đặt hàng:</h5>
+                                        <p class="mb-1">Sản phẩm đã chọn: <strong><span id="checkout-selected-count">0</span></strong></p>
+                                        <p class="mb-0">Tổng thanh toán: <strong><span id="checkout-selected-total">0₫</span></strong></p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 text-right">
+                                    <a class="btn_1 mr-3" href="<?= route_to('category') ?>">Continue Shopping</a>
+                                    <button class="btn_1 checkout_btn_1" id="checkout-selected-btn" disabled>
+                                        Mua hàng (<span id="checkout-btn-count">0</span>)
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -309,10 +286,7 @@
 
 <?= $this->section('scripts') ?>
 <!-- JS riêng cho cart -->
-<script src="<?= base_url('aranoz-master/js/mail-script.js'); ?>"></script>
 <script src="<?= base_url('aranoz-master/js/stellar.js'); ?>"></script>
-<script src="<?= base_url('aranoz-master/js/price_rangs.js'); ?>"></script>
-<!-- custom js -->
 <script src="<?= base_url('aranoz-master/js/custom.js'); ?>"></script>
 
 <script>
@@ -323,33 +297,134 @@ $(document).ready(function() {
         console.log('[CART DEBUG] ' + message);
     }
     
-    // ============= FIXED QUANTITY CONTROLS - KHÔNG GHI ĐÈ CÁC HANDLERS KHÁC =============
+    // ============= CHECKBOX FUNCTIONALITY =============
     
-    // Xóa chỉ quantity handlers (không làm mất coupon, shipping handlers)
-    $(document).off('click', '.increase-qty.cart-fixed');
-    $(document).off('click', '.decrease-qty.cart-fixed');
-    $(document).off('change', '.quantity-input.cart-fixed');
+    // Select All functionality
+    $('#select-all, #header-select-all').on('change', function() {
+        const isChecked = $(this).is(':checked');
+        $('.item-checkbox:not(:disabled)').prop('checked', isChecked);
+        
+        // Sync both select all checkboxes
+        $('#select-all, #header-select-all').prop('checked', isChecked);
+        
+        updateSelectedSummary();
+    });
+
+    // Individual checkbox change
+    $(document).on('change', '.item-checkbox', function() {
+        updateSelectedSummary();
+        
+        // Update select all checkbox state
+        const totalCheckboxes = $('.item-checkbox:not(:disabled)').length;
+        const checkedCheckboxes = $('.item-checkbox:not(:disabled):checked').length;
+        
+        $('#select-all, #header-select-all').prop('checked', totalCheckboxes === checkedCheckboxes);
+    });
+
+    function updateSelectedSummary() {
+        const selectedItems = $('.item-checkbox:checked');
+        const selectedCount = selectedItems.length;
+        let selectedTotal = 0;
+
+        selectedItems.each(function() {
+            const price = parseInt($(this).data('price'));
+            const quantity = parseInt($(this).data('quantity'));
+            selectedTotal += price * quantity;
+        });
+
+        // Update summary display
+        $('#selected-count').text(selectedCount);
+        $('#selected-total').text(formatCurrency(selectedTotal) + '₫');
+        
+        // Update checkout section
+        $('#checkout-selected-count').text(selectedCount);
+        $('#checkout-selected-total').text(formatCurrency(selectedTotal) + '₫');
+        $('#checkout-btn-count').text(selectedCount);
+
+        // Show/hide summary and enable/disable checkout button
+        if (selectedCount > 0) {
+            $('#selected-summary').show();
+            $('#checkout-selected-btn').prop('disabled', false).removeClass('btn-secondary').addClass('checkout_btn_1');
+        } else {
+            $('#selected-summary').hide();
+            $('#checkout-selected-btn').prop('disabled', true).removeClass('checkout_btn_1').addClass('btn-secondary');
+        }
+
+        debugLog(`Selected: ${selectedCount} items, Total: ${selectedTotal}`);
+    }
+
+    // Checkout selected items
+    $('#checkout-selected-btn').on('click', function(e) {
+        e.preventDefault();
+        
+        const selectedItems = $('.item-checkbox:checked');
+        if (selectedItems.length === 0) {
+            showToast('warning', 'Vui lòng chọn ít nhất một sản phẩm');
+            return;
+        }
+
+        // Check for out of stock items
+        let hasOutOfStock = false;
+        selectedItems.each(function() {
+            const $row = $(this).closest('.cart-item');
+            if ($row.hasClass('out-of-stock')) {
+                hasOutOfStock = true;
+                return false;
+            }
+        });
+
+        if (hasOutOfStock) {
+            showToast('error', 'Có sản phẩm hết hàng trong danh sách đã chọn');
+            return;
+        }
+
+        // Collect selected product IDs
+        const selectedProductIds = [];
+        selectedItems.each(function() {
+            selectedProductIds.push($(this).val());
+        });
+
+        // Store selected items in session and redirect to checkout
+        $.ajax({
+            url: '<?= base_url() ?>api/cart/set-checkout-items',
+            type: 'POST',
+            data: {
+                selected_items: selectedProductIds,
+                '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+            },
+            success: function(response) {
+                if (response.success) {
+                    window.location.href = '<?= route_to('api_cart_checkout') ?>';
+                } else {
+                    showToast('error', response.message);
+                }
+            },
+            error: function() {
+                showToast('error', 'Có lỗi xảy ra khi chuẩn bị thanh toán');
+            }
+        });
+    });
     
-    // Add class để phân biệt với handlers khác
+    // ============= QUANTITY CONTROLS =============
+    
     $('.increase-qty, .decrease-qty, .quantity-input').addClass('cart-fixed');
     
     debugLog('Cart quantity fix initialized');
 
-    // FIXED: Increase quantity - đọc từ server
+    // Increase quantity
     $(document).on('click', '.increase-qty.cart-fixed', function(e) {
         e.preventDefault();
         e.stopPropagation();
         
         if (isUpdating) return;
         
-        const $row = $(this).closest('.cart-item'); // chỉ lấy đúng row
-    const productId = $row.data('product-id');
-    const $input = $row.find('.quantity-input');
-    const maxValue = parseInt($input.attr('max')) || 999;
+        const $row = $(this).closest('.cart-item');
+        const productId = $row.data('product-id');
+        const $input = $row.find('.quantity-input');
+        const maxValue = parseInt($input.attr('max')) || 999;
         
         debugLog(`Increase clicked for product ${productId}`);
         
-        // Lấy quantity hiện tại từ server
         $.ajax({
             url: '<?= base_url() ?>api/cart/data',
             type: 'GET',
@@ -372,7 +447,7 @@ $(document).ready(function() {
         });
     });
 
-    // FIXED: Decrease quantity - đọc từ server
+    // Decrease quantity
     $(document).on('click', '.decrease-qty.cart-fixed', function(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -380,12 +455,10 @@ $(document).ready(function() {
         if (isUpdating) return;
         
         const $row = $(this).closest('.cart-item');
-    const productId = $row.data('product-id');
-    const $input = $row.find('.quantity-input');
+        const productId = $row.data('product-id');
         
         debugLog(`Decrease clicked for product ${productId}`);
         
-        // Lấy quantity hiện tại từ server
         $.ajax({
             url: '<?= base_url() ?>api/cart/data',
             type: 'GET',
@@ -410,7 +483,7 @@ $(document).ready(function() {
         });
     });
 
-    // FIXED: Input change - chỉ khi thực sự thay đổi
+    // Input change
     $(document).on('change', '.quantity-input.cart-fixed', function(e) {
         if (isUpdating) return;
         
@@ -421,7 +494,6 @@ $(document).ready(function() {
         
         debugLog(`Input changed: product=${productId}, value=${value}`);
         
-        // Validate
         if (value < 0) {
             value = 1;
             $input.val(1);
@@ -435,7 +507,6 @@ $(document).ready(function() {
             if (confirm('Bạn có muốn xóa sản phẩm này khỏi giỏ hàng không?')) {
                 updateQuantityServer(productId, 0);
             } else {
-                // Reset về 1
                 $input.val(1);
             }
         } else {
@@ -464,18 +535,21 @@ $(document).ready(function() {
                 
                 if (response.success) {
                     if (response.action === 'removed') {
-                        // Remove item from DOM
                         $(`.cart-item[data-product-id="${productId}"]`).fadeOut(function() {
                             $(this).remove();
                             checkEmptyCart();
+                            updateSelectedSummary();
                         });
                         showToast('success', response.message);
                     } else {
-                        // Update UI
                         const $input = $(`.quantity-input[data-product-id="${productId}"]`);
                         $input.val(quantity);
                         
+                        // Update checkbox data-quantity
+                        $(`.item-checkbox[data-product-id="${productId}"]`).attr('data-quantity', quantity);
+                        
                         updateItemDisplay(productId, quantity);
+                        updateSelectedSummary();
                         showToast('success', response.message);
                     }
                     
@@ -496,35 +570,25 @@ $(document).ready(function() {
     }
 
     function updateItemDisplay(productId, quantity) {
-    const $row = $(`.cart-item[data-product-id="${productId}"]`); // chỉ lấy đúng row
-    const $input = $row.find('.quantity-input');
-    const price = parseInt($input.data('price')) || 0;
-    const total = quantity * price;
+        const $row = $(`.cart-item[data-product-id="${productId}"]`);
+        const $input = $row.find('.quantity-input');
+        const price = parseInt($input.data('price')) || 0;
+        const total = quantity * price;
 
-    // Update chỉ trong row này
-    $input.val(quantity);
-    $row.find('.item-total').text(formatCurrency(total) + '₫');
-}
-
+        $input.val(quantity);
+        $row.find('.item-total').text(formatCurrency(total) + '₫');
+    }
 
     function updateTotalsFromResponse(response) {
-        if (response.subtotal !== undefined) {
-            $('#cart-subtotal').text(formatCurrency(response.subtotal) + '₫');
-        }
-        if (response.shipping_fee !== undefined) {
-            $('#shipping-fee').text(formatCurrency(response.shipping_fee) + '₫');
-        }
         if (response.total !== undefined) {
-            $('#cart-total').text(formatCurrency(response.total) + '₫');
+            $('#cart-total').text(formatCurrency(response.subtotal) + '₫');
         }
     }
 
-    // ============= GIỮ NGUYÊN TẤT CẢ HANDLERS CŨ =============
+    // ============= OTHER FUNCTIONS =============
 
     // Remove item
     $('.remove-item').click(function() {
-        if (!$(this).data('product-id')) return; // Skip coupon remove
-        
         const productId = $(this).data('product-id');
         if (confirm('Bạn có chắc muốn xóa sản phẩm này?')) {
             removeItem(productId);
@@ -547,44 +611,6 @@ $(document).ready(function() {
         }
     });
 
-    // Toggle coupon section
-    $('#toggle-coupon').click(function(e) {
-        e.preventDefault();
-        $('#coupon-section').toggle();
-        $(this).text($('#coupon-section').is(':visible') ? 'Close Coupon' : 'Apply Coupon');
-    });
-
-    // Apply coupon
-    $('#apply-coupon-btn').click(function() {
-        applyCoupon();
-    });
-
-    // Remove coupon
-    $('#remove-coupon').click(function() {
-        removeCoupon();
-    });
-
-    // Shipping options
-    $('.shipping_box ul li a').click(function(e) {
-        e.preventDefault();
-        $('.shipping_box ul li').removeClass('active');
-        $(this).parent().addClass('active');
-        
-        const shippingPrice = parseInt($(this).data('price')) || 0;
-        updateShippingFee(shippingPrice);
-    });
-
-    // Calculate shipping
-    $('#calculate-shipping').click(function(e) {
-        e.preventDefault();
-        calculateShipping();
-    });
-
-    // Province change - load districts
-    $('#province-select').change(function() {
-        loadDistricts($(this).val());
-    });
-
     function removeItem(productId) {
         showLoading();
         
@@ -600,6 +626,7 @@ $(document).ready(function() {
                     $(`.cart-item[data-product-id="${productId}"]`).fadeOut(function() {
                         $(this).remove();
                         checkEmptyCart();
+                        updateSelectedSummary();
                     });
                     
                     if (response.cart_totals) {
@@ -644,7 +671,6 @@ $(document).ready(function() {
                         });
                     }
                     
-                    // Reload if items were removed
                     if (response.removed_count > 0) {
                         setTimeout(() => location.reload(), 2000);
                     }
@@ -688,136 +714,6 @@ $(document).ready(function() {
         });
     }
 
-    function applyCoupon() {
-        const couponCode = $('#coupon-code').val().trim();
-        
-        if (!couponCode) {
-            showToast('warning', 'Vui lòng nhập mã giảm giá');
-            return;
-        }
-        
-        showLoading();
-        
-        $.ajax({
-            url: '<?= route_to('api_cart_apply_promo') ?>',
-            type: 'POST',
-            data: {
-                coupon_code: couponCode,
-                '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
-            },
-            success: function(response) {
-                if (response.success) {
-                    showToast('success', response.message);
-                    location.reload(); // Reload to show applied coupon
-                } else {
-                    showToast('error', response.message);
-                }
-            },
-            error: function() {
-                showToast('error', 'Có lỗi xảy ra');
-            },
-            complete: function() {
-                hideLoading();
-            }
-        });
-    }
-
-    function removeCoupon() {
-        showLoading();
-        
-        $.ajax({
-            url: '<?= route_to('api_cart_remove_coupon') ?>',
-            type: 'POST',
-            data: {
-                '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
-            },
-            success: function(response) {
-                if (response.success) {
-                    showToast('success', response.message);
-                    location.reload();
-                } else {
-                    showToast('error', response.message);
-                }
-            },
-            error: function() {
-                showToast('error', 'Có lỗi xảy ra');
-            },
-            complete: function() {
-                hideLoading();
-            }
-        });
-    }
-
-    function calculateShipping() {
-        const province = $('#province-select').val();
-        const district = $('#district-select').val();
-        const postalCode = $('#postal-code').val();
-        
-        if (!province) {
-            showToast('warning', 'Vui lòng chọn tỉnh/thành phố');
-            return;
-        }
-        
-        showLoading();
-        
-        $.ajax({
-            url: '<?= route_to('api_cart_estimate_shipping') ?>',
-            type: 'POST',
-            data: {
-                city: province,
-                district: district,
-                postal_code: postalCode,
-                '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
-            },
-            success: function(response) {
-                if (response.success) {
-                    updateShippingFee(response.shipping_fee);
-                    showToast('success', 'Đã cập nhật phí vận chuyển. Dự kiến giao hàng: ' + response.estimated_delivery);
-                } else {
-                    showToast('error', response.message);
-                }
-            },
-            error: function() {
-                showToast('error', 'Có lỗi xảy ra khi tính phí vận chuyển');
-            },
-            complete: function() {
-                hideLoading();
-            }
-        });
-    }
-
-    function updateShippingFee(fee) {
-        $('#shipping-fee').text(formatCurrency(fee) + '₫');
-        updateCartTotalsFromDOM();
-    }
-
-    function updateCartTotalsFromDOM() {
-        const subtotal = parseInt($('#cart-subtotal').text().replace(/[^\d]/g, '')) || 0;
-        const shippingFee = parseInt($('#shipping-fee').text().replace(/[^\d]/g, '')) || 0;
-        const discount = parseInt($('#applied-coupon-row .text-success').text().replace(/[^\d]/g, '')) || 0;
-        const total = subtotal + shippingFee - discount;
-        
-        $('#cart-total').text(formatCurrency(total) + '₫');
-    }
-
-    function loadDistricts(provinceCode) {
-        // Mock districts data - in real app, this would come from API
-        const districts = {
-            'HCM': ['Quận 1', 'Quận 2', 'Quận 3', 'Quận 4', 'Quận 5'],
-            'HN': ['Ba Đình', 'Hoàn Kiếm', 'Tây Hồ', 'Long Biên', 'Cầu Giấy'],
-            'DN': ['Hải Châu', 'Thanh Khê', 'Sơn Trà', 'Ngũ Hành Sơn', 'Liên Chiểu']
-        };
-        
-        const $districtSelect = $('#district-select');
-        $districtSelect.empty().append('<option value="">Chọn Quận/Huyện</option>');
-        
-        if (districts[provinceCode]) {
-            districts[provinceCode].forEach(district => {
-                $districtSelect.append(`<option value="${district}">${district}</option>`);
-            });
-        }
-    }
-
     function checkEmptyCart() {
         if ($('.cart-item').length === 0) {
             setTimeout(() => location.reload(), 1000);
@@ -825,9 +721,7 @@ $(document).ready(function() {
     }
 
     function updateTotalsDisplay(totals) {
-        $('#cart-subtotal').text(formatCurrency(totals.subtotal) + '₫');
-        $('#shipping-fee').text(formatCurrency(totals.shipping_fee) + '₫');
-        $('#cart-total').text(formatCurrency(totals.total) + '₫');
+        $('#cart-total').text(formatCurrency(totals.subtotal) + '₫');
     }
 
     function showLoading() {
@@ -845,7 +739,7 @@ $(document).ready(function() {
         
         const toast = `
             <div class="alert ${toastClass} alert-dismissible fade show" 
-                 style="min-width: 300px; max-width: 400px; margin-bottom: 10px;">
+                 style="position: fixed; top: 20px; right: 20px; z-index: 10000; min-width: 300px; max-width: 400px;">
                 <strong>${type.charAt(0).toUpperCase() + type.slice(1)}!</strong> ${message}
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
@@ -853,7 +747,7 @@ $(document).ready(function() {
             </div>
         `;
         
-        $('#toast-container').append(toast);
+        $('body').append(toast);
         
         setTimeout(() => {
             $('.alert').first().fadeOut(() => $('.alert').first().remove());
@@ -864,27 +758,10 @@ $(document).ready(function() {
         return new Intl.NumberFormat('vi-VN').format(amount);
     }
 
-    // Checkout validation
-    $('#checkout-btn').click(function(e) {
-        const hasOutOfStock = $('.out-of-stock').length > 0;
-        const hasZeroQuantity = $('.quantity-input').filter(function() {
-            return parseInt($(this).val()) === 0;
-        }).length > 0;
-        
-        if (hasOutOfStock) {
-            e.preventDefault();
-            showToast('error', 'Giỏ hàng có sản phẩm hết hàng. Vui lòng xóa hoặc thay thế.');
-            return false;
-        }
-        
-        if (hasZeroQuantity) {
-            e.preventDefault();
-            showToast('error', 'Giỏ hàng có sản phẩm với số lượng 0. Vui lòng cập nhật số lượng.');
-            return false;
-        }
-    });
+    // Initialize selected summary on page load
+    updateSelectedSummary();
 
-    // Đồng bộ quantities từ server khi load trang
+    // Sync quantities from server on page load
     $.ajax({
         url: '<?= base_url() ?>api/cart/data',
         type: 'GET',
@@ -894,10 +771,13 @@ $(document).ready(function() {
                     const $input = $(`.quantity-input[data-product-id="${item.product_id}"]`);
                     if ($input.length) {
                         $input.val(item.quantity);
+                        // Update checkbox data-quantity
+                        $(`.item-checkbox[data-product-id="${item.product_id}"]`).attr('data-quantity', item.quantity);
                         debugLog(`Synced product ${item.product_id}: ${item.quantity}`);
                     }
                 });
                 debugLog('All quantities synced from server on page load');
+                updateSelectedSummary();
             }
         },
         error: function() {
@@ -905,7 +785,7 @@ $(document).ready(function() {
         }
     });
 
-    debugLog('Perfect Cart JavaScript initialized - UI preserved, quantity fixed');
+    debugLog('Enhanced Cart with Checkboxes JavaScript initialized');
 });
 </script>
 
