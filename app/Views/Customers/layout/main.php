@@ -53,17 +53,12 @@
         </li>
 
         <!-- Shop -->
-        <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown_1"
-               role="button" data-toggle="dropdown" aria-haspopup="true"
-               aria-expanded="false">
-                Shop
-            </a>
-            <div class="dropdown-menu" aria-labelledby="navbarDropdown_1">
-                <a class="dropdown-item" href="<?= route_to('home_category') ?>">Shop Category</a>
-                <a class="dropdown-item" href="<?= route_to('home_single_product') ?>">Product Details</a>
-            </div>
-        </li>
+        <li class="nav-item">
+    <a class="nav-link" href="<?= route_to('category') ?>">
+        Shop
+    </a>
+</li>
+
 
         <!-- Pages -->
         <li class="nav-item dropdown">
@@ -83,17 +78,11 @@
         </li>
 
         <!-- Blog -->
-        <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown_2"
-               role="button" data-toggle="dropdown" aria-haspopup="true"
-               aria-expanded="false">
-                Blog
-            </a>
-            <div class="dropdown-menu" aria-labelledby="navbarDropdown_2">
-                <a class="dropdown-item" href="<?= route_to('home_blog') ?>">Blog</a>
-                <a class="dropdown-item" href="<?= route_to('home_single_blog') ?>">Single Blog</a>
-            </div>
-        </li>
+              <li class="nav-item">
+    <a class="nav-link" href="<?= route_to('blog') ?>">
+        Blog
+    </a>
+</li>
 
         <!-- Contact -->
         <li class="nav-item">
@@ -106,12 +95,12 @@
                             <a id="search_1" href="javascript:void(0)"><i class="ti-search"></i></a>
                             <a href="<?= route_to('wishlist') ?>"><i class="ti-heart"></i></a>
 
-                            <div class="dropdown cart">
-                                <a class="dropdown-toggle" href="#" id="navbarDropdown3" role="button"
-                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <i class="fas fa-cart-plus"></i>
-                                </a>
-                            </div>
+                            <div class="cart">
+    <a href="<?= route_to('cart') ?>" id="navbarCart">
+        <i class="fas fa-cart-plus"></i>
+    </a>
+</div>
+
                             <div class="dropdown user">
                                 <?php if (session()->has('user')): ?>
                                     <!-- Khi đã đăng nhập -->

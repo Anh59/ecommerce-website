@@ -51,6 +51,7 @@ class BlogPostController extends BaseController
         return $this->saveData($id);
     }
 
+ // FINAL FIX: saveData method với slug được tạo TRƯỚC khi insert
     private function saveData($id = null)
     {
         if (!$this->request->isAJAX()) {
@@ -58,6 +59,21 @@ class BlogPostController extends BaseController
         }
 
         $isUpdate = !is_null($id);
+
+        // Lấy dữ liệu từ form
+        $data = $this->request->getPost([
+            'title', 'excerpt', 'content', 'author_name', 'category', 
+            'status', 'meta_title', 'meta_description', 'image_alt',
+            'is_featured', 'published_at'
+        ]);
+
+        // QUAN TRỌNG: Tạo slug từ title TRƯỚC khi validate
+        if (!empty($data['title'])) {
+            $data['slug'] = $this->blogPostModel->generateUniqueSlug($data['title'], $id);
+            log_message('debug', 'Generated slug: ' . $data['slug'] . ' from title: ' . $data['title']);
+        }
+
+        // Validate với slug đã được tạo
         [$rules, $messages] = $isUpdate 
             ? $this->blogPostModel->rulesForUpdate($id)
             : $this->blogPostModel->rulesForInsert();
@@ -70,18 +86,11 @@ class BlogPostController extends BaseController
             ]);
         }
 
-        // Lấy dữ liệu
-        $data = $this->request->getPost([
-            'title', 'excerpt', 'content', 'author_name', 'category', 
-            'status', 'meta_title', 'meta_description', 'image_alt',
-            'is_featured', 'published_at'
-        ]);
-
         // Set default values cho các trường không bắt buộc
         $data['is_featured'] = $data['is_featured'] ?? 0;
-        $data['view_count'] = 0; // Mặc định 0 cho bài viết mới
+        $data['view_count'] = $isUpdate ? null : 0; // Chỉ set view_count = 0 khi thêm mới
         
-        // Xử lý meta fields - set default nếu rỗng
+        // Xử lý meta fields
         if (empty($data['meta_title'])) {
             $data['meta_title'] = $data['title'];
         }
@@ -89,7 +98,11 @@ class BlogPostController extends BaseController
             $data['meta_description'] = substr(strip_tags($data['excerpt']), 0, 160);
         }
 
-     
+        // Tính toán reading_time từ content
+        if (!empty($data['content'])) {
+            $data['reading_time'] = $this->blogPostModel->calculateReadingTime($data['content']);
+        }
+
         // Xử lý published_at
         if ($data['status'] === 'published' && empty($data['published_at'])) {
             $data['published_at'] = date('Y-m-d H:i:s');
@@ -100,28 +113,50 @@ class BlogPostController extends BaseController
             $data['author_id'] = session('user_id');
         }
 
-        // Tính toán reading_time từ content
-        $data['reading_time'] = $this->blogPostModel->calculateReadingTime($data['content']);
-
         // Xử lý upload ảnh
         $this->handleImageUpload($data, $id);
 
-        // Lưu hoặc cập nhật
-        if ($isUpdate) {
-            // Khi update, không reset view_count
-            unset($data['view_count']);
-            $this->blogPostModel->update($id, $data);
-            $message = 'Cập nhật bài viết thành công';
-        } else {
-            $this->blogPostModel->insert($data);
-            $message = 'Thêm bài viết thành công';
-        }
+        try {
+            // Lưu hoặc cập nhật
+            if ($isUpdate) {
+                // Khi update, không ghi đè view_count
+                unset($data['view_count']);
+                $result = $this->blogPostModel->update($id, $data);
+                $message = 'Cập nhật bài viết thành công';
+                log_message('debug', 'Updated post ID: ' . $id . ' with slug: ' . $data['slug']);
+            } else {
+                $result = $this->blogPostModel->insert($data);
+                $message = 'Thêm bài viết thành công';
+                log_message('debug', 'Inserted new post with ID: ' . $result . ' and slug: ' . $data['slug']);
+            }
 
-        return $this->response->setJSON([
-            'status' => 'success',
-            'message' => $message,
-            'token'   => csrf_hash()
-        ]);
+            if ($result === false) {
+                // Lấy lỗi từ model
+                $errors = $this->blogPostModel->errors();
+                log_message('error', 'Model validation errors: ' . print_r($errors, true));
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => $errors ?: 'Có lỗi xảy ra khi lưu bài viết',
+                    'token'   => csrf_hash()
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => $message,
+                'token'   => csrf_hash()
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'BlogPostController saveData error: ' . $e->getMessage());
+            log_message('error', 'Data being saved: ' . print_r($data, true));
+            
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Có lỗi hệ thống: ' . $e->getMessage(),
+                'token'   => csrf_hash()
+            ]);
+        }
     }
 
     private function handleImageUpload(&$data, $id = null)

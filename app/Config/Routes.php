@@ -10,10 +10,10 @@ $routes->get('/', 'Home::index');
 $routes->get('/about', 'Home::about',['as'=>'home_about']);// trang chủ
 $routes->get('/layout', 'Home::layout');
 // $routes->get('/login', 'Home::login');
-$routes->get('/blog', 'Home::blog',['as'=>'home_blog']);
+// $routes->get('/blog', 'Home::blog',['as'=>'home_blog']);
 $routes->get('/contact', 'Home::contact',['as'=>'home_contact']);
-$routes->get('/single-blog', 'Home::single_blog',['as'=>'home_single_blog']);
-$routes->get('/single-product', 'Home::single_product',['as'=>'home_single_product']);
+// $routes->get('/single-blog', 'Home::single_blog',['as'=>'home_single_blog']);
+// $routes->get('/single-product', 'Home::single_product',['as'=>'home_single_product']);
 // $routes->get('/cart', 'Home::cart',['as'=>'home_cart']);
 // $routes->get('/checkout', 'Home::checkout',['as'=>'home_checkout']);
 // $routes->get('/category', 'Home::category',['as'=>'home_category']);
@@ -23,7 +23,11 @@ $routes->get('/elements', 'Home::elements',['as'=>'home_elements']);
 $routes->get('/feature', 'Home::feature',['as'=>'home_feature']);
 // $routes->get('/cart', 'CartController::index',['as'=>'home_cart']);
 
-
+//bài viết 
+$routes->get('blog', 'BlogController::index',['as'=>'blog']);
+$routes->get('blog/post/(:segment)', 'BlogController::single/$1');
+$routes->get('blog/category/(:segment)', 'BlogController::category/$1');
+$routes->post('blog/add-comment', 'BlogController::addComment');
 // Thêm các routes sau vào file app/Config/Routes.php
 // Single product AJAX (trả JSON)
 $routes->get('/single-product/(:segment)', 'SingleProductController::detail/$1', ['as' => 'product_detail']);

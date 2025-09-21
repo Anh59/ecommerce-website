@@ -15,11 +15,12 @@ class BlogPostModel extends Model
     
     protected $allowedFields = [
         'title', 'slug', 'excerpt', 'content', 'featured_image', 'image_alt', 
-        'author_id', 'author_name', 'category',  
+        'author_id', 'author_name', 'category', 'tags',  
         'status', 'published_at', 'meta_title', 'meta_description', 'view_count', 
         'is_featured', 'reading_time', 'created_at', 'updated_at', 'deleted_at'
     ];
 
+    // Đã xóa slug khỏi validation rules
     protected $validationRules = [
         'title'            => 'required|min_length[5]|max_length[255]',
         'excerpt'          => 'required|min_length[10]|max_length[500]',
@@ -34,6 +35,7 @@ class BlogPostModel extends Model
         'view_count'       => 'permit_empty|integer'
     ];
 
+    // Đã xóa slug khỏi validation messages
     protected $validationMessages = [
         'title' => [
             'required'   => 'Tiêu đề bài viết là bắt buộc',
@@ -70,19 +72,16 @@ class BlogPostModel extends Model
         ]
     ];
 
-    // Build validation rules động
     public function buildValidationRules($isInsert = true, $id = null)
     {
         $rules = $this->validationRules;
         $messages = $this->validationMessages;
         
-        // Unique rules cho title và slug
+        // Chỉ giữ is_unique cho title, đã xóa is_unique cho slug
         if ($isInsert) {
             $rules['title'] .= '|is_unique[blog_posts.title]';
-            $rules['slug'] = 'is_unique[blog_posts.slug]';
         } else {
             $rules['title'] .= "|is_unique[blog_posts.title,id,{$id}]";
-            $rules['slug'] = "is_unique[blog_posts.slug,id,{$id}]";
         }
         
         // Featured image - chỉ bắt buộc khi thêm mới
@@ -103,11 +102,50 @@ class BlogPostModel extends Model
         return $this->buildValidationRules(false, $id);
     }
 
+    /**
+     * Generate unique slug from title
+     */
+    /**
+ * Generate unique slug from title (without accents)
+ */
+public function generateUniqueSlug($title, $id = null)
+{
+    // Remove accents using iconv
+    $slug = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $title);
+    
+    // Remove any remaining special characters
+    $slug = preg_replace("/[^a-zA-Z0-9\s]/", "", $slug);
+    
+    // Now create URL-friendly slug
+    $baseSlug = url_title($slug, '-', true);
+    $slug = $baseSlug;
+    $counter = 1;
+
+    // Check if slug exists
+    while (true) {
+        $query = $this->where('slug', $slug);
+        if ($id) {
+            $query->where('id !=', $id);
+        }
+        
+        $existing = $query->first();
+        if (!$existing) {
+            break; // Slug is unique
+        }
+        
+        // Add counter to make it unique
+        $slug = $baseSlug . '-' . $counter;
+        $counter++;
+    }
+
+    return $slug;
+}
+
     // Lấy bài viết với thông tin comment count
     public function getPostsWithCommentCount()
     {
         return $this->select('blog_posts.*, COUNT(blog_comments.id) as comment_count')
-                   ->join('blog_comments', 'blog_posts.id = blog_comments.post_id', 'left')
+                   ->join('blog_comments', 'blog_posts.id = blog_comments.post_id AND blog_comments.is_approved = 1', 'left')
                    ->groupBy('blog_posts.id')
                    ->orderBy('blog_posts.created_at', 'DESC')
                    ->findAll();
@@ -131,10 +169,20 @@ class BlogPostModel extends Model
                    ->findAll();
     }
 
+    // Get post by slug
+    public function getPostBySlug($slug)
+    {
+        return $this->where('slug', $slug)
+                    ->where('status', 'published')
+                    ->first();
+    }
+
     // Tăng lượt xem
     public function incrementViewCount($id)
     {
-        $this->where('id', $id)->increment('view_count');
+        return $this->set('view_count', 'view_count + 1', false)
+                   ->where('id', $id)
+                   ->update();
     }
 
     // Tính toán thời gian đọc (ước tính 200 từ/phút)
@@ -142,56 +190,6 @@ class BlogPostModel extends Model
     {
         $wordCount = str_word_count(strip_tags($content));
         return max(1, ceil($wordCount / 200));
-    }
-
-    // Callback trước khi insert
-    protected function beforeInsert(array $data)
-    {
-        $data = $this->prepareData($data);
-        return $data;
-    }
-
-    // Callback trước khi update
-    protected function beforeUpdate(array $data)
-    {
-        $data = $this->prepareData($data);
-        return $data;
-    }
-
-    private function prepareData(array $data)
-    {
-        if (isset($data['data']['title'])) {
-            // Tạo slug từ title
-            $data['data']['slug'] = url_title($data['data']['title'], '-', true);
-            
-            // Tự động tạo meta_title nếu chưa có
-            if (empty($data['data']['meta_title'])) {
-                $data['data']['meta_title'] = $data['data']['title'];
-            }
-        }
-
-        if (isset($data['data']['content'])) {
-            // Tính toán thời gian đọc nếu chưa có
-            if (!isset($data['data']['reading_time']) || empty($data['data']['reading_time'])) {
-                $data['data']['reading_time'] = $this->calculateReadingTime($data['data']['content']);
-            }
-        }
-
-        // Set default values
-        if (!isset($data['data']['view_count'])) {
-            $data['data']['view_count'] = 0;
-        }
-        
-        if (!isset($data['data']['is_featured'])) {
-            $data['data']['is_featured'] = 0;
-        };
-
- 
-
-       
-
-
-        return $data;
     }
 
     // Dates

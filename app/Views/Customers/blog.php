@@ -5,10 +5,6 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
-
-    <!-- Header part end-->
-
-    <!--================Home Banner Area =================-->
     <!-- breadcrumb start-->
     <section class="breadcrumb breadcrumb_bg">
         <div class="container">
@@ -16,8 +12,8 @@
                 <div class="col-lg-8">
                     <div class="breadcrumb_iner">
                         <div class="breadcrumb_iner_item">
-                            <h2>Shop Single</h2>
-                            <p>Home <span>-</span> Shop Single</p>
+                            <h2>Blog</h2>
+                            <p>Home <span>-</span> Blog</p>
                         </div>
                     </div>
                 </div>
@@ -32,316 +28,221 @@
             <div class="row">
                 <div class="col-lg-8 mb-5 mb-lg-0">
                     <div class="blog_left_sidebar">
-                        <article class="blog_item">
-                            <div class="blog_item_img">
-                                <img class="card-img rounded-0" src="<?= base_url('aranoz-master/img/blog/single_blog_1.png'); ?>" alt="">
-                                <a href="#" class="blog_item_date">
-                                    <h3>15</h3>
-                                    <p>Jan</p>
-                                </a>
+                        
+                        <!-- Search Form -->
+                        <?php if (isset($searchKeyword) || isset($searchCategory)): ?>
+                            <div class="blog-search-form">
+                                <div class="alert alert-info">
+                                    <i class="ti-search"></i>
+                                    <?php if (isset($searchKeyword) && $searchKeyword): ?>
+                                        Search results for: <strong>"<?= esc($searchKeyword) ?>"</strong>
+                                    <?php endif; ?>
+                                    <?php if (isset($searchCategory) && $searchCategory): ?>
+                                        Category: <strong><?= esc($searchCategory) ?></strong>
+                                    <?php endif; ?>
+                                    <?php if (isset($totalResults)): ?>
+                                        - <?= $totalResults ?> result(s) found
+                                    <?php endif; ?>
+                                </div>
                             </div>
+                        <?php elseif (isset($currentCategory)): ?>
+                            <div class="blog-search-form">
+                                <div class="alert alert-primary">
+                                    <i class="ti-folder"></i>
+                                    Posts in category: <strong><?= esc($currentCategory) ?></strong>
+                                </div>
+                            </div>
+                        <?php endif; ?>
 
-                            <div class="blog_details">
-                                <a class="d-inline-block" href="single-blog.html">
-                                    <h2>Google inks pact for new 35-storey office</h2>
-                                </a>
-                                <p>That dominion stars lights dominion divide years for fourth have don't stars is that
-                                    he earth it first without heaven in place seed it second morning saying.</p>
-                                <ul class="blog-info-link">
-                                    <li><a href="#"><i class="far fa-user"></i> Travel, Lifestyle</a></li>
-                                    <li><a href="#"><i class="far fa-comments"></i> 03 Comments</a></li>
+                        <!-- Blog Posts -->
+                        <?php if (!empty($posts)): ?>
+                            <?php foreach ($posts as $post): ?>
+                                <article class="blog_item">
+                                    <div class="blog_item_img">
+                                        <img class="card-img rounded-0" 
+                                             src="<?= base_url($post['featured_image'] ?? 'aranoz-master/img/blog/single_blog_1.png') ?>" 
+                                             alt="<?= esc($post['image_alt'] ?? $post['title']) ?>">
+                                        <a href="<?= base_url('blog/' . $post['slug']) ?>" class="blog_item_date">
+                                            <h3><?= date('j', strtotime($post['published_at'])) ?></h3>
+                                            <p><?= date('M', strtotime($post['published_at'])) ?></p>
+                                        </a>
+                                    </div>
+
+                                    <div class="blog_details">
+                                        <a class="d-inline-block" href="<?= base_url('blog/post/' . $post['slug']) ?>">
+                                            <h2><?= esc($post['title']) ?></h2>
+                                        </a>
+                                        <p class="blog-excerpt"><?= esc($post['excerpt']) ?></p>
+                                        
+                                        <ul class="blog-info-link blog-meta">
+                                            <li>
+                                                <a href="<?= base_url('blog/category/' . urlencode($post['category'])) ?>">
+                                                    <i class="ti-folder"></i> <?= esc($post['category']) ?>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <span><i class="ti-user"></i> <?= esc($post['author_name']) ?></span>
+                                            </li>
+                                            <li>
+                                                <span><i class="ti-eye"></i> <?= number_format($post['view_count']) ?> views</span>
+                                            </li>
+                                            <li>
+                                                <span><i class="ti-time"></i> <?= $post['reading_time'] ?> min read</span>
+                                            </li>
+                                        </ul>
+                                        
+                                        <div class="mt-3">
+                                            <a href="<?= base_url('blog/post/' . $post['slug']) ?>" class="btn_3">
+                                                Read More <i class="ti-arrow-right"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </article>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <!-- No Results -->
+                            <div class="no-results">
+                                <i class="ti-search"></i>
+                                <h3>No blog posts found</h3>
+                                <p>We couldn't find any posts matching your criteria.</p>
+                                <a href="<?= base_url('blog') ?>" class="btn_1">View All Posts</a>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- Pagination -->
+                        <?php if (isset($pager) && $pager->getPageCount() > 1): ?>
+                            <nav class="blog-pagination justify-content-center d-flex">
+                                <ul class="pagination">
+                                    <!-- Previous Page -->
+                                    <?php if ($pager->hasPreviousPage()): ?>
+                                        <li class="page-item">
+                                            <a href="<?= $pager->getPreviousPageURI() ?>" class="page-link" aria-label="Previous">
+                                                <i class="ti-angle-left"></i>
+                                            </a>
+                                        </li>
+                                    <?php endif; ?>
+
+                                    <!-- Page Numbers -->
+                                    <?php foreach ($pager->links() as $link): ?>
+                                        <li class="page-item <?= $link['active'] ? 'active' : '' ?>">
+                                            <a href="<?= $link['uri'] ?>" class="page-link">
+                                                <?= $link['title'] ?>
+                                            </a>
+                                        </li>
+                                    <?php endforeach; ?>
+
+                                    <!-- Next Page -->
+                                    <?php if ($pager->hasNextPage()): ?>
+                                        <li class="page-item">
+                                            <a href="<?= $pager->getNextPageURI() ?>" class="page-link" aria-label="Next">
+                                                <i class="ti-angle-right"></i>
+                                            </a>
+                                        </li>
+                                    <?php endif; ?>
                                 </ul>
-                            </div>
-                        </article>
-
-                        <article class="blog_item">
-                            <div class="blog_item_img">
-                                <img class="card-img rounded-0" src="<?= base_url('aranoz-master/img/blog/single_blog_2.png'); ?>" alt="">
-                                <a href="#" class="blog_item_date">
-                                    <h3>15</h3>
-                                    <p>Jan</p>
-                                </a>
-                            </div>
-
-                            <div class="blog_details">
-                                <a class="d-inline-block" href="single-blog.html">
-                                    <h2>Google inks pact for new 35-storey office</h2>
-                                </a>
-                                <p>That dominion stars lights dominion divide years for fourth have don't stars is that
-                                    he earth it first without heaven in place seed it second morning saying.</p>
-                                <ul class="blog-info-link">
-                                    <li><a href="#"><i class="far fa-user"></i> Travel, Lifestyle</a></li>
-                                    <li><a href="#"><i class="far fa-comments"></i> 03 Comments</a></li>
-                                </ul>
-                            </div>
-                        </article>
-
-                        <article class="blog_item">
-                            <div class="blog_item_img">
-                                <img class="card-img rounded-0" src="<?= base_url('aranoz-master/img/blog/single_blog_3.png'); ?>" alt="">
-                                <a href="#" class="blog_item_date">
-                                    <h3>15</h3>
-                                    <p>Jan</p>
-                                </a>
-                            </div>
-
-                            <div class="blog_details">
-                                <a class="d-inline-block" href="single-blog.html">
-                                    <h2>Google inks pact for new 35-storey office</h2>
-                                </a>
-                                <p>That dominion stars lights dominion divide years for fourth have don't stars is that
-                                    he earth it first without heaven in place seed it second morning saying.</p>
-                                <ul class="blog-info-link">
-                                    <li><a href="#"><i class="far fa-user"></i> Travel, Lifestyle</a></li>
-                                    <li><a href="#"><i class="far fa-comments"></i> 03 Comments</a></li>
-                                </ul>
-                            </div>
-                        </article>
-
-                        <article class="blog_item">
-                            <div class="blog_item_img">
-                                <img class="card-img rounded-0" src="<?= base_url('aranoz-master/img/blog/single_blog_4.png'); ?>" alt="">
-                                <a href="#" class="blog_item_date">
-                                    <h3>15</h3>
-                                    <p>Jan</p>
-                                </a>
-                            </div>
-
-                            <div class="blog_details">
-                                <a class="d-inline-block" href="single-blog.html">
-                                    <h2>Google inks pact for new 35-storey office</h2>
-                                </a>
-                                <p>That dominion stars lights dominion divide years for fourth have don't stars is that
-                                    he earth it first without heaven in place seed it second morning saying.</p>
-                                <ul class="blog-info-link">
-                                    <li><a href="#"><i class="far fa-user"></i> Travel, Lifestyle</a></li>
-                                    <li><a href="#"><i class="far fa-comments"></i> 03 Comments</a></li>
-                                </ul>
-                            </div>
-                        </article>
-
-                        <article class="blog_item">
-                            <div class="blog_item_img">
-                                <img class="card-img rounded-0" src="<?= base_url('aranoz-master/img/blog/single_blog_5.png'); ?>" alt="">
-                                <a href="#" class="blog_item_date">
-                                    <h3>15</h3>
-                                    <p>Jan</p>
-                                </a>
-                            </div>
-
-                            <div class="blog_details">
-                                <a class="d-inline-block" href="single-blog.html">
-                                    <h2>Google inks pact for new 35-storey office</h2>
-                                </a>
-                                <p>That dominion stars lights dominion divide years for fourth have don't stars is that
-                                    he earth it first without heaven in place seed it second morning saying.</p>
-                                <ul class="blog-info-link">
-                                    <li><a href="#"><i class="far fa-user"></i> Travel, Lifestyle</a></li>
-                                    <li><a href="#"><i class="far fa-comments"></i> 03 Comments</a></li>
-                                </ul>
-                            </div>
-                        </article>
-
-                        <nav class="blog-pagination justify-content-center d-flex">
-                            <ul class="pagination">
-                                <li class="page-item">
-                                    <a href="#" class="page-link" aria-label="Previous">
-                                        <i class="ti-angle-left"></i>
-                                    </a>
-                                </li>
-                                <li class="page-item">
-                                    <a href="#" class="page-link">1</a>
-                                </li>
-                                <li class="page-item active">
-                                    <a href="#" class="page-link">2</a>
-                                </li>
-                                <li class="page-item">
-                                    <a href="#" class="page-link" aria-label="Next">
-                                        <i class="ti-angle-right"></i>
-                                    </a>
-                                </li>
-                            </ul>
-                        </nav>
+                            </nav>
+                        <?php endif; ?>
                     </div>
                 </div>
+
+                <!-- Sidebar -->
                 <div class="col-lg-4">
                     <div class="blog_right_sidebar">
+                        
+                        <!-- Search Widget -->
                         <aside class="single_sidebar_widget search_widget">
-                            <form action="#">
+                            <form action="<?= base_url('blog/search') ?>" method="GET">
                                 <div class="form-group">
                                     <div class="input-group mb-3">
-                                        <input type="text" class="form-control" placeholder='Search Keyword'
-                                            onfocus="this.placeholder = ''"
-                                            onblur="this.placeholder = 'Search Keyword'">
+                                        <input type="text" name="keyword" class="form-control" 
+                                               value="<?= esc($searchKeyword ?? '') ?>"
+                                               placeholder='Search Posts'
+                                               onfocus="this.placeholder = ''"
+                                               onblur="this.placeholder = 'Search Posts'">
                                         <div class="input-group-append">
-                                            <button class="btn" type="button"><i class="ti-search"></i></button>
+                                            <button class="btn" type="submit"><i class="ti-search"></i></button>
                                         </div>
                                     </div>
                                 </div>
-                                <button class="button rounded-0 primary-bg text-white w-100 btn_1"
-                                    type="submit">Search</button>
+                                <button class="button rounded-0 primary-bg text-white w-100 btn_1" type="submit">
+                                    Search
+                                </button>
                             </form>
                         </aside>
 
+                        <!-- Categories Widget -->
                         <aside class="single_sidebar_widget post_category_widget">
-                            <h4 class="widget_title">Category</h4>
+                            <h4 class="widget_title">Categories</h4>
                             <ul class="list cat-list">
-                                <li>
-                                    <a href="#" class="d-flex">
-                                        <p>Resaurant food</p>
-                                        <p>(37)</p>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#" class="d-flex">
-                                        <p>Travel news</p>
-                                        <p>(10)</p>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#" class="d-flex">
-                                        <p>Modern technology</p>
-                                        <p>(03)</p>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#" class="d-flex">
-                                        <p>Product</p>
-                                        <p>(11)</p>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#" class="d-flex">
-                                        <p>Inspiration</p>
-                                        <p>21</p>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#" class="d-flex">
-                                        <p>Health Care (21)</p>
-                                        <p>09</p>
-                                    </a>
-                                </li>
+                                <?php if (!empty($categories)): ?>
+                                    <?php foreach ($categories as $category): ?>
+                                        <li>
+                                            <a href="<?= base_url('blog/category/' . urlencode($category['category'])) ?>" class="d-flex category-link">
+                                                <p><?= esc($category['category']) ?></p>
+                                                <p>(<?= $category['post_count'] ?>)</p>
+                                            </a>
+                                        </li>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <li><p>No categories found</p></li>
+                                <?php endif; ?>
                             </ul>
                         </aside>
 
+                        <!-- Recent Posts Widget -->
                         <aside class="single_sidebar_widget popular_post_widget">
-                            <h3 class="widget_title">Recent Post</h3>
-                            <div class="media post_item">
-                                <img src="<?= base_url('aranoz-master/img/post/post_1.png'); ?>" alt="post">
-                                <div class="media-body">
-                                    <a href="single-blog.html">
-                                        <h3>From life was you fish...</h3>
-                                    </a>
-                                    <p>January 12, 2019</p>
-                                </div>
-                            </div>
-                            <div class="media post_item">
-                                <img src="<?= base_url('aranoz-master/img/post/post_2.png'); ?>" alt="post">
-                                <div class="media-body">
-                                    <a href="single-blog.html">
-                                        <h3>The Amazing Hubble</h3>
-                                    </a>
-                                    <p>02 Hours ago</p>
-                                </div>
-                            </div>
-                            <div class="media post_item">
-                                <img src="<?= base_url('aranoz-master/img/post/post_3.png'); ?>" alt="post">
-                                <div class="media-body">
-                                    <a href="single-blog.html">
-                                        <h3>Astronomy Or Astrology</h3>
-                                    </a>
-                                    <p>03 Hours ago</p>
-                                </div>
-                            </div>
-                            <div class="media post_item">
-                                <img src="<?= base_url('aranoz-master/img/post/post_4.png'); ?>" alt="post">
-                                <div class="media-body">
-                                    <a href="single-blog.html">
-                                        <h3>Asteroids telescope</h3>
-                                    </a>
-                                    <p>01 Hours ago</p>
-                                </div>
-                            </div>
-                        </aside>
-                        <aside class="single_sidebar_widget tag_cloud_widget">
-                            <h4 class="widget_title">Tag Clouds</h4>
-                            <ul class="list">
-                                <li>
-                                    <a href="#">project</a>
-                                </li>
-                                <li>
-                                    <a href="#">love</a>
-                                </li>
-                                <li>
-                                    <a href="#">technology</a>
-                                </li>
-                                <li>
-                                    <a href="#">travel</a>
-                                </li>
-                                <li>
-                                    <a href="#">restaurant</a>
-                                </li>
-                                <li>
-                                    <a href="#">life style</a>
-                                </li>
-                                <li>
-                                    <a href="#">design</a>
-                                </li>
-                                <li>
-                                    <a href="#">illustration</a>
-                                </li>
-                            </ul>
+                            <h3 class="widget_title">Recent Posts</h3>
+                            <?php if (!empty($recentPosts)): ?>
+                                <?php foreach ($recentPosts as $recentPost): ?>
+                                    <div class="media post_item">
+                                        <img src="<?= base_url($recentPost['featured_image'] ?? 'aranoz-master/img/post/post_1.png') ?>" 
+                                             alt="<?= esc($recentPost['title']) ?>">
+                                        <div class="media-body">
+                                            <a href="<?= base_url('blog/' . $recentPost['slug']) ?>">
+                                                <h3><?= esc(strlen($recentPost['title']) > 40 ? substr($recentPost['title'], 0, 40) . '...' : $recentPost['title']) ?></h3>
+                                            </a>
+                                            <p><?= date('F j, Y', strtotime($recentPost['published_at'])) ?></p>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </aside>
 
+                        <!-- Featured Posts Widget -->
+                        <?php if (!empty($featuredPosts)): ?>
+                            <aside class="single_sidebar_widget popular_post_widget">
+                                <h3 class="widget_title">Featured Posts</h3>
+                                <?php foreach ($featuredPosts as $featured): ?>
+                                    <div class="media post_item">
+                                        <img src="<?= base_url($featured['featured_image'] ?? 'aranoz-master/img/post/post_1.png') ?>" 
+                                             alt="<?= esc($featured['title']) ?>">
+                                        <div class="media-body">
+                                            <a href="<?= base_url('blog/' . $featured['slug']) ?>">
+                                                <h3><?= esc(strlen($featured['title']) > 40 ? substr($featured['title'], 0, 40) . '...' : $featured['title']) ?></h3>
+                                            </a>
+                                            <p><?= date('F j, Y', strtotime($featured['published_at'])) ?></p>
+                                            <small class="text-warning">
+                                                <i class="ti-star"></i> Featured
+                                            </small>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </aside>
+                        <?php endif; ?>
 
-                        <aside class="single_sidebar_widget instagram_feeds">
-                            <h4 class="widget_title">Instagram Feeds</h4>
-                            <ul class="instagram_row flex-wrap">
-                                <li>
-                                    <a href="#">
-                                        <img class="img-fluid" src="<?= base_url('aranoz-master/img/post/post_5.png'); ?>" alt="">
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#">
-                                        <img class="img-fluid" src="<?= base_url('aranoz-master/img/post/post_6.png'); ?>" alt="">
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#">
-                                        <img class="img-fluid" src="<?= base_url('aranoz-master/img/post/post_7.png'); ?>" alt="">
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#">
-                                        <img class="img-fluid" src="<?= base_url('aranoz-master/img/post/post_8.png'); ?>" alt="">
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#">
-                                        <img class="img-fluid" src="<?= base_url('aranoz-master/img/post/post_9.png'); ?>" alt="">
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#">
-                                        <img class="img-fluid" src="<?= base_url('aranoz-master/img/post/post_10.png'); ?>" alt="">
-                                    </a>
-                                </li>
-                            </ul>
-                        </aside>
-
-
+                        <!-- Newsletter Widget -->
                         <aside class="single_sidebar_widget newsletter_widget">
                             <h4 class="widget_title">Newsletter</h4>
-
-                            <form action="#">
+                            <form action="#" method="POST" id="newsletter-form">
                                 <div class="form-group">
-                                    <input type="email" class="form-control" onfocus="this.placeholder = ''"
-                                        onblur="this.placeholder = 'Enter email'" placeholder='Enter email' required>
+                                    <input type="email" name="email" class="form-control" 
+                                           onfocus="this.placeholder = ''"
+                                           onblur="this.placeholder = 'Enter email'" 
+                                           placeholder='Enter email' required>
                                 </div>
-                                <button class="button rounded-0 primary-bg text-white w-100 btn_1"
-                                    type="submit">Subscribe</button>
+                                <button class="button rounded-0 primary-bg text-white w-100 btn_1" type="submit">
+                                    Subscribe
+                                </button>
                             </form>
                         </aside>
                     </div>
@@ -353,7 +254,29 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
+<script>
+$(document).ready(function() {
+    // Newsletter form submission
+    $('#newsletter-form').on('submit', function(e) {
+        e.preventDefault();
+        // Add newsletter subscription logic here
+        showToast('success', 'Thank you for subscribing to our newsletter!');
+    });
 
+    function showToast(type, message) {
+        const toastClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const toast = `
+            <div class="alert ${toastClass} alert-dismissible fade show position-fixed" 
+                 style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+                ${message}
+                <button type="button" class="close" data-dismiss="alert">
+                    <span>&times;</span>
+                </button>
+            </div>
+        `;
+        $('body').append(toast);
+        setTimeout(() => $('.alert').fadeOut(() => $('.alert').remove()), 3000);
+    }
+});
+</script>
 <?= $this->endSection() ?>
-    
-    

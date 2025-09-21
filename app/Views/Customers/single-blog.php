@@ -1,672 +1,469 @@
-<!doctype html>
-<html lang="zxx">
+<?= $this->extend('Customers/layout/main') ?>
 
-<head>
-   <!-- Required meta tags -->
-   <meta charset="utf-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-   <title>aranoz</title>
-   <link rel="icon" href="<?= base_url('aranoz-master/img/favicon.png') ?>">
-   <!-- Bootstrap CSS -->
-   <link rel="stylesheet" href="<?= base_url('aranoz-master/css/bootstrap.min.css'); ?>">
-   <!-- animate CSS -->
-   <link rel="stylesheet" href="<?= base_url('aranoz-master/css/animate.css'); ?>">
-   <!-- owl carousel CSS -->
-   <link rel="stylesheet" href="<?= base_url('aranoz-master/css/owl.carousel.min.css'); ?>">
-   <!-- font awesome CSS -->
-   <link rel="stylesheet" href="<?= base_url('aranoz-master/css/all.css'); ?>">
-   <!-- flaticon CSS -->
-   <link rel="stylesheet" href="<?= base_url('aranoz-master/css/flaticon.css'); ?>">
-   <link rel="stylesheet" href="<?= base_url('aranoz-master/css/themify-icons.css'); ?>">
-   <!-- font awesome CSS -->
-   <link rel="stylesheet" href="<?= base_url('aranoz-master/css/magnific-popup.css'); ?>">
-   <!-- swiper CSS -->
-   <link rel="stylesheet" href="<?= base_url('aranoz-master/css/slick.css'); ?>">
-   <!-- style CSS -->
-   <link rel="stylesheet" href="<?= base_url('aranoz-master/css/style.css'); ?>">
-</head>
+<?= $this->section('styles') ?>
+<style>
+.single-blog-header { margin-bottom: 30px; }
+.blog-meta { color: #666; font-size: 14px; margin: 15px 0; }
+.blog-meta i { margin-right: 5px; }
+.blog-meta span { margin-right: 15px; }
+.blog-content { line-height: 1.8; font-size: 16px; }
+.blog-content h2, .blog-content h3, .blog-content h4 { margin: 25px 0 15px 0; }
+.blog-content p { margin-bottom: 15px; }
+.blog-content img { max-width: 100%; height: auto; margin: 20px 0; }
+.blog-tags { margin: 30px 0; }
+.blog-tag { display: inline-block; background: #f8f9fa; padding: 5px 12px; margin: 5px 5px 5px 0; border-radius: 15px; color: #666; text-decoration: none; font-size: 13px; }
+.blog-tag:hover { background: #007bff; color: white; text-decoration: none; }
+.blog-navigation { border-top: 1px solid #eee; margin-top: 40px; padding-top: 30px; }
+.nav-post { display: flex; align-items: center; text-decoration: none; color: #333; }
+.nav-post:hover { text-decoration: none; color: #007bff; }
+.nav-post img { width: 60px; height: 60px; object-fit: cover; border-radius: 5px; margin: 0 15px; }
+.nav-post-content h5 { margin: 0; font-size: 14px; }
+.nav-post-content p { margin: 0; font-size: 12px; color: #666; }
+.related-posts { margin-top: 40px; border-top: 1px solid #eee; padding-top: 30px; }
+.related-post-item { margin-bottom: 20px; }
+.related-post-item img { width: 100px; height: 80px; object-fit: cover; border-radius: 5px; }
+.comments-section { margin-top: 40px; border-top: 1px solid #eee; padding-top: 30px; }
+.comment-item { margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; }
+.comment-header { display: flex; justify-content-between; align-items: center; margin-bottom: 10px; }
+.comment-author { font-weight: 600; color: #333; }
+.comment-date { color: #666; font-size: 13px; }
+.comment-content { color: #555; line-height: 1.6; }
+.comment-reply { margin-left: 40px; margin-top: 20px; }
+.reply-btn { color: #007bff; font-size: 13px; cursor: pointer; }
+.reply-btn:hover { text-decoration: underline; }
+.comment-form { background: #fff; padding: 30px; border: 1px solid #eee; border-radius: 8px; margin-top: 30px; }
+.featured-badge { background: #ff6b35; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; margin-left: 10px; }
+</style>
+<?= $this->endSection() ?>
 
-<body>
-   <!--::header part start::-->
-   <header class="main_menu home_menu">
-      <div class="container">
-          <div class="row align-items-center">
-              <div class="col-lg-12">
-                  <nav class="navbar navbar-expand-lg navbar-light">
-                      <a class="navbar-brand" href="index.html"> <img src="<?= base_url('aranoz-master/img/logo.png'); ?>" alt="logo"> </a>
-                      <button class="navbar-toggler" type="button" data-toggle="collapse"
-                          data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-                          aria-expanded="false" aria-label="Toggle navigation">
-                          <span class="menu_icon"><i class="fas fa-bars"></i></span>
-                      </button>
+<?= $this->section('content') ?>
+    <!-- breadcrumb start-->
+    <section class="breadcrumb breadcrumb_bg">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="breadcrumb_iner">
+                        <div class="breadcrumb_iner_item">
+                            <h2>Blog Details</h2>
+                            <p>Home <span>-</span> Blog <span>-</span> <?= esc($post['title']) ?></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- breadcrumb start-->
 
-                      <div class="collapse navbar-collapse main-menu-item" id="navbarSupportedContent">
-                          <ul class="navbar-nav">
-                              <li class="nav-item">
-                                  <a class="nav-link" href="index.html">Home</a>
-                              </li>
-                              <li class="nav-item dropdown">
-                                  <a class="nav-link dropdown-toggle" href="blog.html" id="navbarDropdown_1"
-                                      role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                      Shop
-                                  </a>
-                                  <div class="dropdown-menu" aria-labelledby="navbarDropdown_1">
-                                      <a class="dropdown-item" href="category.html"> shop category</a>
-                                      <a class="dropdown-item" href="single-product.html">product details</a>
-                                      
-                                  </div>
-                              </li>
-                              <li class="nav-item dropdown">
-                                  <a class="nav-link dropdown-toggle" href="blog.html" id="navbarDropdown_3"
-                                      role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                      pages
-                                  </a>
-                                  <div class="dropdown-menu" aria-labelledby="navbarDropdown_2">
-                                      <a class="dropdown-item" href="login.html"> login</a>
-                                      <a class="dropdown-item" href="tracking.html">tracking</a>
-                                      <a class="dropdown-item" href="checkout.html">product checkout</a>
-                                      <a class="dropdown-item" href="cart.html">shopping cart</a>
-                                      <a class="dropdown-item" href="confirmation.html">confirmation</a>
-                                      <a class="dropdown-item" href="elements.html">elements</a>
-                                  </div>
-                              </li>
-                              <li class="nav-item dropdown">
-                                  <a class="nav-link dropdown-toggle" href="blog.html" id="navbarDropdown_2"
-                                      role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                      blog
-                                  </a>
-                                  <div class="dropdown-menu" aria-labelledby="navbarDropdown_2">
-                                      <a class="dropdown-item" href="blog.html"> blog</a>
-                                      <a class="dropdown-item" href="single-blog.html">Single blog</a>
-                                  </div>
-                              </li>
-                              
-                              <li class="nav-item">
-                                  <a class="nav-link" href="contact.html">Contact</a>
-                              </li>
-                          </ul>
-                      </div>
-                      <div class="hearer_icon d-flex">
-                          <a id="search_1" href="javascript:void(0)"><i class="ti-search"></i></a>
-                          <a href=""><i class="ti-heart"></i></a>
-                          <div class="dropdown cart">
-                              <a class="dropdown-toggle" href="#" id="navbarDropdown3" role="button"
-                                  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                  <i class="fas fa-cart-plus"></i>
-                              </a>
-                              <!-- <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                  <div class="single_product">
-  
-                                  </div>
-                              </div> -->
-                              
-                          </div>
-                      </div>
-                  </nav>
-              </div>
-          </div>
-      </div>
-      <div class="search_input" id="search_input_box">
-          <div class="container ">
-              <form class="d-flex justify-content-between search-inner">
-                  <input type="text" class="form-control" id="search_input" placeholder="Search Here">
-                  <button type="submit" class="btn"></button>
-                  <span class="ti-close" id="close_search" title="Close Search"></span>
-              </form>
-          </div>
-      </div>
-  </header>
-   <!-- Header part end-->
-
-   <!--================Home Banner Area =================-->
-   <!-- breadcrumb start-->
-   <section class="breadcrumb breadcrumb_bg">
-      <div class="container">
-         <div class="row justify-content-center">
-            <div class="col-lg-8">
-               <div class="breadcrumb_iner">
-                  <div class="breadcrumb_iner_item">
-                     <h2>Shop Single</h2>
-                     <p>Home <span>-</span> Shop Single</p>
-                  </div>
-               </div>
-            </div>
-         </div>
-      </div>
-   </section>
-   <!-- breadcrumb start-->
-   <!--================Blog Area =================-->
-   <section class="blog_area single-post-area padding_top">
-      <div class="container">
-         <div class="row">
-            <div class="col-lg-8 posts-list">
-               <div class="single-post">
-                  <div class="feature-img">
-                     <img class="img-fluid" src="<?= base_url('aranoz-master/img/blog/single_blog_1.png'); ?>" alt="">
-                  </div>
-                  <div class="blog_details">
-                     <h2>Second divided from form fish beast made every of seas
-                        all gathered us saying he our
-                     </h2>
-                     <ul class="blog-info-link mt-3 mb-4">
-                        <li><a href="#"><i class="far fa-user"></i> Travel, Lifestyle</a></li>
-                        <li><a href="#"><i class="far fa-comments"></i> 03 Comments</a></li>
-                     </ul>
-                     <p class="excert">
-                        MCSE boot camps have its supporters and its detractors. Some people do not understand why you
-                        should have to spend money on boot camp when you can get the MCSE study materials yourself at a
-                        fraction of the camp price. However, who has the willpower
-                     </p>
-                     <p>
-                        MCSE boot camps have its supporters and its detractors. Some people do not understand why you
-                        should have to spend money on boot camp when you can get the MCSE study materials yourself at a
-                        fraction of the camp price. However, who has the willpower to actually sit through a
-                        self-imposed MCSE training. who has the willpower to actually
-                     </p>
-                     <div class="quote-wrapper">
-                        <div class="quotes">
-                           MCSE boot camps have its supporters and its detractors. Some people do not understand why you
-                           should have to spend money on boot camp when you can get the MCSE study materials yourself at
-                           a fraction of the camp price. However, who has the willpower to actually sit through a
-                           self-imposed MCSE training.
-                        </div>
-                     </div>
-                     <p>
-                        MCSE boot camps have its supporters and its detractors. Some people do not understand why you
-                        should have to spend money on boot camp when you can get the MCSE study materials yourself at a
-                        fraction of the camp price. However, who has the willpower
-                     </p>
-                     <p>
-                        MCSE boot camps have its supporters and its detractors. Some people do not understand why you
-                        should have to spend money on boot camp when you can get the MCSE study materials yourself at a
-                        fraction of the camp price. However, who has the willpower to actually sit through a
-                        self-imposed MCSE training. who has the willpower to actually
-                     </p>
-                  </div>
-               </div>
-               <div class="navigation-top">
-                  <div class="d-sm-flex justify-content-between text-center">
-                     <p class="like-info"><span class="align-middle"><i class="far fa-heart"></i></span> Lily and 4
-                        people like this</p>
-                     <div class="col-sm-4 text-center my-2 my-sm-0">
-                        <!-- <p class="comment-count"><span class="align-middle"><i class="far fa-comment"></i></span> 06 Comments</p> -->
-                     </div>
-                     <ul class="social-icons">
-                        <li><a href="#"><i class="fab fa-facebook-f"></i></a></li>
-                        <li><a href="#"><i class="fab fa-twitter"></i></a></li>
-                        <li><a href="#"><i class="fab fa-dribbble"></i></a></li>
-                        <li><a href="#"><i class="fab fa-behance"></i></a></li>
-                     </ul>
-                  </div>
-                  <div class="navigation-area">
-                     <div class="row">
-                        <div
-                           class="col-lg-6 col-md-6 col-12 nav-left flex-row d-flex justify-content-start align-items-center">
-                           <div class="thumb">
-                              <a href="#">
-                                 <img class="img-fluid" src="<?= base_url('aranoz-master/img/post/preview.png'); ?>" alt="">
-                              </a>
-                           </div>
-                           <div class="arrow">
-                              <a href="#">
-                                 <span class="lnr text-white ti-arrow-left"></span>
-                              </a>
-                           </div>
-                           <div class="detials">
-                              <p>Prev Post</p>
-                              <a href="#">
-                                 <h4>Space The Final Frontier</h4>
-                              </a>
-                           </div>
-                        </div>
-                        <div
-                           class="col-lg-6 col-md-6 col-12 nav-right flex-row d-flex justify-content-end align-items-center">
-                           <div class="detials">
-                              <p>Next Post</p>
-                              <a href="#">
-                                 <h4>Telescopes 101</h4>
-                              </a>
-                           </div>
-                           <div class="arrow">
-                              <a href="#">
-                                 <span class="lnr text-white ti-arrow-right"></span>
-                              </a>
-                           </div>
-                           <div class="thumb">
-                              <a href="#">
-                                 <img class="img-fluid" src="<?= base_url('aranoz-master/img/post/next.png'); ?>" alt="">
-                              </a>
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-               <div class="blog-author">
-                  <div class="media align-items-center">
-                     <img src="<?= base_url('aranoz-master/img/blog/author.png'); ?>" alt="">
-                     <div class="media-body">
-                        <a href="#">
-                           <h4>Harvard milan</h4>
-                        </a>
-                        <p>Second divided from form fish beast made. Every of seas all gathered use saying you're, he
-                           our dominion twon Second divided from</p>
-                     </div>
-                  </div>
-               </div>
-               <div class="comments-area">
-                  <h4>05 Comments</h4>
-                  <div class="comment-list">
-                     <div class="single-comment justify-content-between d-flex">
-                        <div class="user justify-content-between d-flex">
-                           <div class="thumb">
-                              <img src="<?= base_url('aranoz-master/img/comment/comment_1.png'); ?>" alt="">
-                           </div>
-                           <div class="desc">
-                              <p class="comment">
-                                 Multiply sea night grass fourth day sea lesser rule open subdue female fill which them
-                                 Blessed, give fill lesser bearing multiply sea night grass fourth day sea lesser
-                              </p>
-                              <div class="d-flex justify-content-between">
-                                 <div class="d-flex align-items-center">
-                                    <h5>
-                                       <a href="#">Emilly Blunt</a>
-                                    </h5>
-                                    <p class="date">December 4, 2017 at 3:12 pm </p>
-                                 </div>
-                                 <div class="reply-btn">
-                                    <a href="#" class="btn-reply text-uppercase">reply</a>
-                                 </div>
-                              </div>
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-                  <div class="comment-list">
-                     <div class="single-comment justify-content-between d-flex">
-                        <div class="user justify-content-between d-flex">
-                           <div class="thumb">
-                              <img src="<?= base_url('aranoz-master/img/comment/comment_2.png'); ?>" alt="">
-                           </div>
-                           <div class="desc">
-                              <p class="comment">
-                                 Multiply sea night grass fourth day sea lesser rule open subdue female fill which them
-                                 Blessed, give fill lesser bearing multiply sea night grass fourth day sea lesser
-                              </p>
-                              <div class="d-flex justify-content-between">
-                                 <div class="d-flex align-items-center">
-                                    <h5>
-                                       <a href="#">Emilly Blunt</a>
-                                    </h5>
-                                    <p class="date">December 4, 2017 at 3:12 pm </p>
-                                 </div>
-                                 <div class="reply-btn">
-                                    <a href="#" class="btn-reply text-uppercase">reply</a>
-                                 </div>
-                              </div>
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-                  <div class="comment-list">
-                     <div class="single-comment justify-content-between d-flex">
-                        <div class="user justify-content-between d-flex">
-                           <div class="thumb">
-                              <img src="<?= base_url('aranoz-master/img/comment/comment_3.png'); ?>" alt="">
-                           </div>
-                           <div class="desc">
-                              <p class="comment">
-                                 Multiply sea night grass fourth day sea lesser rule open subdue female fill which them
-                                 Blessed, give fill lesser bearing multiply sea night grass fourth day sea lesser
-                              </p>
-                              <div class="d-flex justify-content-between">
-                                 <div class="d-flex align-items-center">
-                                    <h5>
-                                       <a href="#">Emilly Blunt</a>
-                                    </h5>
-                                    <p class="date">December 4, 2017 at 3:12 pm </p>
-                                 </div>
-                                 <div class="reply-btn">
-                                    <a href="#" class="btn-reply text-uppercase">reply</a>
-                                 </div>
-                              </div>
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-               <div class="comment-form">
-                  <h4>Leave a Reply</h4>
-                  <form class="form-contact comment_form" action="#" id="commentForm">
-                     <div class="row">
-                        <div class="col-12">
-                           <div class="form-group">
-                              <textarea class="form-control w-100" name="comment" id="comment" cols="30" rows="9"
-                                 placeholder="Write Comment"></textarea>
-                           </div>
-                        </div>
-                        <div class="col-sm-6">
-                           <div class="form-group">
-                              <input class="form-control" name="name" id="name" type="text" placeholder="Name">
-                           </div>
-                        </div>
-                        <div class="col-sm-6">
-                           <div class="form-group">
-                              <input class="form-control" name="email" id="email" type="email" placeholder="Email">
-                           </div>
-                        </div>
-                        <div class="col-12">
-                           <div class="form-group">
-                              <input class="form-control" name="website" id="website" type="text" placeholder="Website">
-                           </div>
-                        </div>
-                     </div>
-                     <div class="form-group mt-3">
-                        <a href="#" class="btn_3 button-contactForm">Send Message</a>
-                     </div>
-                  </form>
-               </div>
-            </div>
-            <div class="col-lg-4">
-               <div class="blog_right_sidebar">
-                  <aside class="single_sidebar_widget search_widget">
-                     <form action="#">
-                        <div class="form-group">
-                           <div class="input-group mb-3">
-                              <input type="text" class="form-control" placeholder='Search Keyword'
-                                 onfocus="this.placeholder = ''" onblur="this.placeholder = 'Search Keyword'">
-                              <div class="input-group-append">
-                                 <button class="btn" type="button"><i class="ti-search"></i></button>
-                              </div>
-                           </div>
-                        </div>
-                        <button class="button rounded-0 primary-bg text-white w-100 btn_1" type="submit">Search</button>
-                     </form>
-                  </aside>
-                  <aside class="single_sidebar_widget post_category_widget">
-                     <h4 class="widget_title">Category</h4>
-                     <ul class="list cat-list">
-                        <li>
-                           <a href="#" class="d-flex">
-                              <p>Resaurant food</p>
-                              <p>(37)</p>
-                           </a>
-                        </li>
-                        <li>
-                           <a href="#" class="d-flex">
-                              <p>Travel news</p>
-                              <p>(10)</p>
-                           </a>
-                        </li>
-                        <li>
-                           <a href="#" class="d-flex">
-                              <p>Modern technology</p>
-                              <p>(03)</p>
-                           </a>
-                        </li>
-                        <li>
-                           <a href="#" class="d-flex">
-                              <p>Product</p>
-                              <p>(11)</p>
-                           </a>
-                        </li>
-                        <li>
-                           <a href="#" class="d-flex">
-                              <p>Inspiration</p>
-                              <p>(21)</p>
-                           </a>
-                        </li>
-                        <li>
-                           <a href="#" class="d-flex">
-                              <p>Health Care</p>
-                              <p>(21)</p>
-                           </a>
-                        </li>
-                     </ul>
-                  </aside>
-                  <aside class="single_sidebar_widget popular_post_widget">
-                     <h3 class="widget_title">Recent Post</h3>
-                     <div class="media post_item">
-                        <img src="<?= base_url('aranoz-master/img/post/post_1.png'); ?>" alt="post">
-                        <div class="media-body">
-                           <a href="single-blog.html">
-                              <h3>From life was you fish...</h3>
-                           </a>
-                           <p>January 12, 2019</p>
-                        </div>
-                     </div>
-                     <div class="media post_item">
-                        <img src="<?= base_url('aranoz-master/img/post/post_2.png'); ?>" alt="post">
-                        <div class="media-body">
-                           <a href="single-blog.html">
-                              <h3>The Amazing Hubble</h3>
-                           </a>
-                           <p>02 Hours ago</p>
-                        </div>
-                     </div>
-                     <div class="media post_item">
-                        <img src="<?= base_url('aranoz-master/img/post/post_3.png'); ?>" alt="post">
-                        <div class="media-body">
-                           <a href="single-blog.html">
-                              <h3>Astronomy Or Astrology</h3>
-                           </a>
-                           <p>03 Hours ago</p>
-                        </div>
-                     </div>
-                     <div class="media post_item">
-                        <img src="<?= base_url('aranoz-master/img/post/post_4.png'); ?>" alt="post">
-                        <div class="media-body">
-                           <a href="single-blog.html">
-                              <h3>Asteroids telescope</h3>
-                           </a>
-                           <p>01 Hours ago</p>
-                        </div>
-                     </div>
-                  </aside>
-                  <aside class="single_sidebar_widget tag_cloud_widget">
-                     <h4 class="widget_title">Tag Clouds</h4>
-                     <ul class="list">
-                        <li>
-                           <a href="#">project</a>
-                        </li>
-                        <li>
-                           <a href="#">love</a>
-                        </li>
-                        <li>
-                           <a href="#">technology</a>
-                        </li>
-                        <li>
-                           <a href="#">travel</a>
-                        </li>
-                        <li>
-                           <a href="#">restaurant</a>
-                        </li>
-                        <li>
-                           <a href="#">life style</a>
-                        </li>
-                        <li>
-                           <a href="#">design</a>
-                        </li>
-                        <li>
-                           <a href="#">illustration</a>
-                        </li>
-                     </ul>
-                  </aside>
-                  <aside class="single_sidebar_widget instagram_feeds">
-                     <h4 class="widget_title">Instagram Feeds</h4>
-                     <ul class="instagram_row flex-wrap">
-                        <li>
-                           <a href="#">
-                              <img class="img-fluid" src="<?= base_url('aranoz-master/img/post/post_5.png'); ?>" alt="">
-                           </a>
-                        </li>
-                        <li>
-                           <a href="#">
-                              <img class="img-fluid" src="<?= base_url('aranoz-master/img/post/post_6.png'); ?>" alt="">
-                           </a>
-                        </li>
-                        <li>
-                           <a href="#">
-                              <img class="img-fluid" src="<?= base_url('aranoz-master/img/post/post_7.png'); ?>" alt="">
-                           </a>
-                        </li>
-                        <li>
-                           <a href="#">
-                              <img class="img-fluid" src="<?= base_url('aranoz-master/img/post/post_8.png'); ?>" alt="">
-                           </a>
-                        </li>
-                        <li>
-                           <a href="#">
-                              <img class="img-fluid" src="<?= base_url('aranoz-master/img/post/post_9.png'); ?>" alt="">
-                           </a>
-                        </li>
-                        <li>
-                           <a href="#">
-                              <img class="img-fluid" src="<?= base_url('aranoz-master/img/post/post_10.png'); ?>" alt="">
-                           </a>
-                        </li>
-                     </ul>
-                  </aside>
-                  <aside class="single_sidebar_widget newsletter_widget">
-                     <h4 class="widget_title">Newsletter</h4>
-                     <form action="#">
-                        <div class="form-group">
-                           <input type="email" class="form-control" onfocus="this.placeholder = ''"
-                              onblur="this.placeholder = 'Enter email'" placeholder='Enter email' required>
-                        </div>
-                        <button class="button rounded-0 primary-bg text-white w-100 btn_1"
-                           type="submit">Subscribe</button>
-                     </form>
-                  </aside>
-               </div>
-            </div>
-         </div>
-      </div>
-   </section>
-   <!--================Blog Area end =================-->
-
-   <!--::footer_part start::-->
-   <footer class="footer_part">
-      <div class="container">
-         <div class="row justify-content-around">
-            <div class="col-sm-6 col-lg-2">
-               <div class="single_footer_part">
-                  <h4>Top Products</h4>
-                  <ul class="list-unstyled">
-                     <li><a href="">Managed Website</a></li>
-                     <li><a href="">Manage Reputation</a></li>
-                     <li><a href="">Power Tools</a></li>
-                     <li><a href="">Marketing Service</a></li>
-                  </ul>
-               </div>
-            </div>
-            <div class="col-sm-6 col-lg-2">
-               <div class="single_footer_part">
-                  <h4>Quick Links</h4>
-                  <ul class="list-unstyled">
-                     <li><a href="">Jobs</a></li>
-                     <li><a href="">Brand Assets</a></li>
-                     <li><a href="">Investor Relations</a></li>
-                     <li><a href="">Terms of Service</a></li>
-                  </ul>
-               </div>
-            </div>
-            <div class="col-sm-6 col-lg-2">
-               <div class="single_footer_part">
-                  <h4>Features</h4>
-                  <ul class="list-unstyled">
-                     <li><a href="">Jobs</a></li>
-                     <li><a href="">Brand Assets</a></li>
-                     <li><a href="">Investor Relations</a></li>
-                     <li><a href="">Terms of Service</a></li>
-                  </ul>
-               </div>
-            </div>
-            <div class="col-sm-6 col-lg-2">
-               <div class="single_footer_part">
-                  <h4>Resources</h4>
-                  <ul class="list-unstyled">
-                     <li><a href="">Guides</a></li>
-                     <li><a href="">Research</a></li>
-                     <li><a href="">Experts</a></li>
-                     <li><a href="">Agencies</a></li>
-                  </ul>
-               </div>
-            </div>
-            <div class="col-sm-6 col-lg-4">
-               <div class="single_footer_part">
-                  <h4>Newsletter</h4>
-                  <p>Heaven fruitful doesn't over lesser in days. Appear creeping
-                  </p>
-                  <div id="mc_embed_signup">
-                     <form target="_blank"
-                        action="https://spondonit.us12.list-manage.com/subscribe/post?u=1462626880ade1ac87bd9c93a&amp;id=92a4423d01"
-                        method="get" class="subscribe_form relative mail_part">
-                        <input type="email" name="email" id="newsletter-form-email" placeholder="Email Address"
-                           class="placeholder hide-on-focus" onfocus="this.placeholder = ''"
-                           onblur="this.placeholder = ' Email Address '">
-                        <button type="submit" name="submit" id="newsletter-submit"
-                           class="email_icon newsletter-submit button-contactForm">subscribe</button>
-                        <div class="mt-10 info"></div>
-                     </form>
-                  </div>
-               </div>
-            </div>
-         </div>
-
-      </div>
-      <div class="copyright_part">
-         <div class="container">
+    <!--================Single Blog Area =================-->
+    <section class="blog_area single-post-area padding_top">
+        <div class="container">
             <div class="row">
-               <div class="col-lg-8">
-                  <div class="copyright_text">
-                     <P><!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. -->
-Copyright &copy;<script>document.write(new Date().getFullYear());</script> All rights reserved | This template is made with <i class="ti-heart" aria-hidden="true"></i> by <a href="https://colorlib.com" target="_blank">Colorlib</a>
-<!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. --></P>
-                  </div>
-               </div>
-               <div class="col-lg-4">
-                  <div class="footer_icon social_icon">
-                     <ul class="list-unstyled">
-                        <li><a href="#" class="single_social_icon"><i class="fab fa-facebook-f"></i></a></li>
-                        <li><a href="#" class="single_social_icon"><i class="fab fa-twitter"></i></a></li>
-                        <li><a href="#" class="single_social_icon"><i class="fas fa-globe"></i></a></li>
-                        <li><a href="#" class="single_social_icon"><i class="fab fa-behance"></i></a></li>
-                     </ul>
-                  </div>
-               </div>
+                <div class="col-lg-8 posts-list">
+                    <div class="single-post">
+                        
+                        <!-- Post Header -->
+                        <div class="single-blog-header">
+                            <div class="feature-img">
+                                <img class="img-fluid w-100" 
+                                     src="<?= base_url($post['featured_image'] ?? 'aranoz-master/img/blog/single_blog_1.png') ?>" 
+                                     alt="<?= esc($post['image_alt'] ?? $post['title']) ?>">
+                            </div>
+                            
+                            <div class="blog_details mt-4">
+                                <h2><?= esc($post['title']) ?>
+                                    <?php if ($post['is_featured']): ?>
+                                        <span class="featured-badge">Featured</span>
+                                    <?php endif; ?>
+                                </h2>
+                                
+                                <div class="blog-meta">
+                                    <span><i class="ti-user"></i> By <?= esc($post['author_name']) ?></span>
+                                    <span><i class="ti-calendar"></i> <?= date('F j, Y', strtotime($post['published_at'])) ?></span>
+                                    <span><i class="ti-folder"></i> 
+                                        <a href="<?= base_url('blog/category/' . urlencode($post['category'])) ?>" class="text-primary">
+                                            <?= esc($post['category']) ?>
+                                        </a>
+                                    </span>
+                                    <span><i class="ti-eye"></i> <?= number_format($post['view_count']) ?> views</span>
+                                    <span><i class="ti-time"></i> <?= $post['reading_time'] ?> min read</span>
+                                    <span><i class="ti-comment"></i> <?= $commentCount ?> comments</span>
+                                </div>
+                                
+                                <div class="blog-content mt-4">
+                                    <?= $post['content'] ?>
+                                </div>
+                                
+                                <!-- Tags -->
+                                <?php if (!empty($post['tags'])): ?>
+                                    <?php $tags = is_string($post['tags']) ? json_decode($post['tags'], true) : $post['tags']; ?>
+                                    <?php if (!empty($tags) && is_array($tags)): ?>
+                                        <div class="blog-tags">
+                                            <strong>Tags: </strong>
+                                            <?php foreach ($tags as $tag): ?>
+                                                <a href="<?= base_url('blog/search?keyword=' . urlencode($tag)) ?>" class="blog-tag">
+                                                    <?= esc($tag) ?>
+                                                </a>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <!-- Post Navigation -->
+                        <?php if ($previousPost || $nextPost): ?>
+                            <div class="blog-navigation">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <?php if ($previousPost): ?>
+                                            <a href="<?= base_url('blog/post/' . $previousPost['slug']) ?>" class="nav-post">
+                                                <div class="nav-direction">
+                                                    <i class="ti-arrow-left"></i> Previous Post
+                                                </div>
+                                                <img src="<?= base_url($previousPost['featured_image'] ?? 'aranoz-master/img/blog/single_blog_1.png') ?>" 
+                                                     alt="<?= esc($previousPost['title']) ?>">
+                                                <div class="nav-post-content">
+                                                    <h5><?= esc(strlen($previousPost['title']) > 50 ? substr($previousPost['title'], 0, 50) . '...' : $previousPost['title']) ?></h5>
+                                                    <p><?= date('M j, Y', strtotime($previousPost['published_at'])) ?></p>
+                                                </div>
+                                            </a>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="col-md-6 text-right">
+                                        <?php if ($nextPost): ?>
+                                            <a href="<?= base_url('blog/post/' . $nextPost['slug']) ?>" class="nav-post justify-content-end">
+                                                <div class="nav-post-content text-right">
+                                                    <h5><?= esc(strlen($nextPost['title']) > 50 ? substr($nextPost['title'], 0, 50) . '...' : $nextPost['title']) ?></h5>
+                                                    <p><?= date('M j, Y', strtotime($nextPost['published_at'])) ?></p>
+                                                </div>
+                                                <img src="<?= base_url($nextPost['featured_image'] ?? 'aranoz-master/img/blog/single_blog_1.png') ?>" 
+                                                     alt="<?= esc($nextPost['title']) ?>">
+                                                <div class="nav-direction">
+                                                    Next Post <i class="ti-arrow-right"></i>
+                                                </div>
+                                            </a>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- Related Posts -->
+                        <?php if (!empty($relatedPosts)): ?>
+                            <div class="related-posts">
+                                <h4>Related Posts</h4>
+                                <div class="row">
+                                    <?php foreach ($relatedPosts as $related): ?>
+                                        <div class="col-md-4 related-post-item">
+                                            <div class="card border-0">
+                                                <img src="<?= base_url($related['featured_image'] ?? 'aranoz-master/img/blog/single_blog_1.png') ?>" 
+                                                     class="card-img-top" alt="<?= esc($related['title']) ?>"
+                                                     style="height: 200px; object-fit: cover;">
+                                                <div class="card-body p-3">
+                                                    <h6 class="card-title">
+                                                        <a href="<?= base_url('blog/' . $related['slug']) ?>" class="text-dark">
+                                                            <?= esc(strlen($related['title']) > 60 ? substr($related['title'], 0, 60) . '...' : $related['title']) ?>
+                                                        </a>
+                                                    </h6>
+                                                    <small class="text-muted">
+                                                        <?= date('M j, Y', strtotime($related['published_at'])) ?>
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- Comments Section -->
+                        <div class="comments-section">
+                            <h4>Comments (<?= $commentCount ?>)</h4>
+                            
+                            <!-- Comments List -->
+                            <div class="comments-list mt-4">
+                                <?php if (!empty($comments)): ?>
+                                    <?php foreach ($comments as $comment): ?>
+                                        <?= view('Customers/comment_item', ['comment' => $comment]) ?>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div class="text-center py-4">
+                                        <i class="ti-comment" style="font-size: 3rem; color: #ddd;"></i>
+                                        <p class="mt-2 text-muted">No comments yet. Be the first to comment!</p>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+
+                            <!-- Comment Form -->
+                            <div class="comment-form">
+                                <h5>Leave a Comment</h5>
+                                <form id="comment-form">
+                                    <input type="hidden" name="post_id" value="<?= $post['id'] ?>">
+                                    <input type="hidden" name="parent_id" value="" id="parent-comment-id">
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <input type="text" name="author_name" class="form-control" 
+                                                       placeholder="Your Name *" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <input type="email" name="author_email" class="form-control" 
+                                                       placeholder="Your Email *" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <textarea name="comment" class="form-control" rows="5" 
+                                                  placeholder="Your Comment *" required></textarea>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <button type="submit" class="btn_1">
+                                            <span class="btn-text">Post Comment</span>
+                                            <span class="btn-loading" style="display: none;">
+                                                <i class="fa fa-spinner fa-spin"></i> Posting...
+                                            </span>
+                                        </button>
+                                        <button type="button" class="btn btn-secondary ml-2" id="cancel-reply" style="display: none;">
+                                            Cancel Reply
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="col-lg-4">
+                    <div class="blog_right_sidebar">
+                        
+                        <!-- Search Widget -->
+                        <aside class="single_sidebar_widget search_widget">
+                            <form action="<?= base_url('blog/search') ?>" method="GET">
+                                <div class="form-group">
+                                    <div class="input-group mb-3">
+                                        <input type="text" name="keyword" class="form-control" 
+                                               placeholder='Search Posts'
+                                               onfocus="this.placeholder = ''"
+                                               onblur="this.placeholder = 'Search Posts'">
+                                        <div class="input-group-append">
+                                            <button class="btn" type="submit"><i class="ti-search"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="button rounded-0 primary-bg text-white w-100 btn_1" type="submit">
+                                    Search
+                                </button>
+                            </form>
+                        </aside>
+
+                        <!-- Categories Widget -->
+                        <aside class="single_sidebar_widget post_category_widget">
+                            <h4 class="widget_title">Categories</h4>
+                            <ul class="list cat-list">
+                                <?php if (!empty($categories)): ?>
+                                    <?php foreach ($categories as $category): ?>
+                                        <li>
+                                            <a href="<?= base_url('blog/category/' . urlencode($category['category'])) ?>" 
+                                               class="d-flex <?= $category['category'] === $post['category'] ? 'text-primary font-weight-bold' : '' ?>">
+                                                <p><?= esc($category['category']) ?></p>
+                                                <p>(<?= $category['post_count'] ?>)</p>
+                                            </a>
+                                        </li>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </ul>
+                        </aside>
+
+                        <!-- Recent Posts Widget -->
+                        <aside class="single_sidebar_widget popular_post_widget">
+                            <h3 class="widget_title">Recent Posts</h3>
+                            <?php if (!empty($recentPosts)): ?>
+                                <?php foreach ($recentPosts as $recentPost): ?>
+                                    <div class="media post_item">
+                                        <img src="<?= base_url($recentPost['featured_image'] ?? 'aranoz-master/img/post/post_1.png') ?>" 
+                                             alt="<?= esc($recentPost['title']) ?>">
+                                        <div class="media-body">
+                                            <a href="<?= base_url('blog/' . $recentPost['slug']) ?>">
+                                                <h3><?= esc(strlen($recentPost['title']) > 40 ? substr($recentPost['title'], 0, 40) . '...' : $recentPost['title']) ?></h3>
+                                            </a>
+                                            <p><?= date('F j, Y', strtotime($recentPost['published_at'])) ?></p>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </aside>
+
+                        <!-- Newsletter Widget -->
+                        <aside class="single_sidebar_widget newsletter_widget">
+                            <h4 class="widget_title">Newsletter</h4>
+                            <form action="#" method="POST" id="newsletter-form">
+                                <div class="form-group">
+                                    <input type="email" name="email" class="form-control" 
+                                           onfocus="this.placeholder = ''"
+                                           onblur="this.placeholder = 'Enter email'" 
+                                           placeholder='Enter email' required>
+                                </div>
+                                <button class="button rounded-0 primary-bg text-white w-100 btn_1" type="submit">
+                                    Subscribe
+                                </button>
+                            </form>
+                        </aside>
+                    </div>
+                </div>
             </div>
-         </div>
-      </div>
-   </footer>
-   <!--::footer_part end::-->
+        </div>
+    </section>
+    <!--================Single Blog Area =================-->
+<?= $this->endSection() ?>
 
-   <!-- jquery plugins here-->
-   <!-- jquery -->
-   <script src="<?= base_url('aranoz-master/js/jquery-1.12.1.min.js'); ?>"></script>
-   <!-- popper js -->
-   <script src="<?= base_url('aranoz-master/js/popper.min.js'); ?>"></script>
-   <!-- bootstrap js -->
-   <script src="<?= base_url('aranoz-master/js/bootstrap.min.js'); ?>"></script>
-   <!-- easing js -->
-   <script src="<?= base_url('aranoz-master/js/jquery.magnific-popup.js'); ?>"></script>
-   <!-- swiper js -->
-   <script src="<?= base_url('aranoz-master/js/swiper.min.js'); ?>"></script>
-   <!-- swiper js -->
-   <script src="<?= base_url('aranoz-master/js/masonry.pkgd.js'); ?>"></script>
-   <!-- particles js -->
-   <script src="<?= base_url('aranoz-master/js/owl.carousel.min.js'); ?>"></script>
-   <script src="<?= base_url('aranoz-master/js/jquery.nice-select.min.js'); ?>"></script>
-   <!-- slick js -->
-   <script src="<?= base_url('aranoz-master/js/slick.min.js'); ?>"></script>
-   <script src="<?= base_url('aranoz-master/js/jquery.counterup.min.js'); ?>"></script>
-   <script src="<?= base_url('aranoz-master/js/waypoints.min.js'); ?>"></script>
-   <script src="<?= base_url('aranoz-master/js/contact.js'); ?>"></script>
-   <script src="<?= base_url('aranoz-master/js/jquery.ajaxchimp.min.js'); ?>"></script>
-   <script src="<?= base_url('aranoz-master/js/jquery.form.js'); ?>"></script>
-   <script src="<?= base_url('aranoz-master/js/jquery.validate.min.js'); ?>"></script>
-   <script src="<?= base_url('aranoz-master/js/mail-script.js'); ?>"></script>
-   <!-- custom js -->
-   <script src="<?= base_url('aranoz-master/js/custom.js'); ?>"></script>
-</body>
+<?= $this->section('scripts') ?>
+<script>
+$(document).ready(function() {
+    // Comment form submission
+    $('#comment-form').on('submit', function(e) {
+        e.preventDefault();
+        
+        const $form = $(this);
+        const $submitBtn = $form.find('button[type="submit"]');
+        const $btnText = $submitBtn.find('.btn-text');
+        const $btnLoading = $submitBtn.find('.btn-loading');
+        
+        // Show loading state
+        $btnText.hide();
+        $btnLoading.show();
+        $submitBtn.prop('disabled', true);
+        
+        const formData = $form.serialize() + '&<?= csrf_token() ?>=<?= csrf_hash() ?>';
+        
+        $.ajax({
+            url: '<?= base_url('blog/add-comment') ?>',
+            type: 'POST',
+            data: formData,
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    showToast('success', response.message);
+                    
+                    // Reset form
+                    $form[0].reset();
+                    $('#parent-comment-id').val('');
+                    $('#cancel-reply').hide();
+                    
+                    // Reload comments section (or append new comment)
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    showToast('error', response.message || 'Error posting comment');
+                    if (response.errors) {
+                        console.error('Validation errors:', response.errors);
+                    }
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX Error:', error);
+                showToast('error', 'Network error. Please try again.');
+            },
+            complete: function() {
+                // Hide loading state
+                $btnText.show();
+                $btnLoading.hide();
+                $submitBtn.prop('disabled', false);
+            }
+        });
+    });
 
-</html>
+    // Reply to comment
+    $(document).on('click', '.reply-btn', function(e) {
+        e.preventDefault();
+        
+        const commentId = $(this).data('comment-id');
+        const authorName = $(this).data('author-name');
+        
+        // Set parent comment ID
+        $('#parent-comment-id').val(commentId);
+        
+        // Update form title
+        $('h5', '#comment-form').text(`Reply to ${authorName}`);
+        
+        // Show cancel button
+        $('#cancel-reply').show();
+        
+        // Scroll to form
+        $('html, body').animate({
+            scrollTop: $('#comment-form').offset().top - 100
+        }, 500);
+        
+        // Focus on comment textarea
+        $('textarea[name="comment"]').focus();
+    });
+
+    // Cancel reply
+    $('#cancel-reply').on('click', function() {
+        // Reset form
+        $('#parent-comment-id').val('');
+        $('h5', '.comment-form').text('Leave a Comment');
+        $(this).hide();
+    });
+
+    // Newsletter form
+    $('#newsletter-form').on('submit', function(e) {
+        e.preventDefault();
+        // Add newsletter subscription logic here
+        showToast('success', 'Thank you for subscribing to our newsletter!');
+    });
+
+    // Social sharing (if you want to add social sharing buttons)
+    function sharePost(platform) {
+        const url = encodeURIComponent(window.location.href);
+        const title = encodeURIComponent('<?= addslashes($post['title']) ?>');
+        const text = encodeURIComponent('<?= addslashes(substr(strip_tags($post['excerpt']), 0, 100)) ?>');
+        
+        let shareUrl = '';
+        switch(platform) {
+            case 'facebook':
+                shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+                break;
+            case 'twitter':
+                shareUrl = `https://twitter.com/intent/tweet?url=${url}&text=${title}`;
+                break;
+            case 'linkedin':
+                shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
+                break;
+        }
+        
+        if (shareUrl) {
+            window.open(shareUrl, '_blank', 'width=600,height=400');
+        }
+    }
+
+    // Toast notification function
+    function showToast(type, message) {
+        const toastClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const iconClass = type === 'success' ? 'ti-check' : 'ti-close';
+        
+        const toast = `
+            <div class="alert ${toastClass} alert-dismissible fade show position-fixed" 
+                 style="top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 400px;">
+                <i class="${iconClass}"></i> ${message}
+                <button type="button" class="close" data-dismiss="alert">
+                    <span>&times;</span>
+                </button>
+            </div>
+        `;
+        
+        $('body').append(toast);
+        
+        setTimeout(() => {
+            $('.alert').fadeOut(() => $('.alert').remove());
+        }, 5000);
+    }
+});
+</script>
+<?= $this->endSection() ?>
