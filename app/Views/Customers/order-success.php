@@ -141,7 +141,20 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
-
+<section class="breadcrumb breadcrumb_bg">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="breadcrumb_iner">
+                        <div class="breadcrumb_iner_item">
+                            <h2>Thành công</h2>
+                            <p>Trang chủ <span>-</span> Thành công</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 <div class="order-success-container">
     <div class="container">
         <div class="success-card">

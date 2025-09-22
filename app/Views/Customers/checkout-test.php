@@ -86,7 +86,20 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
-
+<section class="breadcrumb breadcrumb_bg">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="breadcrumb_iner">
+                        <div class="breadcrumb_iner_item">
+                            <h2>Thanh toán</h2>
+                            <p>Trang chủ<span>-</span> Thanh toán</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 <div class="checkout-container">
     <div class="container">
         <div class="row">

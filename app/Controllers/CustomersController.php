@@ -286,6 +286,288 @@ public function processLogin()
                 return $this->response->setJSON(['status' => 'error', 'message' => 'Không tìm thấy tài khoản.']);
             }
 
+// Thêm các method này vào CustomersController.php
 
+/**
+ * Hiển thị trang profile
+ */
+public function profile()
+{
+    // Kiểm tra đăng nhập
+    if (!session()->has('user')) {
+        session()->setFlashdata('error', 'Vui lòng đăng nhập để truy cập trang này.');
+        return redirect()->to(route_to('Customers_sign'));
+    }
+
+    $customerModel = new CustomerModel();
+    $orderModel = new \App\Models\OrderModel();
+    
+    $customerId = session('user')['id'];
+    
+    // Lấy thông tin khách hàng
+    $customer = $customerModel->find($customerId);
+    
+    if (!$customer) {
+        session()->setFlashdata('error', 'Không tìm thấy thông tin tài khoản.');
+        return redirect()->to(route_to('home_about'));
+    }
+    
+    // Lấy danh sách đơn hàng (phân trang)
+    $orders = $orderModel->where('customer_id', $customerId)
+                        ->orderBy('created_at', 'DESC')
+                        ->paginate(10);
+    
+    $data = [
+        'title' => 'Trang cá nhân - ' . $customer['name'],
+        'customer' => $customer,
+        'orders' => $orders,
+        'pager' => $orderModel->pager
+    ];
+    
+    return view('Customers/profile', $data);
+}
+
+/**
+ * Cập nhật thông tin profile
+ */
+public function updateProfile()
+{
+    if (!session()->has('user')) {
+        return $this->response->setJSON(['status' => 'error', 'message' => 'Vui lòng đăng nhập.']);
+    }
+
+    $customerModel = new CustomerModel();
+    $validation = \Config\Services::validation();
+    $customerId = session('user')['id'];
+
+    $validation->setRules([
+        'name' => 'required|min_length[2]|max_length[100]',
+        'phone' => 'required|numeric|min_length[10]|max_length[15]',
+        'address' => 'required|min_length[10]|max_length[255]',
+        'image' => 'permit_empty|max_size[image,2048]|is_image[image]'
+    ]);
+
+    if (!$this->validate($validation->getRules())) {
+        return $this->response->setJSON([
+            'status' => 'error',
+            'message' => 'Dữ liệu không hợp lệ.',
+            'errors' => $this->validator->getErrors()
+        ]);
+    }
+
+    $updateData = [
+        'name'       => $this->request->getPost('name'),
+        'phone'      => $this->request->getPost('phone'),
+        'address'    => $this->request->getPost('address'),
+        'updated_at' => date('Y-m-d H:i:s')
+    ];
+
+    // Xử lý upload ảnh
+    $imageFile = $this->request->getFile('image');
+    if ($imageFile && $imageFile->isValid() && !$imageFile->hasMoved()) {
+        $uploadPath = FCPATH . 'uploads/customers/';
+        if (!is_dir($uploadPath)) {
+            mkdir($uploadPath, 0777, true);
+        }
+
+        $fileName = $customerId . '_' . time() . '.' . $imageFile->getExtension();
+
+        if ($imageFile->move($uploadPath, $fileName)) {
+            // Xóa ảnh cũ nếu có
+            $customer = $customerModel->find($customerId);
+            if ($customer && !empty($customer['image_url'])) {
+                $oldImagePath = FCPATH . $customer['image_url'];
+                if (is_file($oldImagePath)) {
+                    unlink($oldImagePath);
+                }
+            }
+
+            // Lưu đường dẫn tương đối
+            $updateData['image_url'] = 'uploads/customers/' . $fileName;
+        }
+    }
+
+    if ($customerModel->update($customerId, $updateData)) {
+        $updatedCustomer = $customerModel->find($customerId);
+
+        // Cập nhật session
+        session()->set('user', [
+            'id'      => $updatedCustomer['id'],
+            'name'    => $updatedCustomer['name'],
+            'email'   => $updatedCustomer['email'],
+            'phone'   => $updatedCustomer['phone'],
+            'address' => $updatedCustomer['address'],
+            'avatar'  => $updatedCustomer['image_url'] ?? ''
+        ]);
+
+        $response = [
+            'status'  => 'success',
+            'message' => 'Cập nhật thông tin thành công!'
+        ];
+
+        if (isset($updateData['image_url'])) {
+            $response['avatar_url'] = base_url($updateData['image_url']);
+        }
+
+        return $this->response->setJSON($response);
+    }
+
+    return $this->response->setJSON(['status' => 'error', 'message' => 'Có lỗi xảy ra khi cập nhật thông tin.']);
+}
+
+
+/**
+ * Đổi mật khẩu
+ */
+public function changePassword()
+{
+    // Kiểm tra đăng nhập
+    if (!session()->has('user')) {
+        return $this->response->setJSON(['status' => 'error', 'message' => 'Vui lòng đăng nhập.']);
+    }
+
+    $customerModel = new CustomerModel();
+    $validation = \Config\Services::validation();
+    $customerId = session('user')['id'];
+    
+    // Quy tắc xác thực
+    $validation->setRules([
+        'current_password' => 'required',
+        'new_password' => 'required|min_length[8]|regex_match[/(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*])/]',
+        'confirm_password' => 'required|matches[new_password]'
+    ], [
+        'current_password' => [
+            'required' => 'Vui lòng nhập mật khẩu hiện tại.'
+        ],
+        'new_password' => [
+            'required' => 'Vui lòng nhập mật khẩu mới.',
+            'min_length' => 'Mật khẩu mới phải có ít nhất 8 ký tự.',
+            'regex_match' => 'Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ cái, số và ký tự đặc biệt.'
+        ],
+        'confirm_password' => [
+            'required' => 'Vui lòng xác nhận mật khẩu mới.',
+            'matches' => 'Mật khẩu xác nhận không khớp với mật khẩu mới.'
+        ]
+    ]);
+
+    if (!$this->validate($validation->getRules())) {
+        return $this->response->setJSON(['status' => 'error', 'message' => 'Dữ liệu không hợp lệ.', 'errors' => $this->validator->getErrors()]);
+    }
+
+    // Lấy thông tin khách hàng hiện tại
+    $customer = $customerModel->find($customerId);
+    if (!$customer) {
+        return $this->response->setJSON(['status' => 'error', 'message' => 'Không tìm thấy thông tin tài khoản.']);
+    }
+
+    // Kiểm tra mật khẩu hiện tại
+    if (!password_verify($this->request->getPost('current_password'), $customer['password'])) {
+        return $this->response->setJSON(['status' => 'error', 'message' => 'Mật khẩu hiện tại không đúng.']);
+    }
+
+    // Cập nhật mật khẩu mới
+    $updateData = [
+        'password' => password_hash($this->request->getPost('new_password'), PASSWORD_DEFAULT),
+        'updated_at' => date('Y-m-d H:i:s')
+    ];
+
+    if ($customerModel->update($customerId, $updateData)) {
+        return $this->response->setJSON(['status' => 'success', 'message' => 'Đổi mật khẩu thành công!']);
+    } else {
+        return $this->response->setJSON(['status' => 'error', 'message' => 'Có lỗi xảy ra khi đổi mật khẩu.']);
+    }
+}
+
+/**
+ * Xem chi tiết đơn hàng
+ */
+public function orderDetail($orderId)
+{
+    // Debug: Log thông tin
+    log_message('debug', 'OrderDetail called with ID: ' . $orderId);
+    
+    // Kiểm tra đăng nhập
+    if (!session()->has('user')) {
+        log_message('debug', 'User not logged in');
+        return $this->response->setStatusCode(401)->setBody('<div class="alert alert-danger">Vui lòng đăng nhập để xem thông tin này.</div>');
+    }
+
+    try {
+        $orderModel = new \App\Models\OrderModel();
+        $orderItemModel = new \App\Models\OrderItemModel();
+        $customerId = session('user')['id'];
+        
+        log_message('debug', 'Customer ID: ' . $customerId);
+        
+        // Lấy thông tin đơn hàng (chỉ của khách hàng hiện tại)
+        $order = $orderModel->where('id', $orderId)
+                           ->where('customer_id', $customerId)
+                           ->first();
+        
+        log_message('debug', 'Order found: ' . ($order ? 'Yes' : 'No'));
+        
+        if (!$order) {
+            return $this->response->setStatusCode(404)->setBody('<div class="alert alert-danger">Không tìm thấy đơn hàng hoặc bạn không có quyền xem đơn hàng này.</div>');
+        }
+        
+        // Lấy chi tiết sản phẩm trong đơn hàng
+        $orderItems = $orderItemModel->getOrderItems($orderId);
+        
+        log_message('debug', 'Order items count: ' . count($orderItems));
+        
+        $data = [
+            'order' => $order,
+            'orderItems' => $orderItems
+        ];
+        
+        return view('Customers/order_detail_modal', $data);
+        
+    } catch (\Exception $e) {
+        log_message('error', 'Error in orderDetail: ' . $e->getMessage());
+        return $this->response->setStatusCode(500)->setBody('<div class="alert alert-danger">Có lỗi xảy ra: ' . $e->getMessage() . '</div>');
+    }
+}
+
+/**
+ * Hủy đơn hàng
+ */
+public function cancelOrder($orderId)
+{
+    // Kiểm tra đăng nhập
+    if (!session()->has('user')) {
+        return $this->response->setJSON(['status' => 'error', 'message' => 'Vui lòng đăng nhập.']);
+    }
+
+    $orderModel = new \App\Models\OrderModel();
+    $customerId = session('user')['id'];
+    
+    // Lấy thông tin đơn hàng
+    $order = $orderModel->where('id', $orderId)
+                       ->where('customer_id', $customerId)
+                       ->first();
+    
+    if (!$order) {
+        return $this->response->setJSON(['status' => 'error', 'message' => 'Không tìm thấy đơn hàng.']);
+    }
+    
+    // Chỉ cho phép hủy đơn hàng có trạng thái 'pending'
+    if ($order['status'] !== 'pending') {
+        return $this->response->setJSON(['status' => 'error', 'message' => 'Không thể hủy đơn hàng này.']);
+    }
+    
+    // Cập nhật trạng thái đơn hàng
+    $updateData = [
+        'status' => 'cancelled',
+        'updated_at' => date('Y-m-d H:i:s')
+    ];
+    
+    if ($orderModel->update($orderId, $updateData)) {
+        // Có thể thêm logic hoàn trả số lượng sản phẩm vào kho ở đây
+        
+        return $this->response->setJSON(['status' => 'success', 'message' => 'Hủy đơn hàng thành công!']);
+    } else {
+        return $this->response->setJSON(['status' => 'error', 'message' => 'Có lỗi xảy ra khi hủy đơn hàng.']);
+    }
+}
         
 }

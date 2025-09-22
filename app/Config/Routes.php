@@ -132,33 +132,38 @@ $routes->group('api_Customers',function($routes) {
     $routes->get('google_login', 'GoogleController::googleLogin', ['as' => 'google_login']);
     $routes->get('google_callback', 'GoogleController::googleCallback', ['as' => 'google_callback']);
     
-    $routes->group('Manager',  ['filter' => 'authCheck'],function($routes) {
-        $routes->get('profile','Profilecontroller::profile', ['as' => 'profile']);
-        $routes->get('personal', 'ProfileController::personal', ['as' => 'personal']);
+    $routes->get('profile', 'CustomersController::profile', ['as' => 'profile']);
+    $routes->post('profile/update', 'CustomersController::updateProfile', ['as' => 'update_profile']);
+    $routes->post('profile/change-password', 'CustomersController::changePassword', ['as' => 'change_password']);
+    $routes->get('profile/order-detail/(:num)', 'CustomersController::orderDetail/$1');
+    $routes->post('profile/cancel-order/(:num)', 'CustomersController::cancelOrder/$1');
+    // $routes->group('Manager',  ['filter' => 'authCheck'],function($routes) {
+    //     $routes->get('profile','Profilecontroller::profile', ['as' => 'profile']);
+    //     $routes->get('personal', 'ProfileController::personal', ['as' => 'personal']);
 
 
-        $routes->get('change_password','Profilecontroller::change_password', ['as' => 'change_password']);
-        $routes->post('changePassword', 'ProfileController::changePassword', ['as' => 'changePassword']);
+    //     $routes->get('change_password','Profilecontroller::change_password', ['as' => 'change_password']);
+    //     $routes->post('changePassword', 'ProfileController::changePassword', ['as' => 'changePassword']);
 
-        $routes->get('changePersonalInfo', 'ProfileController::changePersonalInfo', ['as' => 'changePersonalInfo']);
+    //     $routes->get('changePersonalInfo', 'ProfileController::changePersonalInfo', ['as' => 'changePersonalInfo']);
         
-        $routes->post('updatePersonalInfo', 'ProfileController::updatePersonalInfo',['as' => 'updatePersonalInfo']);
-        $routes->get('verifyChangeEmailOTP', 'ProfileController::verifyChangeEmailOTP', ['as' => 'verifyChangeEmailOTP']);
-        $routes->post('verifyChangeEmailOTP', 'ProfileController::handleVerifyChangeEmailOTP', ['as' => 'handleVerifyChangeEmailOTP']);
+    //     $routes->post('updatePersonalInfo', 'ProfileController::updatePersonalInfo',['as' => 'updatePersonalInfo']);
+    //     $routes->get('verifyChangeEmailOTP', 'ProfileController::verifyChangeEmailOTP', ['as' => 'verifyChangeEmailOTP']);
+    //     $routes->post('verifyChangeEmailOTP', 'ProfileController::handleVerifyChangeEmailOTP', ['as' => 'handleVerifyChangeEmailOTP']);
 
 
 
-        $routes->get('order','ProfileController::order', ['as' => 'order']);
-        $routes->get('detail_order/(:num)', 'ProfileController::detail_order/$1', ['as' => 'detail_order']);
-        $routes->get('history_order','ProfileController::history_order', ['as' => 'history_order']);
-        $routes->get('detail_history_order/(:num)', 'ProfileController::detail_history_order/$1', ['as' => 'detail_history_order']);
-        $routes->get('history_order/delete/(:num)', 'ProfileController::delete_order/$1', ['as' => 'delete_order']);//xoá đơn hàng
-        $routes->get('history_order/reorder/(:num)', 'ProfileController::reorder/$1', ['as' => 'reorder']);//đặt lại đơn hàng
-        $routes->post('cancel/(:num)', 'ProfileController::cancelOrder/$1', ['as' => 'cancel_order']);//huỷ đơn hàng đã đặt
-        $routes->get('reviews/(:num)', 'ProfileController::reviews/$1',['as'=>'reviews']); // Hiển thị trang đánh giá
-        $routes->post('reviews/submit/(:num)', 'ProfileController::submitReview/$1',['as'=>'submitReview']); // Xử lý gửi đánh giá
+    //     $routes->get('order','ProfileController::order', ['as' => 'order']);
+    //     $routes->get('detail_order/(:num)', 'ProfileController::detail_order/$1', ['as' => 'detail_order']);
+    //     $routes->get('history_order','ProfileController::history_order', ['as' => 'history_order']);
+    //     $routes->get('detail_history_order/(:num)', 'ProfileController::detail_history_order/$1', ['as' => 'detail_history_order']);
+    //     $routes->get('history_order/delete/(:num)', 'ProfileController::delete_order/$1', ['as' => 'delete_order']);//xoá đơn hàng
+    //     $routes->get('history_order/reorder/(:num)', 'ProfileController::reorder/$1', ['as' => 'reorder']);//đặt lại đơn hàng
+    //     $routes->post('cancel/(:num)', 'ProfileController::cancelOrder/$1', ['as' => 'cancel_order']);//huỷ đơn hàng đã đặt
+    //     $routes->get('reviews/(:num)', 'ProfileController::reviews/$1',['as'=>'reviews']); // Hiển thị trang đánh giá
+    //     $routes->post('reviews/submit/(:num)', 'ProfileController::submitReview/$1',['as'=>'submitReview']); // Xử lý gửi đánh giá
 
-    });
+    // });
   
 });
 

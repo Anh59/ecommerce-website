@@ -110,7 +110,7 @@
                                         <?= esc(session('user')['name']) ?>
                                     </a>
                                     <div class="dropdown-menu" aria-labelledby="userDropdown">
-                                        <a class="dropdown-item" href="<?= base_url('profile') ?>">My Profile</a>
+                                        <a class="dropdown-item" href="<?= route_to('profile') ?>">My Profile</a>
                                         <a class="dropdown-item" href="<?= base_url('orders') ?>">My Orders</a>
                                         <div class="dropdown-divider"></div>
                                         <a class="dropdown-item" href="<?= route_to('Customers_logout') ?>">Logout</a>
