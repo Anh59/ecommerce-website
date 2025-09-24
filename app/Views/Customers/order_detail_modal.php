@@ -39,12 +39,15 @@
                                 $statusClass = 'badge-danger';
                                 $statusText = 'Đã hủy';
                                 break;
+                            default:
+                                $statusClass = 'badge-secondary';
+                                $statusText = ucfirst($order['status']);
                         }
                         ?>
                         <span class="badge <?= $statusClass ?>"><?= $statusText ?></span>
                     </td>
                 </tr>
-                <?php if($order['tracking_number']): ?>
+                <?php if(!empty($order['tracking_number'])): ?>
                 <tr>
                     <td><strong>Mã vận đơn:</strong></td>
                     <td><?= esc($order['tracking_number']) ?></td>
@@ -98,6 +101,9 @@
                                 $paymentClass = 'badge-info';
                                 $paymentText = 'Đã hoàn tiền';
                                 break;
+                            default:
+                                $paymentClass = 'badge-secondary';
+                                $paymentText = ucfirst($order['payment_status']);
                         }
                         ?>
                         <span class="badge <?= $paymentClass ?>"><?= $paymentText ?></span>
@@ -108,7 +114,7 @@
     </div>
 
     <!-- Shipping Address -->
-    <?php if($order['shipping_address']): ?>
+    <?php if(!empty($order['shipping_address'])): ?>
     <div class="mb-4">
         <h6><i class="fas fa-shipping-fast"></i> Địa chỉ giao hàng</h6>
         <?php 
@@ -119,7 +125,7 @@
                 <?= esc($shippingAddress['phone'] ?? '') ?><br>
                 <?= esc($shippingAddress['address'] ?? '') ?><br>
                 <?= esc($shippingAddress['ward'] ?? '') ?>, <?= esc($shippingAddress['district'] ?? '') ?>, <?= esc($shippingAddress['city'] ?? '') ?>
-                <?php if(isset($shippingAddress['postal_code'])): ?>
+                <?php if(!empty($shippingAddress['postal_code'])): ?>
                 <br>Mã bưu điện: <?= esc($shippingAddress['postal_code']) ?>
                 <?php endif; ?>
             </div>
@@ -139,10 +145,19 @@
                         <th width="100">Đơn giá</th>
                         <th width="80">Số lượng</th>
                         <th width="120">Thành tiền</th>
+                        <th width="120">Đánh giá</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach($orderItems as $item): ?>
+                    <?php 
+                        $reviewModel = new \App\Models\ProductReviewModel();
+                        $hasReview = $reviewModel->where([
+                            'order_id' => $order['id'],
+                            'product_id' => $item['product_id'],
+                            'customer_id' => session('user')['id']
+                        ])->first();
+                    ?>
                     <tr>
                         <td>
                             <img src="<?= $item['main_image'] ? base_url($item['main_image']) : base_url('aranoz-master/img/no-image.png') ?>" 
@@ -152,13 +167,23 @@
                         </td>
                         <td>
                             <strong><?= esc($item['product_name']) ?></strong>
-                            <?php if($item['product_sku']): ?>
+                            <?php if(!empty($item['product_sku'])): ?>
                             <br><small class="text-muted">SKU: <?= esc($item['product_sku']) ?></small>
                             <?php endif; ?>
                         </td>
                         <td><?= number_format($item['price'], 0, ',', '.') ?>đ</td>
                         <td class="text-center"><?= $item['quantity'] ?></td>
                         <td><strong><?= number_format($item['total'], 0, ',', '.') ?>đ</strong></td>
+                        <td>
+                            <?php if($order['status'] === 'delivered'): ?>
+                                <button 
+                                    id="review-btn-<?= $order['id'] ?>-<?= $item['product_id'] ?>" 
+                                    class="btn btn-sm <?= $hasReview ? 'btn-success' : 'btn-outline-secondary' ?>" 
+                                    onclick="<?= $hasReview ? "viewReview({$order['id']}, {$item['product_id']})" : "showReviewForm({$order['id']}, {$item['product_id']}, '".esc($item['product_name'], 'js')."')" ?>">
+                                    <i class="fas fa-star"></i> <?= $hasReview ? 'Đã đánh giá' : 'Đánh giá' ?>
+                                </button>
+                            <?php endif; ?>
+                        </td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -194,7 +219,7 @@
     </div>
 
     <!-- Notes -->
-    <?php if($order['notes']): ?>
+    <?php if(!empty($order['notes'])): ?>
     <div class="mt-4">
         <h6><i class="fas fa-sticky-note"></i> Ghi chú</h6>
         <div class="card card-body bg-light">
@@ -204,7 +229,7 @@
     <?php endif; ?>
 
     <!-- Timeline (if applicable) -->
-    <?php if($order['shipped_at'] || $order['delivered_at']): ?>
+    <?php if(!empty($order['shipped_at']) || !empty($order['delivered_at'])): ?>
     <div class="mt-4">
         <h6><i class="fas fa-timeline"></i> Lịch sử đơn hàng</h6>
         <div class="timeline">
@@ -215,7 +240,7 @@
                     <br><small class="text-muted"><?= date('d/m/Y H:i', strtotime($order['created_at'])) ?></small>
                 </div>
             </div>
-            <?php if($order['shipped_at']): ?>
+            <?php if(!empty($order['shipped_at'])): ?>
             <div class="timeline-item">
                 <div class="timeline-marker bg-info"></div>
                 <div class="timeline-content">
@@ -224,7 +249,7 @@
                 </div>
             </div>
             <?php endif; ?>
-            <?php if($order['delivered_at']): ?>
+            <?php if(!empty($order['delivered_at'])): ?>
             <div class="timeline-item">
                 <div class="timeline-marker bg-success"></div>
                 <div class="timeline-content">
@@ -243,7 +268,6 @@
     position: relative;
     padding-left: 30px;
 }
-
 .timeline::before {
     content: '';
     position: absolute;
@@ -253,12 +277,10 @@
     width: 2px;
     background: #dee2e6;
 }
-
 .timeline-item {
     position: relative;
     margin-bottom: 20px;
 }
-
 .timeline-marker {
     position: absolute;
     left: -23px;
@@ -269,7 +291,6 @@
     border: 3px solid #fff;
     box-shadow: 0 0 0 2px #dee2e6;
 }
-
 .timeline-content {
     background: #f8f9fa;
     padding: 10px 15px;

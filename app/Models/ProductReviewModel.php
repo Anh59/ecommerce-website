@@ -9,7 +9,7 @@ class ProductReviewModel extends Model
     protected $table = 'product_reviews';
     protected $primaryKey = 'id';
     protected $allowedFields = [
-        'product_id', 'customer_id', 'rating', 'title', 'comment', 'is_verified'
+        'order_id', 'product_id', 'customer_id', 'rating', 'title', 'comment', 'is_verified'
     ];
     protected $useTimestamps = true;
     protected $createdField = 'created_at';

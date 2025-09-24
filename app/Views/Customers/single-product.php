@@ -3,7 +3,7 @@
 <?= $this->section('styles') ?>
     <link rel="stylesheet" href="<?= base_url('aranoz-master/css/lightslider.min.css'); ?>">
     <style>
-        .wishlist-btn.active i { color: #ff0000 !important; }
+        
         .review-form, .comment-form { display: none; }
         .review-form.active, .comment-form.active { display: block; }
         .rating i { cursor: pointer; }
@@ -11,43 +11,104 @@
         .reply-form { margin-left: 50px; margin-top: 10px; display: none; }
         .reply-form.active { display: block; }
         
-        /* NEW: Buy Now Button Styles */
-        .buy-now-section { 
-            border-top: 1px solid #eee; 
-            padding-top: 20px; 
-            margin-top: 20px; 
+        /* NEW: Improved Button Layout */
+        .card_area { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px; 
         }
+        
+        .top-row { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            gap: 15px; 
+        }
+        
+        .add-cart-wishlist { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+        }
+        
+        .buy-now-section { 
+            width: 100%; 
+        }
+        
         .btn-buy-now { 
             background: #ff6b35; 
             color: white; 
             border: none; 
-            padding: 12px 30px; 
+            padding: 15px 40px; 
             font-size: 16px; 
             font-weight: 600; 
             text-transform: uppercase; 
             letter-spacing: 1px; 
             transition: all 0.3s ease; 
+            width: 100%;
+            border-radius: 5px;
         }
+        
         .btn-buy-now:hover { 
             background: #e55a2e; 
             color: white; 
             transform: translateY(-2px); 
             box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3); 
         }
-        .quantity-buy-section { 
-            display: flex; 
-            align-items: center; 
-            gap: 15px; 
-            margin-bottom: 15px; 
+        
+        .wishlist-btn {
+            background: transparent;
+            border: 2px solid #ddd;
+            padding: 12px 15px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
         }
-        .buy-actions { 
-            display: flex; 
-            gap: 10px; 
-            flex-wrap: wrap; 
+        
+        .wishlist-btn:hover {
+            border-color: #ff0000;
+            background: #ff0000;
+            color: white;
         }
+        
+        .wishlist-btn.active {
+            border-color: #ff0000;
+            background: #ff0000;
+            color: white;
+        }
+
+        /* Review avatar styling */
+        .review_item .media img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #f0f0f0;
+        }
+
+        /* Comment avatar styling */
+        .comment_list .review_item .media img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #f0f0f0;
+        }
+
+        /* Reply indentation */
+        .comment-reply {
+            margin-left: 60px;
+            padding-left: 20px;
+            border-left: 2px solid #f0f0f0;
+        }
+        
         @media (max-width: 768px) {
-            .buy-actions { flex-direction: column; }
-            .buy-actions .btn { margin-bottom: 10px; }
+            .top-row { 
+                flex-direction: column; 
+                align-items: stretch; 
+            }
+            .add-cart-wishlist { 
+                justify-content: center; 
+            }
         }
     </style>
 <?= $this->endSection() ?>
@@ -95,10 +156,10 @@
                 <div class="s_product_text">
                     <h5>
                         <?php if (!empty($previousProduct)): ?>
-                            <a href="<?= route_to('single-product/', $previousProduct['slug']) ?>">previous</a> <span>|</span>
+                            <a href="<?= route_to('product_detail', $previousProduct['slug']) ?>">previous</a> <span>|</span>
                         <?php endif; ?>
                         <?php if (!empty($nextProduct)): ?>
-                            <a href="<?= route_to('single-product/', $nextProduct['slug']) ?>">next</a>
+                            <a href="<?= route_to('product_detail', $nextProduct['slug']) ?>">next</a>
                         <?php endif; ?>
                     </h5>
                     <h3><?= esc($product['name']) ?></h3>
@@ -137,36 +198,38 @@
                     
                     <p><?= esc($product['short_description']) ?></p>
                     
+                    <!-- IMPROVED: New Button Layout -->
                     <div class="card_area">
-                        <!-- Quantity Selection -->
-                        <div class="quantity-buy-section">
+                        <!-- Top Row: Quantity + Add to Cart + Wishlist -->
+                        <div class="top-row">
                             <div class="product_count">
                                 <span class="inumber-decrement"> <i class="ti-minus"></i></span>
                                 <input class="input-number" type="text" value="1" min="1" max="<?= $product['stock_quantity'] ?>" id="quantity">
                                 <span class="number-increment"> <i class="ti-plus"></i></span>
                             </div>
                             
-                            <button class="like_us wishlist-btn <?= $isInWishlist ? 'active' : '' ?>" 
-                                    data-product-id="<?= $product['id'] ?>" title="Add to Wishlist">
-                                <i class="ti-heart"></i>
-                            </button>
-                        </div>
-                        
-                        <!-- Action Buttons -->
-                        <?php if ($product['stock_status'] != 'out_of_stock'): ?>
-                            <div class="buy-actions">
-                                <a href="#" class="btn_3 add-to-cart-btn" data-product-id="<?= $product['id'] ?>">
-                                    <i class="ti-shopping-cart"></i> Add to Cart
-                                </a>
+                            <div class="add-cart-wishlist">
+                                <?php if ($product['stock_status'] != 'out_of_stock'): ?>
+                                    <a href="#" class="btn_3 add-to-cart-btn" data-product-id="<?= $product['id'] ?>">
+                                        <i class="ti-shopping-cart"></i> 
+                                    </a>
+                                <?php else: ?>
+                                    <a href="#" class="btn_3 disabled">Out of Stock</a>
+                                <?php endif; ?>
                                 
-                                <!-- NEW: Buy Now Button -->
-                                <button class="btn btn-buy-now buy-now-btn" data-product-id="<?= $product['id'] ?>">
-                                    <i class="ti-bolt"></i> Buy Now
+                                <button class="wishlist-btn <?= $isInWishlist ? 'active' : '' ?>" 
+                                        data-product-id="<?= $product['id'] ?>" title="Add to Wishlist">
+                                    <i class="ti-heart"></i>
                                 </button>
                             </div>
-                        <?php else: ?>
-                            <div class="buy-actions">
-                                <a href="#" class="btn_3 disabled">Out of Stock</a>
+                        </div>
+                        
+                        <!-- Bottom Row: Buy Now Button -->
+                        <?php if ($product['stock_status'] != 'out_of_stock'): ?>
+                            <div class="buy-now-section">
+                                <button class="btn btn-buy-now buy-now-btn" data-product-id="<?= $product['id'] ?>">
+                                    <i class="ti-bolt"></i> Mua ngay
+                                </button>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -177,7 +240,6 @@
 </div>
 <!--================End Single Product Area =================-->
 
-<!-- [REST OF THE ORIGINAL CODE REMAINS THE SAME] -->
 <!--================Product Description Area =================-->
 <section class="product_description_area">
     <div class="container">
@@ -240,7 +302,39 @@
                         <div class="comment_list" id="comments-container">
                             <?php if (!empty($comments)): ?>
                                 <?php foreach ($comments as $comment): ?>
-                                    <?= view('Customers/partials/comment_item', ['comment' => $comment]) ?>
+                                    <div class="review_item">
+                                        <div class="media">
+                                            <div class="d-flex">
+                                                <img src="<?= base_url($comment['customer_image'] ?? 'aranoz-master/img/product/single-product/review-1.png') ?>" 
+                                                     alt="<?= esc($comment['customer_name']) ?>" />
+                                            </div>
+                                            <div class="media-body">
+                                                <h4><?= esc($comment['customer_name']) ?></h4>
+                                                <h5><?= date('M j, Y', strtotime($comment['created_at'])) ?></h5>
+                                                <a class="reply_btn" href="#" data-comment-id="<?= $comment['id'] ?>">Reply</a>
+                                            </div>
+                                        </div>
+                                        <p><?= esc($comment['comment']) ?></p>
+                                        
+                                        <!-- Display replies -->
+                                        <?php if (!empty($comment['replies'])): ?>
+                                            <?php foreach ($comment['replies'] as $reply): ?>
+                                                <div class="review_item comment-reply">
+                                                    <div class="media">
+                                                        <div class="d-flex">
+                                                            <img src="<?= base_url($reply['customer_image'] ?? 'aranoz-master/img/product/single-product/review-1.png') ?>" 
+                                                                 alt="<?= esc($reply['customer_name']) ?>" />
+                                                        </div>
+                                                        <div class="media-body">
+                                                            <h4><?= esc($reply['customer_name']) ?></h4>
+                                                            <h5><?= date('M j, Y', strtotime($reply['created_at'])) ?></h5>
+                                                        </div>
+                                                    </div>
+                                                    <p><?= esc($reply['comment']) ?></p>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
+                                    </div>
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <p class="text-center">No comments yet. Be the first to comment!</p>
@@ -269,10 +363,10 @@
                 </div>
             </div>
             
-            <!-- Reviews Tab -->
+            <!-- Reviews Tab - SIMPLIFIED: Only display reviews -->
             <div class="tab-pane fade" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
                 <div class="row">
-                    <div class="col-lg-6">
+                    <div class="col-lg-12">
                         <div class="row total_rate">
                             <div class="col-6">
                                 <div class="box_total">
@@ -306,7 +400,8 @@
                                     <div class="review_item">
                                         <div class="media">
                                             <div class="d-flex">
-                                                <img src="<?= base_url($review['customer_image'] ?? 'aranoz-master/img/product/single-product/review-1.png') ?>" alt="<?= esc($review['customer_name']) ?>" />
+                                                <img src="<?= base_url($review['customer_image'] ?? 'aranoz-master/img/product/single-product/review-1.png') ?>" 
+                                                     alt="<?= esc($review['customer_name']) ?>" />
                                             </div>
                                             <div class="media-body">
                                                 <h4><?= esc($review['customer_name']) ?></h4>
@@ -323,46 +418,8 @@
                                     </div>
                                 <?php endforeach; ?>
                             <?php else: ?>
-                                <p class="text-center">No reviews yet. Be the first to review!</p>
+                                <p class="text-center">No reviews yet.</p>
                             <?php endif; ?>
-                        </div>
-                    </div>
-                    
-                    <div class="col-lg-6">
-                        <div class="review_box review-form" id="review-form">
-                            <h4>Add a Review</h4>
-                            <form class="row contact_form" id="reviewForm" novalidate="novalidate">
-                                <input type="hidden" name="product_id" value="<?= $product['id'] ?>">
-                                
-                                <div class="col-md-12">
-                                    <p>Your Rating:</p>
-                                    <div class="rating" id="rating-stars">
-                                        <?php for ($i = 1; $i <= 5; $i++): ?>
-                                            <i class="fa fa-star-o" data-rating="<?= $i ?>"></i>
-                                        <?php endfor; ?>
-                                    </div>
-                                    <input type="hidden" name="rating" id="rating-value" value="0" required>
-                                    <p id="rating-text">Not rated yet</p>
-                                </div>
-                                
-                                <div class="col-md-12">
-                                    <div class="form-group">
-                                        <input type="text" class="form-control" name="title" id="review-title" 
-                                               placeholder="Review Title" required>
-                                    </div>
-                                </div>
-                                
-                                <div class="col-md-12">
-                                    <div class="form-group">
-                                        <textarea class="form-control" name="comment" id="review-comment" rows="4" 
-                                                  placeholder="Your Review" required></textarea>
-                                    </div>
-                                </div>
-                                
-                                <div class="col-md-12 text-right">
-                                    <button type="submit" class="btn_3">Submit Review</button>
-                                </div>
-                            </form>
                         </div>
                     </div>
                 </div>
@@ -373,32 +430,32 @@
 <!--================End Product Description Area =================-->
 
 <!-- Related Products -->
-   <section class="product_list best_seller">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-lg-12">
-                    <div class="section_tittle text-center">
-                        <h2>Best Sellers <span>shop</span></h2>
-                    </div>
-                </div>
-            </div>
-            <div class="row align-items-center justify-content-between">
-                <div class="col-lg-12">
-                    <div class="best_product_slider owl-carousel">
-                        <?php for($i = 1; $i <= 5; $i++): ?>
-                        <div class="single_product_item">
-                            <img src="<?= base_url("aranoz-master/img/product/product_{$i}.png") ?>" alt="">
-                            <div class="single_product_text">
-                                <h4>Best Seller Product <?= $i ?></h4>
-                                <h3><?= number_format(150000 * $i) ?>₫</h3>
-                            </div>
-                        </div>
-                        <?php endfor; ?>
-                    </div>
+<section class="product_list best_seller">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-12">
+                <div class="section_tittle text-center">
+                    <h2>Best Sellers <span>shop</span></h2>
                 </div>
             </div>
         </div>
-    </section>
+        <div class="row align-items-center justify-content-between">
+            <div class="col-lg-12">
+                <div class="best_product_slider owl-carousel">
+                    <?php for($i = 1; $i <= 5; $i++): ?>
+                    <div class="single_product_item">
+                        <img src="<?= base_url("aranoz-master/img/product/product_{$i}.png") ?>" alt="">
+                        <div class="single_product_text">
+                            <h4>Best Seller Product <?= $i ?></h4>
+                            <h3><?= number_format(150000 * $i) ?>₫</h3>
+                        </div>
+                    </div>
+                    <?php endfor; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
 <?= $this->endSection() ?>
 
@@ -472,32 +529,28 @@ $(document).ready(function() {
         });
     });
 
-    // NEW: Buy Now functionality
+    // Buy Now functionality
     $('.buy-now-btn').click(function(e) {
         e.preventDefault();
         
         var productId = $(this).data('product-id');
         var quantity = $('#quantity').val();
         
-        // Validate quantity
         if (!quantity || quantity < 1) {
             showToast('error', 'Vui lòng chọn số lượng hợp lệ');
             return;
         }
         
-        // Check if user is logged in
         <?php if (!session()->has('customer_id')): ?>
             showToast('error', 'Vui lòng đăng nhập để mua hàng');
             setTimeout(function() {
-                window.location.href = '<?= base_url('/api_Customers/customers_sign') ?>';
+                window.location.href = '<?= base_url('/customers/sign') ?>';
             }, 1500);
             return;
         <?php endif; ?>
         
-        // Show loading
         $(this).prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Processing...');
         
-        // Add to cart first, then redirect to checkout
         $.ajax({
             url: '<?= route_to('api_buy_now') ?>',
             type: 'POST',
@@ -509,10 +562,7 @@ $(document).ready(function() {
             },
             success: function(response) {
                 if (response.success) {
-                    // Clear any existing cart items (optional - for buy now only this item)
                     showToast('success', 'Redirecting to checkout...');
-                    
-                    // Redirect to checkout with buy_now parameter
                     setTimeout(function() {
                         window.location.href = '<?= base_url('/checkout') ?>?buy_now=1&product_id=' + productId;
                     }, 1000);
@@ -556,82 +606,6 @@ $(document).ready(function() {
             },
             error: function() {
                 showToast('error', 'Có lỗi xảy ra, vui lòng thử lại');
-            }
-        });
-    });
-
-    // [REST OF THE ORIGINAL JAVASCRIPT REMAINS THE SAME]
-    // Rating stars
-    $('#rating-stars i').hover(function() {
-        var rating = $(this).data('rating');
-        highlightStars(rating);
-        $('#rating-text').text(rating + ' Star' + (rating > 1 ? 's' : ''));
-    }).click(function() {
-        var rating = $(this).data('rating');
-        $('#rating-value').val(rating);
-        $('#rating-text').text(rating + ' Star' + (rating > 1 ? 's' : '') + ' (selected)');
-    });
-
-    $('#rating-stars').mouseleave(function() {
-        var currentRating = $('#rating-value').val();
-        highlightStars(currentRating);
-        if (currentRating > 0) {
-            $('#rating-text').text(currentRating + ' Star' + (currentRating > 1 ? 's' : '') + ' (selected)');
-        } else {
-            $('#rating-text').text('Not rated yet');
-        }
-    });
-
-    function highlightStars(rating) {
-        $('#rating-stars i').each(function() {
-            if ($(this).data('rating') <= rating) {
-                $(this).removeClass('fa-star-o').addClass('fa-star');
-            } else {
-                $(this).removeClass('fa-star').addClass('fa-star-o');
-            }
-        });
-    }
-
-    // Review form submission
-    $('#reviewForm').submit(function(e) {
-        e.preventDefault();
-        
-        <?php if (!session()->has('customer_id')): ?>
-            showToast('error', 'Please login to submit a review');
-            return false;
-        <?php endif; ?>
-        
-        if ($('#rating-value').val() == 0) {
-            showToast('error', 'Please select a rating');
-            return false;
-        }
-        
-        var formData = $(this).serialize();
-        
-        $.ajax({
-            url: '<?= route_to('api_product_review') ?>',
-            type: 'POST',
-            data: formData + '&<?= csrf_token() ?>=<?= csrf_hash() ?>',
-            success: function(response) {
-                if (response.success) {
-                    showToast('success', response.message);
-                    $('#reviewForm')[0].reset();
-                    $('#rating-value').val(0);
-                    highlightStars(0);
-                    $('#rating-text').text('Not rated yet');
-                    
-                    // Update review stats and list
-                    updateReviews(response.reviewStats);
-                } else {
-                    showToast('error', response.message);
-                    if (response.errors) {
-                        console.error(response.errors);
-                    }
-                }
-            },
-            error: function(xhr) {
-                showToast('error', 'Có lỗi xảy ra, vui lòng thử lại');
-                console.error(xhr.responseText);
             }
         });
     });
@@ -689,27 +663,6 @@ $(document).ready(function() {
         $('#comment-form').addClass('active');
     });
 
-    $('#reviews-tab').click(function() {
-        $('#review-form').addClass('active');
-    });
-
-    function updateReviews(reviewStats) {
-        // Update overall rating
-        $('.box_total h4').text(reviewStats.average_rating.toFixed(1));
-        $('.box_total h6').text('(' + reviewStats.total_reviews + ' Reviews)');
-        
-        // Update rating counts
-        for (var i = 1; i <= 5; i++) {
-            $('.rating_list li:nth-child(' + (6 - i) + ') a')
-                .html(i + ' Star' + (i > 1 ? 's' : '') + 
-                      ' <i class="fa fa-star' + (i < 5 ? '' : '') + '"></i>'.repeat(i) +
-                      ' ' + (reviewStats.rating_counts[i] || 0));
-        }
-        
-        // Reload reviews (you might want to implement AJAX loading of new reviews)
-        location.reload();
-    }
-
     function addNewComment(comment) {
         var commentHtml = `
             <div class="review_item">
@@ -736,7 +689,6 @@ $(document).ready(function() {
     }
 
     function showToast(type, message) {
-        // Simple toast implementation
         var toastClass = type === 'success' ? 'alert-success' : 
                        type === 'error' ? 'alert-danger' : 'alert-info';
         

@@ -2,19 +2,19 @@
 
 <?= $this->section('content') ?>
 <section class="breadcrumb breadcrumb_bg">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <div class="breadcrumb_iner">
-                        <div class="breadcrumb_iner_item">
-                            <h2>Thông tin cá nhân</h2>
-                            <p>Trang chủ <span>-</span> Thông tin cá nhân</p>
-                        </div>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="breadcrumb_iner">
+                    <div class="breadcrumb_iner_item">
+                        <h2>Thông tin cá nhân</h2>
+                        <p>Trang chủ <span>-</span> Thông tin cá nhân</p>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 <div class="container mt-5 mb-5">
     <div class="row">
         <!-- Sidebar Navigation -->
@@ -40,7 +40,6 @@
         <!-- Main Content -->
         <div class="col-lg-9 col-md-8">
             <div class="tab-content">
-                
                 <!-- Profile Information Tab -->
                 <div class="tab-pane fade show active" id="profile-info">
                     <div class="card">
@@ -53,7 +52,9 @@
                                     <div class="col-md-4 text-center">
                                         <div class="profile-image-container mb-3">
                                             <img src="<?= $customer['image_url'] ? base_url($customer['image_url']) : base_url('aranoz-master/img/default-avatar.png') ?>" 
-                                                 alt="Avatar" class="profile-image" id="profileImage">
+                                                alt="Avatar" class="rounded-circle border" id="profileImage"
+                                                style="width: 120px; height: 120px; object-fit: cover;">
+
                                             <div class="image-overlay">
                                                 <i class="fas fa-camera"></i>
                                                 <input type="file" id="imageInput" name="image" accept="image/*" style="display: none;">
@@ -288,10 +289,71 @@
     </div>
 </div>
 
+<!-- Review Modal -->
+<div class="modal fade" id="reviewModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reviewModalTitle">Đánh giá sản phẩm</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="reviewForm">
+                    <input type="hidden" name="order_id" id="reviewOrderId">
+                    <input type="hidden" name="product_id" id="reviewProductId">
+                    <div class="form-group">
+                        <label for="rating">Đánh giá</label>
+                        <div class="star-rating">
+                            <input type="radio" name="rating" value="5" id="star5" required><label for="star5"><i class="fas fa-star"></i></label>
+                            <input type="radio" name="rating" value="4" id="star4"><label for="star4"><i class="fas fa-star"></i></label>
+                            <input type="radio" name="rating" value="3" id="star3"><label for="star3"><i class="fas fa-star"></i></label>
+                            <input type="radio" name="rating" value="2" id="star2"><label for="star2"><i class="fas fa-star"></i></label>
+                            <input type="radio" name="rating" value="1" id="star1"><label for="star1"><i class="fas fa-star"></i></label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="title">Tiêu đề đánh giá</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="comment">Nhận xét</label>
+                        <textarea class="form-control" id="comment" name="comment" rows="4" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Gửi đánh giá</button>
+                </form>
+                <div id="viewReviewContent" style="display: none;">
+                    <!-- Review content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <?= $this->endSection() ?>
 
 <?= $this->section('styles') ?>
-
+<style>
+.star-rating {
+    direction: rtl;
+    display: inline-flex;
+    font-size: 24px;
+}
+.star-rating input {
+    display: none;
+}
+.star-rating label {
+    color: #ddd;
+    cursor: pointer;
+    margin-right: 5px;
+}
+.star-rating input:checked ~ label,
+.star-rating label:hover,
+.star-rating label:hover ~ label {
+    color: #f5b301;
+}
+</style>
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
@@ -326,7 +388,6 @@ $(document).ready(function() {
                 hideLoading();
                 if (response.status === 'success') {
                     showSuccessMessage('Thành công', response.message);
-                    // Update avatar in header if changed
                     if (response.avatar_url) {
                         $('.navbar .fas.fa-user').parent().find('img').attr('src', response.avatar_url);
                     }
@@ -348,13 +409,11 @@ $(document).ready(function() {
         let newPassword = $('#new_password').val();
         let confirmPassword = $('#confirm_password').val();
         
-        // Validate password match
         if (newPassword !== confirmPassword) {
             showErrorMessage('Lỗi', 'Mật khẩu mới và xác nhận mật khẩu không khớp');
             return;
         }
         
-        // Validate password strength
         let passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*])/;
         if (newPassword.length < 8 || !passwordRegex.test(newPassword)) {
             showErrorMessage('Lỗi', 'Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ cái, số và ký tự đặc biệt');
@@ -379,6 +438,39 @@ $(document).ready(function() {
             error: function() {
                 hideLoading();
                 showErrorMessage('Lỗi', 'Có lỗi xảy ra khi đổi mật khẩu');
+            }
+        });
+    });
+
+    // Review Form Submission
+    $('#reviewForm').submit(function(e) {
+        e.preventDefault();
+        
+        showLoading();
+        
+        $.ajax({
+            url: '<?= route_to("submit_review") ?>',
+            type: 'POST',
+            data: $(this).serialize(),
+            success: function(response) {
+                hideLoading();
+                if (response.status === 'success') {
+                    showSuccessMessage('Thành công', response.message);
+                    $('#reviewModal').modal('hide');
+                    $('#reviewForm')[0].reset();
+                    // Update button to show "Đã đánh giá"
+                    $(`#review-btn-${$('#reviewOrderId').val()}-${$('#reviewProductId').val()}`)
+                        .text('Đã đánh giá')
+                        .removeClass('btn-outline-secondary')
+                        .addClass('btn-success')
+                        .attr('onclick', `viewReview(${$('#reviewOrderId').val()}, ${$('#reviewProductId').val()})`);
+                } else {
+                    showErrorMessage('Lỗi', response.message || 'Có lỗi xảy ra khi gửi đánh giá');
+                }
+            },
+            error: function() {
+                hideLoading();
+                showErrorMessage('Lỗi', 'Có lỗi xảy ra khi gửi đánh giá');
             }
         });
     });
@@ -416,7 +508,7 @@ function viewOrderDetail(orderId) {
 function cancelOrder(orderId) {
     if (confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
         $.ajax({
-            url: '<?= base_url("profile/cancel-order") ?>/' + orderId,
+            url: '<?= base_url("api_Customers/profile/cancel-order") ?>/' + orderId,
             type: 'POST',
             success: function(response) {
                 if (response.status === 'success') {
@@ -431,6 +523,30 @@ function cancelOrder(orderId) {
             }
         });
     }
+}
+
+function showReviewForm(orderId, productId, productName) {
+    $('#reviewOrderId').val(orderId);
+    $('#reviewProductId').val(productId);
+    $('#reviewModalTitle').text(`Đánh giá sản phẩm: ${productName}`);
+    $('#reviewForm').show();
+    $('#viewReviewContent').hide();
+    $('#reviewModal').modal('show');
+}
+
+function viewReview(orderId, productId) {
+    $.ajax({
+        url: '<?= base_url("api_Customers/profile/view-review") ?>/' + orderId + '/' + productId,
+        type: 'GET',
+        success: function(response) {
+            $('#viewReviewContent').html(response).show();
+            $('#reviewForm').hide();
+            $('#reviewModal').modal('show');
+        },
+        error: function() {
+            showErrorMessage('Lỗi', 'Không thể tải thông tin đánh giá');
+        }
+    });
 }
 </script>
 <?= $this->endSection() ?>

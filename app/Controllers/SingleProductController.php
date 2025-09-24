@@ -51,7 +51,7 @@ class SingleProductController extends BaseController
         // Lấy hình ảnh sản phẩm
         $productImages = $this->productModel->getProductImages($product['id']);
         
-        // Lấy đánh giá sản phẩm
+        // Lấy đánh giá sản phẩm (chỉ hiển thị)
         $reviews = $this->reviewModel->getProductReviews($product['id']);
         $reviewStats = $this->reviewModel->getReviewStats($product['id']);
         
@@ -90,7 +90,7 @@ class SingleProductController extends BaseController
     }
 
     /**
-     * FIXED: Buy Now API - Improved session management
+     * Buy Now API - Improved session management
      */
     public function buyNow()
     {
@@ -145,10 +145,10 @@ class SingleProductController extends BaseController
                 ? $product['sale_price'] 
                 : $product['price'];
 
-            // FIXED: Clear any existing checkout_selected_items to avoid conflicts
+            // Clear any existing checkout_selected_items to avoid conflicts
             session()->remove('checkout_selected_items');
             
-            // FIXED: Set buy_now_mode with timestamp for expiration
+            // Set buy_now_mode with timestamp for expiration
             session()->set('buy_now_mode', [
                 'product_id' => $productId,
                 'quantity' => $quantity,
@@ -159,7 +159,6 @@ class SingleProductController extends BaseController
             log_message('debug', 'SingleProduct - Set buy_now_mode for product: ' . $productId . ', quantity: ' . $quantity);
 
             // Optionally also add to cart for inventory tracking
-            // But don't clear entire cart for buy now
             $existingCartItem = $this->cartModel->getCartItem($customerId, $productId);
             
             if ($existingCartItem) {
@@ -201,61 +200,9 @@ class SingleProductController extends BaseController
         }
     }
 
-    public function addReview()
-    {
-        if (!$this->request->isAJAX()) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Invalid request']);
-        }
-
-        // Kiểm tra đăng nhập
-        if (!session()->has('customer_id')) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Please login to review']);
-        }
-
-        $validation = \Config\Services::validation();
-        $validation->setRules([
-            'product_id' => 'required|numeric',
-            'rating' => 'required|numeric|greater_than[0]|less_than[6]',
-            'title' => 'required|min_length[5]|max_length[255]',
-            'comment' => 'required|min_length[10]'
-        ]);
-
-        if (!$validation->withRequest($this->request)->run()) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validation->getErrors()
-            ]);
-        }
-
-        $data = [
-            'product_id' => $this->request->getPost('product_id'),
-            'customer_id' => session('customer_id'),
-            'rating' => $this->request->getPost('rating'),
-            'title' => $this->request->getPost('title'),
-            'comment' => $this->request->getPost('comment'),
-            'is_verified' => true
-        ];
-
-        try {
-            $this->reviewModel->insert($data);
-            
-            // Cập nhật thống kê đánh giá
-            $reviewStats = $this->reviewModel->getReviewStats($data['product_id']);
-            
-            return $this->response->setJSON([
-                'success' => true,
-                'message' => 'Review added successfully',
-                'reviewStats' => $reviewStats
-            ]);
-        } catch (\Exception $e) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Failed to add review: ' . $e->getMessage()
-            ]);
-        }
-    }
-
+    /**
+     * Add comment to product
+     */
     public function addComment()
     {
         if (!$this->request->isAJAX()) {
@@ -306,6 +253,9 @@ class SingleProductController extends BaseController
         }
     }
 
+    /**
+     * Toggle wishlist
+     */
     public function toggleWishlist()
     {
         if (!$this->request->isAJAX()) {

@@ -61,21 +61,7 @@
 
 
         <!-- Pages -->
-        <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown_3"
-               role="button" data-toggle="dropdown" aria-haspopup="true"
-               aria-expanded="false">
-                Pages
-            </a>
-            <div class="dropdown-menu" aria-labelledby="navbarDropdown_3">
-                <a class="dropdown-item" href="<?= route_to('Customers_sign') ?>">Login</a>
-                <a class="dropdown-item" href="<?= route_to('home_tracking') ?>">Tracking</a>
-                <a class="dropdown-item" href="<?= route_to('home_checkout') ?>">Product Checkout</a>
-                <a class="dropdown-item" href="<?= route_to('home_cart') ?>">Shopping Cart</a>
-                <a class="dropdown-item" href="<?= route_to('home_confirmation') ?>">Confirmation</a>
-                <a class="dropdown-item" href="<?= route_to('home_elements') ?>">Elements</a>
-            </div>
-        </li>
+   
 
         <!-- Blog -->
               <li class="nav-item">

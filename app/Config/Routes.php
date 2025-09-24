@@ -32,7 +32,6 @@ $routes->post('blog/add-comment', 'BlogController::addComment');
 // Single product AJAX (trả JSON)
 $routes->get('/single-product/(:segment)', 'SingleProductController::detail/$1', ['as' => 'product_detail']);
 $routes->post('api/single-product/wishlist', 'SingleProductController::toggleWishlist', ['as' => 'api_product_wishlist']);
-$routes->post('api/single-product/review', 'SingleProductController::addReview', ['as' => 'api_product_review']);
 $routes->post('api/single-product/comment', 'SingleProductController::addComment', ['as' => 'api_product_comment']);
 
 $routes->post('api/single-product/buy-now', 'SingleProductController::buyNow', ['as' => 'api_buy_now']);
@@ -136,7 +135,10 @@ $routes->group('api_Customers',function($routes) {
     $routes->post('profile/update', 'CustomersController::updateProfile', ['as' => 'update_profile']);
     $routes->post('profile/change-password', 'CustomersController::changePassword', ['as' => 'change_password']);
     $routes->get('profile/order-detail/(:num)', 'CustomersController::orderDetail/$1');
-    $routes->post('profile/cancel-order/(:num)', 'CustomersController::cancelOrder/$1');
+    $routes->post('profile/cancel-order/(:num)', 'CustomersController::cancelOrder/$1',['as'=>'cancel_order']);
+
+$routes->post('profile/submit-review', 'CustomersController::submitReview', ['as' => 'submit_review']);
+    $routes->get('profile/view-review/(:num)/(:num)', 'CustomersController::viewReview/$1/$2', ['as' => 'view_review']);
     // $routes->group('Manager',  ['filter' => 'authCheck'],function($routes) {
     //     $routes->get('profile','Profilecontroller::profile', ['as' => 'profile']);
     //     $routes->get('personal', 'ProfileController::personal', ['as' => 'personal']);
