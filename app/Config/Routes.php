@@ -43,8 +43,9 @@ $routes->get('checkout/success/(:segment)', 'CheckoutController::orderSuccess/$1
 $routes->post('apply-coupon', 'CouponController::applyCoupon', ['as' => 'apply_coupon']);
 $routes->post('remove-coupon', 'CouponController::removeCoupon', ['as' => 'remove_coupon']);
 
-$routes->get('payment/momo-callback', 'PaymentController::momoCallback');
-$routes->post('payment/momo-ipn', 'PaymentController::momoIPN');
+$routes->get('checkout/momo-callback', 'CheckoutController::momoCallback');
+$routes->post('checkout/momo-ipn', 'CheckoutController::momoIPN');
+$routes->get('checkout/momo-status/(:num)', 'CheckoutController::checkMomoStatus/$1');
 // Category và Product routes
 $routes->get('/category', 'TableCategoryController::index', ['as' => 'category']);
 $routes->post('api/products/filter', 'TableCategoryController::getProducts', ['as' => 'api_products_filter']);
@@ -183,7 +184,7 @@ $routes->group('Dashboard', function (RouteCollection $routes) {// ['filter' => 
 
     // login
     $routes->get('table', 'DashboardController::table', ['as' => 'Dashboard_table', 'filter' => 'Perermissions:Dashboard_table']);
-
+$routes->get('getDashboardDataAjax', 'DashboardController::getDashboardDataAjax');
     // Group
     $routes->group('Group',  function (RouteCollection $routes) {
         $routes->get('table-group', 'GroupController::table', ['as' => 'Table_Group', 'filter' => 'Perermissions:Table_Group']);

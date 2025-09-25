@@ -201,6 +201,8 @@
                                 </label>
                             </div>
                         <?php endforeach; ?>
+
+                         <div id="payment-info-container" class="mt-3"></div>
                     </div>
                     
                 </form>
@@ -436,89 +438,93 @@ $(document).ready(function() {
     }
 
     function processOrder() {
-        isProcessing = true;
-        
-        $('#place-order-btn').prop('disabled', true);
-        $('.loading-spinner').show();
-        $('#loading-overlay').show();
-        
-        const formData = $('#checkout-form').serialize();
-        
-        $.ajax({
-            url: '<?= route_to('checkout_process') ?>',
-            type: 'POST',
-            data: formData,
-            dataType: 'json',
-            timeout: 30000, // 30 seconds timeout
-            success: function(response) {
-                if (response.success) {
-                    showToast('success', response.message);
-                    
-                    // Handle different payment methods
-                    if (response.payment_result) {
-                        if (response.payment_result.status === 'redirect') {
-                            // Redirect to payment gateway
+    isProcessing = true;
+    
+    $('#place-order-btn').prop('disabled', true);
+    $('.loading-spinner').show();
+    $('#loading-overlay').show();
+    
+    const formData = $('#checkout-form').serialize();
+    
+    $.ajax({
+        url: '<?= route_to('checkout_process') ?>',
+        type: 'POST',
+        data: formData,
+        dataType: 'json',
+        timeout: 30000,
+        success: function(response) {
+            if (response.success) {
+                showToast('success', response.message);
+                
+                // QUAN TRỌNG: Xử lý chuyển hướng đến MoMo
+                if (response.payment_result) {
+                    if (response.payment_result.status === 'redirect') {
+                        // Hiển thị thông báo và chuyển hướng đến MoMo
+                        showToast('info', 'Đang chuyển hướng đến cổng thanh toán MoMo...');
+                        
+                        // Chuyển hướng sau 1 giây để người dùng thấy thông báo
+                        setTimeout(() => {
                             window.location.href = response.payment_result.redirect_url;
-                            return;
-                        }
+                        }, 1000);
+                        return; // Dừng xử lý tiếp
                     }
-                    
-                    // For COD or successful payments, redirect to success page
-                    setTimeout(() => {
-                        const successUrl = '<?= base_url('/checkout/success/') ?>' + response.order_number;
-                        window.location.href = successUrl;
-                    }, 1500);
-                    
-                } else {
-                    showToast('error', response.message || 'Có lỗi xảy ra trong quá trình đặt hàng');
-                    
-                    if (response.errors) {
-                        Object.keys(response.errors).forEach(field => {
-                            showFieldError(field, response.errors[field]);
+                }
+                
+                // Chỉ chuyển hướng đến trang thành công nếu là COD hoặc payment đã thành công
+                setTimeout(() => {
+                    const successUrl = '<?= base_url('/checkout/success/') ?>' + response.order_number;
+                    window.location.href = successUrl;
+                }, 1500);
+                
+            } else {
+                showToast('error', response.message || 'Có lỗi xảy ra trong quá trình đặt hàng');
+                
+                if (response.errors) {
+                    Object.keys(response.errors).forEach(field => {
+                        showFieldError(field, response.errors[field]);
+                    });
+                }
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX Error:', {
+                status: xhr.status,
+                statusText: xhr.statusText,
+                responseText: xhr.responseText
+            });
+            
+            let message = 'Có lỗi xảy ra trong quá trình đặt hàng';
+            
+            if (xhr.status === 422) {
+                try {
+                    const errorResponse = JSON.parse(xhr.responseText);
+                    if (errorResponse.errors) {
+                        Object.keys(errorResponse.errors).forEach(field => {
+                            showFieldError(field, errorResponse.errors[field]);
                         });
                     }
+                    message = errorResponse.message || 'Dữ liệu không hợp lệ';
+                } catch (e) {
+                    message = 'Dữ liệu không hợp lệ';
                 }
-            },
-            error: function(xhr, status, error) {
-                console.error('AJAX Error:', {
-                    status: xhr.status,
-                    statusText: xhr.statusText,
-                    responseText: xhr.responseText
-                });
-                
-                let message = 'Có lỗi xảy ra trong quá trình đặt hàng';
-                
-                if (xhr.status === 422) {
-                    // Validation errors
-                    try {
-                        const errorResponse = JSON.parse(xhr.responseText);
-                        if (errorResponse.errors) {
-                            Object.keys(errorResponse.errors).forEach(field => {
-                                showFieldError(field, errorResponse.errors[field]);
-                            });
-                        }
-                        message = errorResponse.message || 'Dữ liệu không hợp lệ';
-                    } catch (e) {
-                        message = 'Dữ liệu không hợp lệ';
-                    }
-                } else if (xhr.status === 500) {
-                    message = 'Lỗi máy chủ. Vui lòng thử lại sau';
-                } else if (xhr.status === 0 || status === 'timeout') {
-                    message = 'Kết nối bị gián đoạn. Vui lòng kiểm tra mạng và thử lại';
-                } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                    message = xhr.responseJSON.message;
-                }
-                
-                showToast('error', message);
-            },
-            complete: function() {
-                isProcessing = false;
-                $('#place-order-btn').prop('disabled', false);
-                $('.loading-spinner').hide();
-                $('#loading-overlay').hide();
+            } else if (xhr.status === 500) {
+                message = 'Lỗi máy chủ. Vui lòng thử lại sau';
+            } else if (xhr.status === 0 || status === 'timeout') {
+                message = 'Kết nối bị gián đoạn. Vui lòng kiểm tra mạng và thử lại';
+            } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                message = xhr.responseJSON.message;
             }
-        });
-    }
+            
+            showToast('error', message);
+        },
+        complete: function() {
+            isProcessing = false;
+            $('#place-order-btn').prop('disabled', false);
+            $('.loading-spinner').hide();
+            $('#loading-overlay').hide();
+        }
+    });
+}
 
     function updateShippingFee() {
         const selectedShipping = $('input[name="shipping_method"]:checked').val();
@@ -696,5 +702,60 @@ $(document).ready(function() {
 
     console.log('Checkout form initialized successfully');
 });
+
+// xử lý momo
+// Thêm sự kiện change cho payment method
+$('input[name="payment_method"]').change(function() {
+    const selectedMethod = $(this).val();
+    $('#payment-info-container').empty(); // Xóa thông tin cũ
+    
+    if (selectedMethod === 'bank_transfer') {
+        showBankTransferInfo();
+    }
+});
+
+// Hàm hiển thị thông tin chuyển khoản
+function showBankTransferInfo() {
+    const infoHtml = `
+        <div class="alert alert-info">
+            <h6><i class="ti-info-alt mr-2"></i>Thông tin chuyển khoản</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Ngân hàng:</strong> Ngân hàng ABC</p>
+                    <p><strong>Số tài khoản:</strong> 1234567890</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Chủ tài khoản:</strong> CONG TY XYZ</p>
+                    <p><strong>Số tiền:</strong> ${formatCurrency(orderSummary.total)}₫</p>
+                </div>
+            </div>
+            <small class="text-muted">
+                Vui lòng chuyển khoản theo đúng thông tin trên và ghi nội dung: <?= $order['order_number'] ?? 'MÃ_ĐƠN_HÀNG' ?>
+            </small>
+        </div>
+    `;
+    $('#payment-info-container').html(infoHtml);
+}
+
+// Cập nhật hàm hiển thị thông tin từ server response
+function showBankTransferInfoFromResponse(bankInfo) {
+    const infoHtml = `
+        <div class="alert alert-info mt-3">
+            <h6><i class="ti-info-alt mr-2"></i>Thông tin chuyển khoản</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Ngân hàng:</strong> ${bankInfo.bank_name}</p>
+                    <p><strong>Số tài khoản:</strong> ${bankInfo.account_number}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Chủ tài khoản:</strong> ${bankInfo.account_name}</p>
+                    <p><strong>Số tiền:</strong> ${formatCurrency(orderSummary.total)}₫</p>
+                </div>
+            </div>
+            <small class="text-muted">Vui lòng chuyển khoản theo đúng thông tin trên</small>
+        </div>
+    `;
+    $('#payment-info-container').html(infoHtml);
+}
 </script>
 <?= $this->endSection() ?>

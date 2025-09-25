@@ -544,7 +544,7 @@ $(document).ready(function() {
         <?php if (!session()->has('customer_id')): ?>
             showToast('error', 'Vui lòng đăng nhập để mua hàng');
             setTimeout(function() {
-                window.location.href = '<?= base_url('/customers/sign') ?>';
+                window.location.href = '<?= route_to('Customers_sign') ?>';
             }, 1500);
             return;
         <?php endif; ?>
