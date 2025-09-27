@@ -1,4 +1,10 @@
 ## code trang  website thương mại điện tử
+
+Mk Admin 
+email : admin@exampl.com
+Mk : 123456
+
+
 # CodeIgniter 4 Application Starter
 
 ## What is CodeIgniter?
