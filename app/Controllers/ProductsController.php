@@ -43,7 +43,7 @@ class ProductsController extends BaseController
         ]);
     }
 
-    // 3. Lưu mới
+    // 3. Lưu mới - ĐÃ SỬA
     public function store()
     {
         $validation = \Config\Services::validation();
@@ -72,28 +72,37 @@ class ProductsController extends BaseController
         if (!isset($post['min_stock_level'])) $post['min_stock_level'] = 0;
         if (!isset($post['stock_status'])) $post['stock_status'] = 'in_stock';
 
-        // Xử lý specifications
+        // Xử lý specifications - PHIÊN BẢN MỚI
         $specifications = [];
-        if (!empty($post['spec_height'])) $specifications['height'] = $post['spec_height'];
-        if (!empty($post['spec_width'])) $specifications['width'] = $post['spec_width'];
-        if (!empty($post['spec_length'])) $specifications['length'] = $post['spec_length'];
-        if (!empty($post['spec_weight'])) $specifications['weight'] = $post['spec_weight'];
-        if (!empty($post['spec_material'])) $specifications['material'] = $post['spec_material'];
-        if (!empty($post['spec_color'])) $specifications['color'] = $post['spec_color'];
+
+        // Thông số kỹ thuật cơ bản
         if (!empty($post['spec_power'])) $specifications['power'] = $post['spec_power'];
         if (!empty($post['spec_capacity'])) $specifications['capacity'] = $post['spec_capacity'];
+        if (!empty($post['spec_voltage'])) $specifications['voltage'] = $post['spec_voltage'];
+        if (!empty($post['spec_frequency'])) $specifications['frequency'] = $post['spec_frequency'];
+        if (!empty($post['spec_screen_size'])) $specifications['screen_size'] = $post['spec_screen_size'];
+        if (!empty($post['spec_color'])) $specifications['color'] = $post['spec_color'];
+
+        // Thông số bổ sung từ textarea
         if (!empty($post['spec_other'])) {
             $otherSpecs = explode("\n", $post['spec_other']);
             foreach ($otherSpecs as $spec) {
-                $parts = explode(':', $spec, 2);
-                if (count($parts) == 2) {
-                    $specifications[trim($parts[0])] = trim($parts[1]);
+                $spec = trim($spec);
+                if (!empty($spec)) {
+                    $parts = explode(':', $spec, 2);
+                    if (count($parts) == 2) {
+                        $key = trim($parts[0]);
+                        $value = trim($parts[1]);
+                        if (!empty($key) && !empty($value)) {
+                            $specifications[$key] = $value;
+                        }
+                    }
                 }
             }
         }
         
         if (!empty($specifications)) {
-            $post['specifications'] = json_encode($specifications);
+            $post['specifications'] = json_encode($specifications, JSON_UNESCAPED_UNICODE);
         }
 
         // Xử lý dimensions
@@ -103,7 +112,7 @@ class ProductsController extends BaseController
         if (!empty($post['dimension_height'])) $dimensions['height'] = (float)$post['dimension_height'];
         
         if (!empty($dimensions)) {
-            $post['dimensions'] = json_encode($dimensions);
+            $post['dimensions'] = json_encode($dimensions, JSON_UNESCAPED_UNICODE);
         }
 
         // Xử lý main image
@@ -115,9 +124,15 @@ class ProductsController extends BaseController
         }
 
         // Clean post data - remove temporary fields
-        unset($post['spec_height'], $post['spec_width'], $post['spec_length'], $post['spec_weight']);
-        unset($post['spec_material'], $post['spec_color'], $post['spec_power'], $post['spec_capacity'], $post['spec_other']);
-        unset($post['dimension_length'], $post['dimension_width'], $post['dimension_height']);
+        $fieldsToRemove = [
+            'spec_power', 'spec_capacity', 'spec_voltage', 'spec_frequency', 
+            'spec_screen_size', 'spec_color', 'spec_other',
+            'dimension_length', 'dimension_width', 'dimension_height'
+        ];
+
+        foreach ($fieldsToRemove as $field) {
+            unset($post[$field]);
+        }
 
         // Set timestamps
         $post['created_at'] = date('Y-m-d H:i:s');
@@ -219,7 +234,7 @@ class ProductsController extends BaseController
             ]);
         }
 
-        // Validation với exclude current record - ĐÃ SỬA
+        // Validation với exclude current record
         $validation = \Config\Services::validation();
         $rules = [
             'name' => 'required|max_length[255]',
@@ -243,22 +258,31 @@ class ProductsController extends BaseController
         if (!isset($post['is_active'])) $post['is_active'] = $oldProduct['is_active'];
         if (!isset($post['is_featured'])) $post['is_featured'] = 0;
 
-        // Xử lý specifications
+        // Xử lý specifications - PHIÊN BẢN MỚI
         $specifications = [];
-        if (!empty($post['spec_height'])) $specifications['height'] = $post['spec_height'];
-        if (!empty($post['spec_width'])) $specifications['width'] = $post['spec_width'];
-        if (!empty($post['spec_length'])) $specifications['length'] = $post['spec_length'];
-        if (!empty($post['spec_weight'])) $specifications['weight'] = $post['spec_weight'];
-        if (!empty($post['spec_material'])) $specifications['material'] = $post['spec_material'];
-        if (!empty($post['spec_color'])) $specifications['color'] = $post['spec_color'];
+
+        // Thông số kỹ thuật cơ bản
         if (!empty($post['spec_power'])) $specifications['power'] = $post['spec_power'];
         if (!empty($post['spec_capacity'])) $specifications['capacity'] = $post['spec_capacity'];
+        if (!empty($post['spec_voltage'])) $specifications['voltage'] = $post['spec_voltage'];
+        if (!empty($post['spec_frequency'])) $specifications['frequency'] = $post['spec_frequency'];
+        if (!empty($post['spec_screen_size'])) $specifications['screen_size'] = $post['spec_screen_size'];
+        if (!empty($post['spec_color'])) $specifications['color'] = $post['spec_color'];
+
+        // Thông số bổ sung từ textarea
         if (!empty($post['spec_other'])) {
             $otherSpecs = explode("\n", $post['spec_other']);
             foreach ($otherSpecs as $spec) {
-                $parts = explode(':', $spec, 2);
-                if (count($parts) == 2) {
-                    $specifications[trim($parts[0])] = trim($parts[1]);
+                $spec = trim($spec);
+                if (!empty($spec)) {
+                    $parts = explode(':', $spec, 2);
+                    if (count($parts) == 2) {
+                        $key = trim($parts[0]);
+                        $value = trim($parts[1]);
+                        if (!empty($key) && !empty($value)) {
+                            $specifications[$key] = $value;
+                        }
+                    }
                 }
             }
         }
@@ -324,15 +348,21 @@ class ProductsController extends BaseController
         }
 
         // Clean post data - remove temporary fields
-        unset($post['spec_height'], $post['spec_width'], $post['spec_length'], $post['spec_weight']);
-        unset($post['spec_material'], $post['spec_color'], $post['spec_power'], $post['spec_capacity'], $post['spec_other']);
-        unset($post['dimension_length'], $post['dimension_width'], $post['dimension_height']);
+        $fieldsToRemove = [
+            'spec_power', 'spec_capacity', 'spec_voltage', 'spec_frequency', 
+            'spec_screen_size', 'spec_color', 'spec_other',
+            'dimension_length', 'dimension_width', 'dimension_height'
+        ];
+
+        foreach ($fieldsToRemove as $field) {
+            unset($post[$field]);
+        }
 
         // Set updated timestamp
         $post['updated_at'] = date('Y-m-d H:i:s');
 
         try {
-            // SỬA: Sử dụng skipValidation để tránh lỗi validation khi update
+            // Sử dụng skipValidation để tránh lỗi validation khi update
             $this->productModel->skipValidation(true)->update($id, $post);
             
             // Verify update thành công
@@ -357,7 +387,7 @@ class ProductsController extends BaseController
         }
     }
 
-    // 6. Delete - ĐÃ SỬA
+    // 6. Delete
     public function delete($id)
     {
         $product = $this->productModel->find($id);
@@ -384,7 +414,7 @@ class ProductsController extends BaseController
             }
             $this->imageModel->where('product_id', $id)->delete();
 
-            // SỬA: Sử dụng delete thực sự thay vì soft delete
+            // Xóa sản phẩm
             $deleted = $this->productModel->delete($id);
             
             if (!$deleted) {

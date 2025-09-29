@@ -167,11 +167,11 @@
                     </div>
                 </div>
 
-                <!-- Specifications Tab -->
+                <!-- Specifications Tab - ĐÃ SỬA -->
                 <div class="tab-pane fade" id="specifications" role="tabpanel">
                     <div class="row">
                         <div class="col-md-6">
-                            <h6>Kích thước</h6>
+                            <h6>Kích thước và Trọng lượng</h6>
                             <div class="mb-3">
                                 <label class="form-label">Chiều dài (cm)</label>
                                 <input type="number" name="dimension_length" id="dimension_length" class="form-control" step="0.1">
@@ -188,49 +188,46 @@
                                 <label class="form-label">Trọng lượng (kg)</label>
                                 <input type="number" name="weight" id="weight" class="form-control" step="0.1">
                             </div>
+
+                            <h6 class="mt-4">Thông tin vật liệu</h6>
                             <div class="mb-3">
-                                <label class="form-label">Chất liệu</label>
+                                <label class="form-label">Chất liệu chính</label>
                                 <input type="text" name="material" id="material" class="form-control">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <h6>Thông số kỹ thuật</h6>
-                            <div class="mb-3">
-                                <label class="form-label">Chiều cao (spec)</label>
-                                <input type="text" name="spec_height" id="spec_height" class="form-control">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Chiều rộng (spec)</label>
-                                <input type="text" name="spec_width" id="spec_width" class="form-control">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Chiều dài (spec)</label>
-                                <input type="text" name="spec_length" id="spec_length" class="form-control">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Trọng lượng (spec)</label>
-                                <input type="text" name="spec_weight" id="spec_weight" class="form-control">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Chất liệu (spec)</label>
-                                <input type="text" name="spec_material" id="spec_material" class="form-control">
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Màu sắc</label>
                                 <input type="text" name="spec_color" id="spec_color" class="form-control">
                             </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6>Thông số kỹ thuật</h6>
                             <div class="mb-3">
                                 <label class="form-label">Công suất</label>
-                                <input type="text" name="spec_power" id="spec_power" class="form-control">
+                                <input type="text" name="spec_power" id="spec_power" class="form-control" placeholder="VD: 1200W, 5V">
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Dung tích</label>
-                                <input type="text" name="spec_capacity" id="spec_capacity" class="form-control">
+                                <input type="text" name="spec_capacity" id="spec_capacity" class="form-control" placeholder="VD: 2L, 500ml">
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Thông số khác</label>
-                                <textarea name="spec_other" id="spec_other" class="form-control" rows="4" placeholder="Mỗi dòng định dạng: Tên: Giá trị"></textarea>
-                                <small class="text-muted">Ví dụ: Điện áp: 220V</small>
+                                <label class="form-label">Điện áp</label>
+                                <input type="text" name="spec_voltage" id="spec_voltage" class="form-control" placeholder="VD: 220V, 12V">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Tần số</label>
+                                <input type="text" name="spec_frequency" id="spec_frequency" class="form-control" placeholder="VD: 50Hz, 2.4GHz">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Kích thước màn hình</label>
+                                <input type="text" name="spec_screen_size" id="spec_screen_size" class="form-control" placeholder="VD: 15.6 inch, 6.1 inch">
+                            </div>
+                            
+                            <h6 class="mt-4">Thông số khác</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Thông số bổ sung</label>
+                                <textarea name="spec_other" id="spec_other" class="form-control" rows="4" placeholder="Mỗi dòng định dạng: Tên: Giá trị&#10;VD:&#10;Chuẩn kết nối: WiFi 6&#10;Bluetooth: 5.0&#10;RAM: 8GB"></textarea>
+                                <small class="text-muted">Nhập các thông số khác, mỗi dòng một thông số theo định dạng: Tên: Giá trị</small>
                             </div>
                         </div>
                     </div>
@@ -418,21 +415,22 @@ $(document).ready(function(){
                     $('#dimension_height').val(p.dimensions_parsed.height);
                 }
 
-                // Fill specifications
+                // Fill specifications - ĐÃ SỬA
                 if (p.specifications_parsed) {
                     const specs = p.specifications_parsed;
-                    $('#spec_height').val(specs.height);
-                    $('#spec_width').val(specs.width);
-                    $('#spec_length').val(specs.length);
-                    $('#spec_weight').val(specs.weight);
-                    $('#spec_material').val(specs.material);
-                    $('#spec_color').val(specs.color);
-                    $('#spec_power').val(specs.power);
-                    $('#spec_capacity').val(specs.capacity);
                     
-                    // Other specs
+                    // Thông số kỹ thuật cơ bản
+                    $('#spec_power').val(specs.power || '');
+                    $('#spec_capacity').val(specs.capacity || '');
+                    $('#spec_voltage').val(specs.voltage || '');
+                    $('#spec_frequency').val(specs.frequency || '');
+                    $('#spec_screen_size').val(specs.screen_size || '');
+                    $('#spec_color').val(specs.color || '');
+                    
+                    // Thông số khác
                     let otherSpecs = [];
-                    const mainSpecs = ['height', 'width', 'length', 'weight', 'material', 'color', 'power', 'capacity'];
+                    const mainSpecs = ['power', 'capacity', 'voltage', 'frequency', 'screen_size', 'color'];
+                    
                     for (let key in specs) {
                         if (!mainSpecs.includes(key)) {
                             otherSpecs.push(key + ': ' + specs[key]);
@@ -584,38 +582,38 @@ $(document).ready(function(){
         }
     });
 
-   // Preview multiple images - ĐÃ SỬA
-$('#images').on('change', function(){
-    const files = this.files;
-    let html = $('#imagesPreview').html();
-    
-    if (files && files.length) {
-        for (let i = 0; i < files.length; i++) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                html += `<div class="preview-image">
-                    <img src="${e.target.result}" width="100" height="100" style="object-fit: cover;">
-                    <button type="button" class="btn btn-sm btn-danger delete-image-btn remove-new-image">
-                        <i class="fa fa-times"></i>
-                    </button>
-                </div>`;
-                $('#imagesPreview').html(html);
+    // Preview multiple images
+    $('#images').on('change', function(){
+        const files = this.files;
+        let html = $('#imagesPreview').html();
+        
+        if (files && files.length) {
+            for (let i = 0; i < files.length; i++) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    html += `<div class="preview-image">
+                        <img src="${e.target.result}" width="100" height="100" style="object-fit: cover;">
+                        <button type="button" class="btn btn-sm btn-danger delete-image-btn remove-new-image">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>`;
+                    $('#imagesPreview').html(html);
+                }
+                reader.readAsDataURL(files[i]);
             }
-            reader.readAsDataURL(files[i]);
         }
-    }
-});
+    });
 
-// Xóa ảnh mới (chưa upload) - THÊM MỚI
-$(document).on('click', '.remove-new-image', function(){
-    $(this).closest('.preview-image').remove();
-});
+    // Xóa ảnh mới (chưa upload)
+    $(document).on('click', '.remove-new-image', function(){
+        $(this).closest('.preview-image').remove();
+    });
 
-// Reset file input khi đóng modal - THÊM MỚI
-$('#productModal').on('hidden.bs.modal', function(){
-    $('#main_image, #images').val('');
-    $('#mainPreview, #imagesPreview').html('');
-});
+    // Reset file input khi đóng modal
+    $('#productModal').on('hidden.bs.modal', function(){
+        $('#main_image, #images').val('');
+        $('#mainPreview, #imagesPreview').html('');
+    });
 
     // Form validation
     $('#productForm').on('submit', function(e){

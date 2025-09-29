@@ -27,7 +27,7 @@ class StockMovementModel extends Model
     protected $useTimestamps = true;
     protected $dateFormat    = 'datetime';
     protected $createdField  = 'created_at';
-    protected $updatedField  = 'updated_at';
+    protected $updatedField  = '';
     protected $deletedField  = 'deleted_at';
 
     // Validation
@@ -74,8 +74,8 @@ class StockMovementModel extends Model
 
     protected function beforeInsert(array $data)
     {
-        $data['data']['created_at'] = date('Y-m-d H:i:s');
-        $data['data']['updated_at'] = date('Y-m-d H:i:s');
+        // $data['data']['created_at'] = date('Y-m-d H:i:s');
+        // $data['data']['updated_at'] = date('Y-m-d H:i:s');
 
         // Set user_id if available in session
         if (session()->has('user_id')) {

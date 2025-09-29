@@ -184,7 +184,7 @@ $routes->group('Dashboard', function (RouteCollection $routes) {// ['filter' => 
 
     // login
     $routes->get('table', 'DashboardController::table', ['as' => 'Dashboard_table', 'filter' => 'Perermissions:Dashboard_table']);
-$routes->get('getDashboardDataAjax', 'DashboardController::getDashboardDataAjax');
+    $routes->get('getDashboardDataAjax', 'DashboardController::getDashboardDataAjax');
     // Group
     $routes->group('Group',  function (RouteCollection $routes) {
         $routes->get('table-group', 'GroupController::table', ['as' => 'Table_Group', 'filter' => 'Perermissions:Table_Group']);
