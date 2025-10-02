@@ -1,7 +1,6 @@
 <?= $this->extend('Customers/layout/main') ?>
 
 <?= $this->section('styles') ?>
-    <link rel="stylesheet" href="<?= base_url('aranoz-master/css/lightslider.min.css'); ?>">
     <style>
         
         .review-form, .comment-form { display: none; }
@@ -101,6 +100,114 @@
             border-left: 2px solid #f0f0f0;
         }
         
+        /* Price styling */
+        .sale-price {
+            color: #ff6b35;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .original-price {
+            text-decoration: line-through;
+            color: #999;
+            font-size: 18px;
+            margin-left: 10px;
+        }
+        
+        .normal-price {
+            color: #222;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        /* NEW: Vertical Thumbnails on Right Side */
+        .product_slider_inner {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .main-carousel-container {
+            flex: 1;
+        }
+        
+        .vertical-thumbnails {
+            width: 100px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .product-carousel .carousel-item img {
+            width: 100%;
+            height: 450px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        
+        .vertical-thumbnails .thumb-item {
+            cursor: pointer;
+            border: 2px solid transparent;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            padding: 2px;
+        }
+        
+        .vertical-thumbnails .thumb-item.active {
+            border-color: #ff6b35;
+        }
+        
+        .vertical-thumbnails .thumb-item img {
+            width: 100%;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 3px;
+        }
+        
+        .vertical-thumbnails .thumb-item:hover {
+            border-color: #ff6b35;
+        }
+        
+        .carousel-control-prev,
+        .carousel-control-next {
+            width: 40px;
+            height: 40px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 50%;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .product-carousel:hover .carousel-control-prev,
+        .product-carousel:hover .carousel-control-next {
+            opacity: 1;
+        }
+        
+        .carousel-control-prev {
+            left: 15px;
+        }
+        
+        .carousel-control-next {
+            right: 15px;
+        }
+        
+        .carousel-indicators {
+            bottom: -50px;
+        }
+        
+        .carousel-indicators li {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #ddd;
+        }
+        
+        .carousel-indicators .active {
+            background-color: #ff6b35;
+        }
+        
         @media (max-width: 768px) {
             .top-row { 
                 flex-direction: column; 
@@ -109,7 +216,61 @@
             .add-cart-wishlist { 
                 justify-content: center; 
             }
+            
+            /* Ẩn thumbnails trên mobile */
+            .vertical-thumbnails {
+                display: none;
+            }
+            
+            .product-carousel .carousel-item img {
+                height: 350px;
+            }
+            
+            .carousel-control-prev,
+            .carousel-control-next {
+                opacity: 1;
+                width: 35px;
+                height: 35px;
+            }
+            
+            /* Hiển thị indicators trên mobile */
+            .carousel-indicators {
+                display: flex;
+                bottom: 15px;
+            }
+            
+            /* Price responsive */
+            .sale-price {
+                font-size: 22px;
+            }
+            
+            .original-price {
+                font-size: 16px;
+            }
+            
+            .normal-price {
+                font-size: 22px;
+            }
         }
+        
+        @media (max-width: 576px) {
+            .product-carousel .carousel-item img {
+                height: 300px;
+            }
+            
+            .sale-price {
+                font-size: 20px;
+            }
+            
+            .original-price {
+                font-size: 14px;
+            }
+            
+            .normal-price {
+                font-size: 20px;
+            }
+        }
+
     </style>
 <?= $this->endSection() ?>
 
@@ -137,17 +298,65 @@
         <div class="row s_product_inner justify-content-between">
             <div class="col-lg-7 col-xl-7">
                 <div class="product_slider_img">
-                    <div id="vertical">
-                        <?php if (!empty($productImages)): ?>
-                            <?php foreach ($productImages as $image): ?>
-                                <div data-thumb="<?= base_url($image['image_url']) ?>">
-                                    <img src="<?= base_url($image['image_url']) ?>" alt="<?= esc($product['name']) ?>" />
+                    <!-- NEW: Vertical Layout with Thumbnails on Right -->
+                    <div class="product_slider_inner">
+                        <!-- Main Carousel -->
+                        <div class="main-carousel-container">
+                            <div id="productCarousel" class="carousel slide product-carousel" data-ride="carousel">
+                                <!-- Indicators -->
+                                <ol class="carousel-indicators">
+                                    <?php if (!empty($productImages)): ?>
+                                        <?php foreach ($productImages as $index => $image): ?>
+                                            <li data-target="#productCarousel" data-slide-to="<?= $index ?>" 
+                                                class="<?= $index === 0 ? 'active' : '' ?>"></li>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <li data-target="#productCarousel" data-slide-to="0" class="active"></li>
+                                    <?php endif; ?>
+                                </ol>
+                                
+                                <!-- Slides -->
+                                <div class="carousel-inner">
+                                    <?php if (!empty($productImages)): ?>
+                                        <?php foreach ($productImages as $index => $image): ?>
+                                            <div class="carousel-item <?= $index === 0 ? 'active' : '' ?>">
+                                                <img src="<?= base_url($image['image_url']) ?>" 
+                                                     class="d-block w-100" 
+                                                     alt="<?= esc($product['name']) ?>">
+                                            </div>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <div class="carousel-item active">
+                                            <img src="<?= base_url('aranoz-master/img/product/single-product/product_1.png') ?>" 
+                                                 class="d-block w-100" 
+                                                 alt="<?= esc($product['name']) ?>">
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                                
+                                <!-- Controls -->
+                                <a class="carousel-control-prev" href="#productCarousel" role="button" data-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="sr-only">Previous</span>
+                                </a>
+                                <a class="carousel-control-next" href="#productCarousel" role="button" data-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="sr-only">Next</span>
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <!-- Vertical Thumbnails on Right - Ẩn trên mobile -->
+                        <?php if (!empty($productImages) && count($productImages) > 1): ?>
+                        <div class="vertical-thumbnails">
+                            <?php foreach ($productImages as $index => $image): ?>
+                                <div class="thumb-item <?= $index === 0 ? 'active' : '' ?>" 
+                                     data-index="<?= $index ?>">
+                                    <img src="<?= base_url($image['image_url']) ?>" 
+                                         alt="<?= esc($product['name']) ?> - Thumbnail <?= $index + 1 ?>">
                                 </div>
                             <?php endforeach; ?>
-                        <?php else: ?>
-                            <div data-thumb="<?= base_url('aranoz-master/img/product/single-product/product_1.png') ?>">
-                                <img src="<?= base_url('aranoz-master/img/product/single-product/product_1.png') ?>" alt="<?= esc($product['name']) ?>" />
-                            </div>
+                        </div>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -164,11 +373,14 @@
                     </h5>
                     <h3><?= esc($product['name']) ?></h3>
                     
+                    <!-- UPDATED: Price with strike-through for original price -->
                     <?php if ($product['sale_price'] && $product['sale_price'] < $product['price']): ?>
-                        <h2 class="sale-price"><?= number_format($product['sale_price']) ?>₫</h2>
-                        <span class="original-price"><?= number_format($product['price']) ?>₫</span>
+                        <div class="price-section">
+                            <h2 class="sale-price"><?= number_format($product['sale_price']) ?>₫</h2>
+                            <span class="original-price"><?= number_format($product['price']) ?>₫</span>
+                        </div>
                     <?php else: ?>
-                        <h2><?= number_format($product['price']) ?>₫</h2>
+                        <h2 class="normal-price"><?= number_format($product['price']) ?>₫</h2>
                     <?php endif; ?>
                     
                     <ul class="list">
@@ -430,59 +642,45 @@
 <!--================End Product Description Area =================-->
 
 <!-- Related Products -->
-<section class="product_list best_seller">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-12">
-                <div class="section_tittle text-center">
-                    <h2>Best Sellers <span>shop</span></h2>
-                </div>
-            </div>
-        </div>
-        <div class="row align-items-center justify-content-between">
-            <div class="col-lg-12">
-                <div class="best_product_slider owl-carousel">
-                    <?php for($i = 1; $i <= 5; $i++): ?>
-                    <div class="single_product_item">
-                        <img src="<?= base_url("aranoz-master/img/product/product_{$i}.png") ?>" alt="">
-                        <div class="single_product_text">
-                            <h4>Best Seller Product <?= $i ?></h4>
-                            <h3><?= number_format(150000 * $i) ?>₫</h3>
-                        </div>
-                    </div>
-                    <?php endfor; ?>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
 
+<?= render_best_sellers([
+    'limit' => 5,
+    'title' => 'Related Products',
+    'subtitle' => 'you may also like'
+]) ?>
+<?= render_best_sellers([
+    'limit' => 6,
+    'title' => 'New Arrivals',
+    'subtitle' => 'latest',
+    'type' => 'latest'
+]) ?>
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
-<script src="<?= base_url('aranoz-master/js/lightslider.min.js'); ?>"></script>
 <script>
 $(document).ready(function() {
-    // Initialize product image slider
-    $('#vertical').lightSlider({
-        gallery: true,
-        item: 1,
-        vertical: true,
-        verticalHeight: 450,
-        vThumbWidth: 80,
-        thumbItem: 3,
-        thumbMargin: 10,
-        slideMargin: 0,
-        responsive: [
-            {
-                breakpoint: 991,
-                settings: {
-                    vertical: false,
-                    verticalHeight: 300,
-                    vThumbWidth: 60
-                }
-            }
-        ]
+    // Bootstrap Carousel functionality
+    $('#productCarousel').carousel({
+        interval: 5000, // Auto-rotate every 5 seconds
+        pause: 'hover',
+        wrap: true
+    });
+
+    // Thumbnail click handler - chỉ hoạt động trên desktop
+    $('.thumb-item').click(function() {
+        var index = $(this).data('index');
+        $('#productCarousel').carousel(index);
+        
+        // Update active thumbnail
+        $('.thumb-item').removeClass('active');
+        $(this).addClass('active');
+    });
+
+    // Update active thumbnail when carousel slides - chỉ hoạt động trên desktop
+    $('#productCarousel').on('slid.bs.carousel', function (e) {
+        var index = $(e.relatedTarget).index();
+        $('.thumb-item').removeClass('active');
+        $('.thumb-item[data-index="' + index + '"]').addClass('active');
     });
 
     // Quantity controls

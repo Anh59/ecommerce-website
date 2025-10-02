@@ -143,12 +143,12 @@ public function processLogin()
                     return $this->response->setJSON([
                         'status' => 'success', 
                         'message' => 'Đăng nhập thành công!',
-                        'redirect_url' => route_to('home_about') // Có thể thay bằng route_to('home') nếu có
+                        'redirect_url' => route_to('home_index') // Có thể thay bằng route_to('home') nếu có
                     ]);
                 } else {
                     // Nếu không phải AJAX, chuyển hướng trực tiếp
                     session()->setFlashdata('success', 'Đăng nhập thành công!');
-                    return redirect()->to(route_to('home_about'));
+                    return redirect()->to(route_to('home_index'));
                 }
             } else {
                 if ($this->request->isAJAX()) {
@@ -185,7 +185,7 @@ public function processLogin()
         {
             session()->remove(['customer_id', 'customer_name', 'customer_avatar']); // Xóa session
             session()->destroy(); // Hủy session
-            return redirect()->route('home_about'); // Chuyển hướng về trang chủ
+            return redirect()->route('home_index'); // Chuyển hướng về trang chủ
         }
         
 
@@ -308,7 +308,7 @@ public function processLogin()
         
         if (!$customer) {
             session()->setFlashdata('error', 'Không tìm thấy thông tin tài khoản.');
-            return redirect()->to(route_to('home_about'));
+            return redirect()->to(route_to('home_index'));
         }
         
         $orders = $orderModel->where('customer_id', $customerId)

@@ -6,8 +6,8 @@ use App\Controllers\ProfileController;
 /**
  * @var RouteCollection $routes
  */
-$routes->get('/', 'Home::index');
-$routes->get('/about', 'Home::about',['as'=>'home_about']);// trang chủ
+
+$routes->get('/', 'Home::index',['as'=>'home_index']);// trang chủ
 $routes->get('/layout', 'Home::layout');
 // $routes->get('/login', 'Home::login');
 // $routes->get('/blog', 'Home::blog',['as'=>'home_blog']);

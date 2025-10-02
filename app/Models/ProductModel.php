@@ -402,4 +402,50 @@ public function getRelatedProducts($productId, $categoryId, $limit = 8)
                 ->limit($limit)
                 ->findAll();
 }
+
+public function getBestSellers($limit = 8)
+{
+    return $this->select('products.*, 
+                         COALESCE(SUM(order_items.quantity), 0) as total_sold')
+                ->join('order_items', 'order_items.product_id = products.id', 'left')
+                ->join('orders', 'orders.id = order_items.order_id AND orders.status IN ("completed", "processing")', 'left')
+                ->where('products.is_active', 1)
+                ->where('products.deleted_at IS NULL')
+                ->groupBy('products.id')
+                ->orderBy('total_sold', 'DESC')
+                ->orderBy('products.created_at', 'DESC')
+                ->limit($limit)
+                ->findAll();
+}
+
+/**
+ * Get featured products as alternative to best sellers
+ * 
+ * @param int $limit
+ * @return array
+ */
+public function getFeaturedProducts($limit = 8)
+{
+    return $this->where('is_featured', 1)
+                ->where('is_active', 1)
+                ->where('deleted_at IS NULL')
+                ->orderBy('created_at', 'DESC')
+                ->limit($limit)
+                ->findAll();
+}
+
+/**
+ * Get latest products
+ * 
+ * @param int $limit
+ * @return array
+ */
+public function getLatestProducts($limit = 8)
+{
+    return $this->where('is_active', 1)
+                ->where('deleted_at IS NULL')
+                ->orderBy('created_at', 'DESC')
+                ->limit($limit)
+                ->findAll();
+}
 }

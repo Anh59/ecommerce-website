@@ -4,7 +4,23 @@
     <link rel="stylesheet" href="<?= base_url('aranoz-master/css/price_rangs.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ion-rangeslider/2.3.1/css/ion.rangeSlider.min.css"/>
     <style>
-    .wishlist-btn { position: relative; }
+    /* Wishlist & Cart Styles */
+    .wishlist-btn { 
+        position: relative;
+        background: none;
+        border: none;
+        padding: 5px;
+        cursor: pointer;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .product-item:hover .wishlist-btn {
+        opacity: 1;
+        visibility: visible;
+    }
+    
     .wishlist-btn.active i { color: #ff0000 !important; }
     .loading { opacity: 0.6; pointer-events: none; }
     .product-item { transition: all 0.3s ease; }
@@ -29,46 +45,32 @@
         justify-content: center;
     }
     
-    /* Dropdown styles */
+    /* Dropdown styles - Giữ lại cần thiết */
     .nice-select {
-        -webkit-tap-highlight-color: transparent;
         background-color: #fff;
         border-radius: 0px;
         border: 1px solid #eeeeee;
-        box-sizing: border-box;
-        clear: both;
         cursor: pointer;
         display: block;
-        float: left;
         font-family: "Poppins", sans-serif;
         font-size: 14px;
-        font-weight: normal;
         height: 40px;
         line-height: 40px;
-        outline: none;
         padding-left: 20px;
         padding-right: 40px;
         position: relative;
         text-align: left !important;
         transition: all 0.2s ease-in-out;
-        user-select: none;
-        white-space: nowrap;
         width: auto;
         margin-left: 10px;
     }
 
-    .nice-select:hover {
-        border-color: #dbdbdb;
-    }
-
-    .nice-select:active, .nice-select.open, .nice-select:focus {
-        border-color: #999;
-    }
+    .nice-select:hover { border-color: #dbdbdb; }
+    .nice-select:active, .nice-select.open, .nice-select:focus { border-color: #999; }
 
     .nice-select:after {
         content: "\f0d7";
         font: normal normal normal 14px/1 FontAwesome;
-        transform: rotate(0);
         border: none;
         color: #555555;
         margin-top: -6px;
@@ -77,16 +79,12 @@
         top: 50%;
     }
 
-    .nice-select.open:after {
-        transform: rotate(180deg);
-    }
+    .nice-select.open:after { transform: rotate(180deg); }
 
     .nice-select .list {
         background-color: #fff;
         border-radius: 0px;
         box-shadow: 0 0 0 1px rgba(68, 68, 68, 0.11);
-        box-sizing: border-box;
-        margin-top: 4px;
         opacity: 0;
         overflow: hidden;
         padding: 0;
@@ -94,7 +92,6 @@
         position: absolute;
         top: 100%;
         left: 0;
-        transform-origin: 50% 0;
         transform: scale(0.75) translateY(-21px);
         transition: all 0.2s cubic-bezier(0.5, 0, 0, 1.25), opacity 0.15s ease-out;
         z-index: 9;
@@ -109,24 +106,17 @@
 
     .nice-select .option {
         cursor: pointer;
-        font-weight: 400;
         line-height: 40px;
         list-style: none;
         min-height: 40px;
-        outline: none;
         padding-left: 20px;
         padding-right: 20px;
         text-align: left;
         transition: all 0.2s;
     }
 
-    .nice-select .option:hover, .nice-select .option.focus, .nice-select .option.selected.focus {
-        background-color: #f6f6f6;
-    }
-
-    .nice-select .option.selected {
-        font-weight: bold;
-    }
+    .nice-select .option:hover { background-color: #f6f6f6; }
+    .nice-select .option.selected { font-weight: bold; }
     
     /* Filter active state */
     .category-filter.active, .brand-filter.active {
@@ -135,6 +125,13 @@
     }
     
     /* Product item styles */
+    .single_product_item {
+        position: relative;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
     .single_product_item img {
         width: 100%;
         height: 250px;
@@ -152,10 +149,31 @@
         flex-grow: 1;
         display: flex;
         flex-direction: column;
+        padding: 32px 0;
+        background-color: #fff;
+        transition: 0.5s;
+    }
+
+    .single_product_item:hover .single_product_text {
+        padding: 32px 32px;
     }
     
     .price-section {
         margin: 10px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .sale-price {
+        color: #ff6b35;
+        font-weight: bold;
+    }
+    
+    .original-price {
+        text-decoration: line-through;
+        color: red;
+        font-size: 0.9em;
     }
     
     .product-actions {
@@ -164,39 +182,55 @@
         justify-content: space-between;
         align-items: center;
     }
-    /* ===== Fix: luôn hiển thị tên sản phẩm và link bên trong ===== */
-.single_product_item .single_product_text h4,
-.single_product_item .single_product_text h4 a,
-.single_product_item .single_product_text a {
-    opacity: 1 !important;
-    visibility: visible !important;
-    transform: none !important;
-    display: block !important;
-    pointer-events: auto !important;
-}
 
-/* giữ style link hợp lý */
-.single_product_item .single_product_text h4 a {
-    color: inherit;
-    text-decoration: none;
-}
+    /* Product name and price always visible */
+    .single_product_text h4 {
+        font-weight: 700;
+        font-size: 18px;
+        margin-bottom: 14px;
+    }
 
-/* nếu muốn hover đổi màu link */
-.single_product_item .single_product_text h4 a:hover {
-    color: #e40da7ff;   
-    text-decoration: underline;
-}
+    .single_product_text h4 a {
+        color: #2a2a2a;
+        text-decoration: none;
+        transition: 0.3s;
+    }
 
-    .add_cart {
+    .single_product_text h4 a:hover {
+        color: #ff3368;
+    }
+
+    .single_product_text h3 {
+        font-weight: 300;
+        font-size: 18px;
+    }
+
+    /* Add to cart button - hidden by default, show on hover */
+    .single_product_text .add_cart {
+        color: #ff3368;
+        text-transform: uppercase;
+        font-size: 18px;
+        font-weight: 500;
+        display: block;
+        margin-top: 10px;
+        opacity: 0;
+        visibility: hidden;
+        transition: 0.5s;
+        text-decoration: none;
         flex-grow: 1;
         margin-right: 10px;
     }
-    
-    .wishlist-btn {
-        background: none;
-        border: none;
-        padding: 5px;
-        cursor: pointer;
+
+    .single_product_item:hover .single_product_text .add_cart {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .add_cart i {
+        float: right;
+        font-size: 18px;
+        line-height: 26px;
+        color: #000;
     }
     
     .stock-indicator {
@@ -211,27 +245,49 @@
         font-weight: bold;
     }
     
-    .out-of-stock .single_product_text {
-        opacity: 0.7;
+    .sale-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #ff0000;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 3px;
+        font-size: 12px;
+        font-weight: bold;
     }
     
-    .filter-actions {
-        margin-top: 15px;
-    }
+    .out-of-stock .single_product_text { opacity: 0.7; }
     
-    .irs--flat .irs-bar {
-        background: #ff6b35;
-    }
+    .filter-actions { margin-top: 15px; }
     
+    /* Range slider styles */
+    .irs--flat .irs-bar { background: #ff6b35; }
     .irs--flat .irs-from, .irs--flat .irs-to, .irs--flat .irs-single {
         background: #ff6b35;
     }
-    
-    .irs--flat .irs-handle>i:first-child {
-        background: #ff6b35;
+    .irs--flat .irs-handle>i:first-child { background: #ff6b35; }
+
+    /* Improve product height consistency */
+    .latest_product_inner .col-lg-4,
+    .latest_product_inner .col-sm-6 {
+        display: flex;
+        align-items: stretch;
     }
-    
-    </style>
+
+    /* Hover effects */
+    .single_product_item:hover {
+        box-shadow: 0px 10px 20px 0px rgba(0, 23, 51, 0.09);
+    }
+
+    /* Toast notifications */
+    .alert.position-fixed {
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        min-width: 300px;
+    }
+</style>
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
@@ -391,7 +447,7 @@
                     </div>
 
                     <div id="products-container">
-                        <div class="row align-items-center latest_product_inner">
+                        <div class="row align-items-stretch latest_product_inner"> <!-- Thay align-items-center bằng align-items-stretch để chiều cao đồng đều -->
                             <?php foreach ($products as $product): ?>
                             <div class="col-lg-4 col-sm-6">
                                 <div class="single_product_item product-item <?= $product['stock_status'] == 'out_of_stock' ? 'out-of-stock' : '' ?>" 
@@ -423,6 +479,9 @@
                                     </div>
                                     <?php if ($product['stock_status'] == 'low_stock'): ?>
                                         <div class="stock-indicator">Only <?= $product['stock_quantity'] ?> left!</div>
+                                    <?php endif; ?>
+                                    <?php if ($product['sale_price'] && $product['sale_price'] < $product['price']): ?>
+                                        <div class="sale-badge">-<?= round((1 - $product['sale_price'] / $product['price']) * 100) ?>%</div>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -746,7 +805,7 @@
         }
 
         function updateProductsDisplay(response) {
-            let html = '<div class="row align-items-center latest_product_inner">';
+            let html = '<div class="row align-items-stretch latest_product_inner">';
             
             if (response.products && response.products.length > 0) {
                 response.products.forEach(function(product) {
@@ -758,8 +817,11 @@
                         stockIndicator = `<div class="stock-indicator">Only ${product.stock_quantity} left!</div>`;
                     }
 
+                    let saleBadge = '';
                     let priceSection = '';
                     if (product.sale_price && product.sale_price < product.price) {
+                        let discountPercent = Math.round((1 - product.sale_price / product.price) * 100);
+                        saleBadge = `<div class="sale-badge">-${discountPercent}%</div>`;
                         priceSection = `
                             <h3 class="sale-price">${formatCurrency(product.sale_price)}₫</h3>
                             <span class="original-price">${formatCurrency(product.price)}₫</span>
@@ -786,6 +848,7 @@
                                     </div>
                                 </div>
                                 ${stockIndicator}
+                                ${saleBadge}
                             </div>
                         </div>
                     `;

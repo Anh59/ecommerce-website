@@ -1,16 +1,84 @@
 <?php
 
 namespace App\Controllers;
-
+use App\Models\ProductModel;
+use App\Models\CategoryModel;
+use App\Models\BrandModel;
 class Home extends BaseController
 {
-    public function index(): string
+    protected $productModel;
+    protected $categoryModel;
+    protected $brandModel;
+
+    public function __construct()
     {
-        return view('welcome_message');
+        $this->productModel = new ProductModel();
+        $this->categoryModel = new CategoryModel();
+        $this->brandModel = new BrandModel();
+        helper(['product', 'url']);
     }
-    public function about(): string
+
+    public function index()
     {
-        return view('Customers/index');
+        $data = [];
+
+        // 1. Banner Slides - Lấy 3 sản phẩm featured ngẫu nhiên
+        $data['bannerProducts'] = $this->productModel
+            ->where('is_featured', 1)
+            ->where('is_active', 1)
+            ->where('deleted_at IS NULL')
+            ->orderBy('RAND()')
+            ->limit(3)
+            ->findAll();
+
+        // 2. Featured Categories - Lấy 4 danh mục parent có sản phẩm nhiều nhất
+        $data['featuredCategories'] = $this->categoryModel
+            ->select('categories.*, COUNT(products.id) as product_count')
+            ->join('products', 'products.category_id = categories.id AND products.is_active = 1', 'left')
+            ->where('categories.is_active', 1)
+            ->where('categories.deleted_at IS NULL')
+            ->where('categories.parent_id IS NULL OR categories.parent_id = 0')
+            ->groupBy('categories.id')
+            ->orderBy('product_count', 'DESC')
+            ->limit(4)
+            ->findAll();
+
+        // 3. Awesome Shop - Sản phẩm mới nhất (2 slides x 8 sản phẩm = 16)
+        $data['latestProducts'] = $this->productModel
+            ->where('is_active', 1)
+            ->where('deleted_at IS NULL')
+            ->orderBy('created_at', 'DESC')
+            ->limit(16)
+            ->findAll();
+
+        // Chia thành 2 slides
+        $data['latestProductsSlide1'] = array_slice($data['latestProducts'], 0, 8);
+        $data['latestProductsSlide2'] = array_slice($data['latestProducts'], 8, 8);
+
+        // 4. Weekly Sale - Sản phẩm có sale_price cao nhất
+        $data['weeklySaleProduct'] = $this->productModel
+            ->select('products.*, 
+                     ((price - sale_price) / price * 100) as discount_percent')
+            ->where('sale_price IS NOT NULL')
+            ->where('sale_price > 0')
+            ->where('sale_price < price')
+            ->where('is_active', 1)
+            ->where('deleted_at IS NULL')
+            ->orderBy('discount_percent', 'DESC')
+            ->first();
+
+        // 5. Best Sellers - Sản phẩm bán chạy
+        $data['bestSellers'] = $this->productModel->getBestSellers(8);
+
+        // 6. Brands - Top brands
+        $data['topBrands'] = $this->brandModel
+            ->where('is_active', 1)
+            ->where('deleted_at IS NULL')
+            ->orderBy('sort_order', 'ASC')
+            ->limit(10)
+            ->findAll();
+
+        return view('Customers/index', $data);
     }
     public function layout(): string{
         return view('Customers/layout/main');
