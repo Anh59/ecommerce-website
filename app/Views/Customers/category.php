@@ -492,7 +492,43 @@
                         <div class="row">
                             <div class="col-lg-12">
                                 <div id="pagination-container">
-                                    <?= $pagerLinks ?>
+                                    <?php if ($totalPages > 1): ?>
+                                    <div class="pageination">
+                                        <nav aria-label="Page navigation example">
+                                            <ul class="pagination justify-content-center">
+                                                <?php if ($currentPage > 1): ?>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="#" data-page="<?= $currentPage - 1 ?>" aria-label="Previous">
+                                                        <i class="ti-angle-double-left"></i>
+                                                    </a>
+                                                </li>
+                                                <?php endif; ?>
+                                                
+                                                <?php 
+                                                $startPage = max(1, $currentPage - 2);
+                                                $endPage = min($totalPages, $startPage + 4);
+                                                if ($endPage - $startPage < 4) {
+                                                    $startPage = max(1, $endPage - 4);
+                                                }
+                                                for ($i = $startPage; $i <= $endPage; $i++): 
+                                                    $activeClass = $i == $currentPage ? 'active' : '';
+                                                ?>
+                                                <li class="page-item <?= $activeClass ?>">
+                                                    <a class="page-link" href="#" data-page="<?= $i ?>"><?= $i ?></a>
+                                                </li>
+                                                <?php endfor; ?>
+                                                
+                                                <?php if ($currentPage < $totalPages): ?>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="#" data-page="<?= $currentPage + 1 ?>" aria-label="Next">
+                                                        <i class="ti-angle-double-right"></i>
+                                                    </a>
+                                                </li>
+                                                <?php endif; ?>
+                                            </ul>
+                                        </nav>
+                                    </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -512,32 +548,13 @@
     <!--================End Category Product Area =================-->
 
     <!-- Best Sellers Section -->
-    <section class="product_list best_seller">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-lg-12">
-                    <div class="section_tittle text-center">
-                        <h2>Best Sellers <span>shop</span></h2>
-                    </div>
-                </div>
-            </div>
-            <div class="row align-items-center justify-content-between">
-                <div class="col-lg-12">
-                    <div class="best_product_slider owl-carousel">
-                        <?php for($i = 1; $i <= 5; $i++): ?>
-                        <div class="single_product_item">
-                            <img src="<?= base_url("aranoz-master/img/product/product_{$i}.png") ?>" alt="">
-                            <div class="single_product_text">
-                                <h4>Best Seller Product <?= $i ?></h4>
-                                <h3><?= number_format(150000 * $i) ?>₫</h3>
-                            </div>
-                        </div>
-                        <?php endfor; ?>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+    <!-- Best Sellers -->
+<?= render_best_sellers([
+    'limit' => 8,
+    'title' => 'Best Sellers',
+    'subtitle' => 'shop',
+    'type' => 'best_sellers'
+]) ?>
 
 <?= $this->endSection() ?>
 
@@ -546,488 +563,496 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ion-rangeslider/2.3.1/js/ion.rangeSlider.min.js"></script>
     
     <script>
-    $(document).ready(function() {
-        let currentFilters = {
-            category_id: <?= $filters['category_id'] ? $filters['category_id'] : 'null' ?>,
-            brand_id: <?= $filters['brand_id'] ? $filters['brand_id'] : 'null' ?>,
-            min_price: <?= $filters['min_price'] ? $filters['min_price'] : 'null' ?>,
-            max_price: <?= $filters['max_price'] ? $filters['max_price'] : 'null' ?>,
-            sort_by: '<?= $filters['sort'] ?? 'name' ?>',
-            per_page: <?= $perPage ?>,
-            page: 1,
-            search: '<?= $filters['search'] ?? '' ?>'
-        };
+$(document).ready(function() {
+    let currentFilters = {
+        category_id: <?= $filters['category_id'] ? $filters['category_id'] : 'null' ?>,
+        brand_id: <?= $filters['brand_id'] ? $filters['brand_id'] : 'null' ?>,
+        min_price: <?= $filters['min_price'] ? $filters['min_price'] : 'null' ?>,
+        max_price: <?= $filters['max_price'] ? $filters['max_price'] : 'null' ?>,
+        sort_by: '<?= $filters['sort'] ?? 'name' ?>',
+        per_page: <?= $perPage ?>,
+        page: <?= $currentPage ?? 1 ?>,
+        search: '<?= $filters['search'] ?? '' ?>'
+    };
 
-        let wishlistItems = [];
+    let wishlistItems = [];
+    let isWishlistLoaded = false;
 
-        // Initialize price range slider
-        function initPriceRangeSlider() {
-            let minPrice = <?= $filters['min_price'] ?? $minPrice ?? 0 ?>;
-            let maxPrice = <?= $filters['max_price'] ?? $maxPrice ?? 1000000 ?>;
-            
-            $(".js-range-slider").ionRangeSlider({
-                type: "double",
-                min: 0,
-                max: <?= $maxPrice ?? 1000000 ?>,
-                from: minPrice,
-                to: maxPrice,
-                grid: true,
-                prefix: "₫",
-                onFinish: function(data) {
-                    $('#min_price').val(data.from);
-                    $('#max_price').val(data.to);
-                    currentFilters.min_price = data.from;
-                    currentFilters.max_price = data.to;
-                    currentFilters.page = 1;
-                    loadProducts();
-                }
-            });
-        }
-
-        // Load wishlist status on page load
-        loadWishlistStatus();
-
-        // Initialize price slider
-        initPriceRangeSlider();
-
-        // Category filter click
-        $('.category-filter').click(function(e) {
-            e.preventDefault();
-            let categoryId = $(this).data('category');
-            
-            // Toggle category
-            if (currentFilters.category_id == categoryId) {
-                currentFilters.category_id = null;
-                $(this).removeClass('active');
-            } else {
-                $('.category-filter').removeClass('active');
-                $(this).addClass('active');
-                currentFilters.category_id = categoryId;
-            }
-            
-            currentFilters.page = 1;
-            loadProducts();
-        });
-
-        // Brand filter click
-        $('.brand-filter').click(function(e) {
-            e.preventDefault();
-            let brandId = $(this).data('brand');
-            
-            // Toggle brand
-            if (currentFilters.brand_id == brandId) {
-                currentFilters.brand_id = null;
-                $(this).removeClass('active');
-            } else {
-                $('.brand-filter').removeClass('active');
-                $(this).addClass('active');
-                currentFilters.brand_id = brandId;
-            }
-            
-            currentFilters.page = 1;
-            loadProducts();
-        });
-
-        // Sort change
-        $(document).on('click', '.sorting .option', function() {
-            currentFilters.sort_by = $(this).data('value');
-            $('.sorting .current').text($(this).text());
-            currentFilters.page = 1;
-            loadProducts();
-        });
-
-        // Per page change
-        $(document).on('click', '.show .option', function() {
-            currentFilters.per_page = $(this).data('value');
-            $('.show .current').text($(this).text());
-            currentFilters.page = 1;
-            loadProducts();
-        });
-
-        // Search functionality
-        let searchTimeout;
-        $('#search-input').on('input', function() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(function() {
-                currentFilters.search = $('#search-input').val();
+    // Initialize price range slider
+    function initPriceRangeSlider() {
+        let minPrice = <?= $filters['min_price'] ?? $minPrice ?? 0 ?>;
+        let maxPrice = <?= $filters['max_price'] ?? $maxPrice ?? 1000000 ?>;
+        
+        $(".js-range-slider").ionRangeSlider({
+            type: "double",
+            min: 0,
+            max: <?= $maxPrice ?? 1000000 ?>,
+            from: minPrice,
+            to: maxPrice,
+            grid: true,
+            prefix: "₫",
+            onFinish: function(data) {
+                $('#min_price').val(data.from);
+                $('#max_price').val(data.to);
+                currentFilters.min_price = data.from;
+                currentFilters.max_price = data.to;
                 currentFilters.page = 1;
                 loadProducts();
-            }, 500);
-        });
-
-        // Clear filters
-        $(document).on('click', '.clear-filters', function() {
-            let filterType = $(this).closest('aside').find('.l_w_title h3').text();
-            
-            if (filterType.includes('Category')) {
-                currentFilters.category_id = null;
-                $('.category-filter').removeClass('active');
-            } else if (filterType.includes('Brand')) {
-                currentFilters.brand_id = null;
-                $('.brand-filter').removeClass('active');
-            } else if (filterType.includes('Price')) {
-                currentFilters.min_price = null;
-                currentFilters.max_price = null;
-                
-                // Reset price slider
-                let slider = $(".js-range-slider").data("ionRangeSlider");
-                slider.update({
-                    from: 0,
-                    to: <?= $maxPrice ?? 1000000 ?>
-                });
-                
-                $('#min_price').val('0');
-                $('#max_price').val('<?= $maxPrice ?? 1000000 ?>');
-            }
-            
-            currentFilters.page = 1;
-            loadProducts();
-        });
-
-        // Add to cart functionality
-        $(document).on('click', '.add-to-cart-btn', function(e) {
-            e.preventDefault();
-            let productId = $(this).data('product-id');
-            let $btn = $(this);
-            
-            if ($btn.hasClass('loading') || $btn.closest('.out-of-stock').length) return;
-            
-            $btn.addClass('loading').text('Adding...');
-            
-            $.ajax({
-                url: '<?= route_to('api_cart_add') ?>',
-                type: 'POST',
-                data: {
-                    product_id: productId,
-                    quantity: 1,
-                    <?= csrf_token() ?>: '<?= csrf_hash() ?>'
-                },
-                success: function(response) {
-                    if (response.success) {
-                        showToast('success', response.message);
-                        updateCartCount(response.cart_count);
-                    } else {
-                        showToast('error', response.message);
-                    }
-                },
-                error: function() {
-                    showToast('error', 'Có lỗi xảy ra, vui lòng thử lại');
-                },
-                complete: function() {
-                    $btn.removeClass('loading').text('+ Add to cart');
-                }
-            });
-        });
-
-        // Wishlist functionality
-        $(document).on('click', '.wishlist-btn', function(e) {
-            e.preventDefault();
-            let productId = $(this).data('product-id');
-            let $btn = $(this);
-            
-            if ($btn.hasClass('loading')) return;
-            
-            $btn.addClass('loading');
-            
-            $.ajax({
-                url: '<?= route_to('api_wishlist_add') ?>',
-                type: 'POST',
-                data: {
-                    product_id: productId,
-                    <?= csrf_token() ?>: '<?= csrf_hash() ?>'
-                },
-                success: function(response) {
-                    if (response.success) {
-                        if (response.action === 'added') {
-                            $btn.addClass('active');
-                            wishlistItems.push(productId);
-                            showToast('success', response.message);
-                        } else {
-                            $btn.removeClass('active');
-                            wishlistItems = wishlistItems.filter(id => id != productId);
-                            showToast('info', response.message);
-                        }
-                        updateWishlistCount();
-                    } else {
-                        showToast('error', response.message);
-                    }
-                },
-                error: function() {
-                    showToast('error', 'Có lỗi xảy ra, vui lòng thử lại');
-                },
-                complete: function() {
-                    $btn.removeClass('loading');
-                }
-            });
-        });
-
-        // Pagination click handler
-        $(document).on('click', '.pagination a', function(e) {
-            e.preventDefault();
-            let url = $(this).attr('href');
-            let page = new URL(url, window.location.origin).searchParams.get('page');
-            if (page) {
-                currentFilters.page = parseInt(page);
-                loadProducts();
             }
         });
-
-        // Load products via AJAX
-        function loadProducts() {
-            $('#loading-overlay').show();
-            $('#products-container').addClass('loading');
-
-            $.ajax({
-                url: '<?= route_to('api_products_filter') ?>',
-                type: 'POST',
-                data: {
-                    ...currentFilters,
-                    <?= csrf_token() ?>: '<?= csrf_hash() ?>'
-                },
-                success: function(response) {
-                    if (response.success) {
-                        updateProductsDisplay(response);
-                        updateProductCount(response.total);
-                        updatePagination(response);
-                        updateWishlistButtons();
-                    } else {
-                        showToast('error', 'Không thể tải sản phẩm');
-                    }
-                },
-                error: function() {
-                    showToast('error', 'Có lỗi xảy ra khi tải sản phẩm');
-                },
-                complete: function() {
-                    $('#loading-overlay').hide();
-                    $('#products-container').removeClass('loading');
-                }
-            });
-        }
-
-        function updateProductsDisplay(response) {
-            let html = '<div class="row align-items-stretch latest_product_inner">';
-            
-            if (response.products && response.products.length > 0) {
-                response.products.forEach(function(product) {
-                    let outOfStockClass = product.stock_status === 'out_of_stock' ? 'out-of-stock' : '';
-                    let addToCartText = product.stock_status === 'out_of_stock' ? 'Out of Stock' : '+ Add to cart';
-                    let stockIndicator = '';
-                    
-                    if (product.stock_status === 'low_stock') {
-                        stockIndicator = `<div class="stock-indicator">Only ${product.stock_quantity} left!</div>`;
-                    }
-
-                    let saleBadge = '';
-                    let priceSection = '';
-                    if (product.sale_price && product.sale_price < product.price) {
-                        let discountPercent = Math.round((1 - product.sale_price / product.price) * 100);
-                        saleBadge = `<div class="sale-badge">-${discountPercent}%</div>`;
-                        priceSection = `
-                            <h3 class="sale-price">${formatCurrency(product.sale_price)}₫</h3>
-                            <span class="original-price">${formatCurrency(product.price)}₫</span>
-                        `;
-                    } else {
-                        priceSection = `<h3>${formatCurrency(product.price)}₫</h3>`;
-                    }
-
-                    html += `
-                        <div class="col-lg-4 col-sm-6">
-                            <div class="single_product_item product-item ${outOfStockClass}" data-product-id="${product.id}">
-                                <img src="${product.main_image || '<?= base_url('aranoz-master/img/product/product_1.png') ?>'}" 
-                                     alt="${escapeHtml(product.name)}">
-                                <div class="single_product_text">
-                                    <h4>${escapeHtml(product.name)}</h4>
-                                    <div class="price-section">${priceSection}</div>
-                                    <div class="product-actions">
-                                        <a href="#" class="add_cart add-to-cart-btn" data-product-id="${product.id}">
-                                            ${addToCartText}
-                                        </a>
-                                        <button class="wishlist-btn" data-product-id="${product.id}" title="Add to Wishlist">
-                                            <i class="ti-heart"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                ${stockIndicator}
-                                ${saleBadge}
-                            </div>
-                        </div>
-                    `;
-                });
-            } else {
-                html += `
-                    <div class="col-12">
-                        <div class="text-center py-5">
-                            <h4>Không tìm thấy sản phẩm nào</h4>
-                            <p>Hãy thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
-                        </div>
-                    </div>
-                `;
-            }
-            
-            html += '</div>';
-            $('#products-container').html(html);
-        }
-
-        function updateProductCount(total) {
-            $('#product-count').text(formatNumber(total));
-        }
-
-        function updatePagination(response) {
-    let paginationHtml = '';
-    if (response.total_pages > 1) {
-        paginationHtml = '<nav aria-label="Page navigation"><ul class="pagination justify-content-center">';
-        
-        // Previous button
-        if (response.page > 1) {
-            paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${response.page - 1}"><i class="ti-angle-double-left"></i></a></li>`;
-        }
-        
-        // Page numbers
-        let startPage = Math.max(1, response.page - 2);
-        let endPage = Math.min(response.total_pages, startPage + 4);
-        
-        if (endPage - startPage < 4) {
-            startPage = Math.max(1, endPage - 4);
-        }
-        
-        for (let i = startPage; i <= endPage; i++) {
-            let activeClass = i === response.page ? 'active' : '';
-            paginationHtml += `<li class="page-item ${activeClass}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-        }
-        
-        // Next button
-        if (response.page < response.total_pages) {
-            paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${response.page + 1}"><i class="ti-angle-double-right"></i></a></li>`;
-        }
-        
-        paginationHtml += '</ul></nav>';
     }
-    
-    $('#pagination-container').html(paginationHtml);
-}
 
-// Cập nhật sự kiện pagination
-$(document).on('click', '.pagination a', function(e) {
-    e.preventDefault();
-    let page = $(this).data('page');
-    if (page) {
-        currentFilters.page = parseInt(page);
-        loadProducts();
+    // Load wishlist status on page load - FIX: Đợi load xong mới update UI
+    function loadWishlistStatus() {
+        return $.ajax({
+            url: '<?= route_to('api_wishlist_status') ?>',
+            type: 'GET',
+            success: function(response) {
+                if (response.wishlist) {
+                    wishlistItems = response.wishlist.map(id => parseInt(id));
+                    isWishlistLoaded = true;
+                    updateWishlistButtons();
+                }
+            },
+            error: function() {
+                console.log('Failed to load wishlist status');
+                isWishlistLoaded = true;
+            }
+        });
     }
-});
 
-        function loadWishlistStatus() {
-            $.ajax({
-                url: '<?= route_to('api_wishlist_status') ?>',
-                type: 'GET',
-                success: function(response) {
-                    if (response.wishlist) {
-                        wishlistItems = response.wishlist;
-                        updateWishlistButtons();
-                    }
-                }
-            });
-        }
-
-        function updateWishlistButtons() {
-            $('.wishlist-btn').each(function() {
-                let productId = parseInt($(this).data('product-id'));
-                if (wishlistItems.includes(productId)) {
-                    $(this).addClass('active');
-                } else {
-                    $(this).removeClass('active');
-                }
-            });
-        }
-
-        function updateWishlistCount() {
-            // Update wishlist count in header if exists
-            $('.wishlist-count').text(wishlistItems.length);
-        }
-
-        function updateCartCount(count) {
-            // Update cart count in header if exists
-            $('.cart-count').text(count);
-        }
-
-        function showToast(type, message) {
-            // Simple toast implementation
-            let toastClass = type === 'success' ? 'alert-success' : 
-                           type === 'error' ? 'alert-danger' : 'alert-info';
-            
-            let toast = `
-                <div class="alert ${toastClass} alert-dismissible fade show position-fixed" 
-                     style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
-                    ${message}
-                    <button type="button" class="close" data-dismiss="alert">
-                        <span>&times;</span>
-                    </button>
-                </div>
-            `;
-            
-            $('body').append(toast);
-            
-            setTimeout(function() {
-                $('.alert').fadeOut(function() {
-                    $(this).remove();
-                });
-            }, 3000);
-        }
-
-        function formatCurrency(amount) {
-            return new Intl.NumberFormat('vi-VN').format(amount);
-        }
-
-        function formatNumber(num) {
-            return new Intl.NumberFormat('vi-VN').format(num);
-        }
-
-        function escapeHtml(text) {
-            let map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-        }
-
-        // Initialize filters based on URL parameters
-        function initializeFromURL() {
-            let urlParams = new URLSearchParams(window.location.search);
-            
-            if (urlParams.get('category')) {
-                currentFilters.category_id = parseInt(urlParams.get('category'));
-                $(`.category-filter[data-category="${currentFilters.category_id}"]`).addClass('active');
-            }
-            
-            if (urlParams.get('brand')) {
-                currentFilters.brand_id = parseInt(urlParams.get('brand'));
-                $(`.brand-filter[data-brand="${currentFilters.brand_id}"]`).addClass('active');
-            }
-            
-            if (urlParams.get('search')) {
-                currentFilters.search = urlParams.get('search');
-                $('#search-input').val(currentFilters.search);
-            }
-            
-            // Update sort dropdown
-            if (urlParams.get('sort')) {
-                currentFilters.sort_by = urlParams.get('sort');
-                let sortText = currentFilters.sort_by === 'price_asc' ? 'Price: Low to High' : 
-                              currentFilters.sort_by === 'price_desc' ? 'Price: High to Low' : 'Name';
-                $('.sorting .current').text(sortText);
-            }
-            
-            // Update per page dropdown
-            if (urlParams.get('per_page')) {
-                currentFilters.per_page = parseInt(urlParams.get('per_page'));
-                $('.show .current').text(currentFilters.per_page);
-            }
-        }
-
+    // Initialize - FIX: Đợi wishlist load xong
+    loadWishlistStatus().then(function() {
+        initPriceRangeSlider();
         initializeFromURL();
     });
+
+    // Category filter click
+    $('.category-filter').click(function(e) {
+        e.preventDefault();
+        let categoryId = $(this).data('category');
+        
+        if (currentFilters.category_id == categoryId) {
+            currentFilters.category_id = null;
+            $(this).removeClass('active');
+        } else {
+            $('.category-filter').removeClass('active');
+            $(this).addClass('active');
+            currentFilters.category_id = categoryId;
+        }
+        
+        currentFilters.page = 1;
+        loadProducts();
+    });
+
+    // Brand filter click
+    $('.brand-filter').click(function(e) {
+        e.preventDefault();
+        let brandId = $(this).data('brand');
+        
+        if (currentFilters.brand_id == brandId) {
+            currentFilters.brand_id = null;
+            $(this).removeClass('active');
+        } else {
+            $('.brand-filter').removeClass('active');
+            $(this).addClass('active');
+            currentFilters.brand_id = brandId;
+        }
+        
+        currentFilters.page = 1;
+        loadProducts();
+    });
+
+    // Sort change
+    $(document).on('click', '.sorting .option', function() {
+        currentFilters.sort_by = $(this).data('value');
+        $('.sorting .current').text($(this).text());
+        currentFilters.page = 1;
+        loadProducts();
+    });
+
+    // Per page change
+    $(document).on('click', '.show .option', function() {
+        currentFilters.per_page = $(this).data('value');
+        $('.show .current').text($(this).text());
+        currentFilters.page = 1;
+        loadProducts();
+    });
+
+    // Search functionality
+    let searchTimeout;
+    $('#search-input').on('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(function() {
+            currentFilters.search = $('#search-input').val();
+            currentFilters.page = 1;
+            loadProducts();
+        }, 500);
+    });
+
+    // Clear filters
+    $(document).on('click', '.clear-filters', function() {
+        let filterType = $(this).closest('aside').find('.l_w_title h3').text();
+        
+        if (filterType.includes('Category')) {
+            currentFilters.category_id = null;
+            $('.category-filter').removeClass('active');
+        } else if (filterType.includes('Brand')) {
+            currentFilters.brand_id = null;
+            $('.brand-filter').removeClass('active');
+        } else if (filterType.includes('Price')) {
+            currentFilters.min_price = null;
+            currentFilters.max_price = null;
+            
+            let slider = $(".js-range-slider").data("ionRangeSlider");
+            slider.update({
+                from: 0,
+                to: <?= $maxPrice ?? 1000000 ?>
+            });
+            
+            $('#min_price').val('0');
+            $('#max_price').val('<?= $maxPrice ?? 1000000 ?>');
+        }
+        
+        currentFilters.page = 1;
+        loadProducts();
+    });
+
+    // Add to cart functionality
+    $(document).on('click', '.add-to-cart-btn', function(e) {
+        e.preventDefault();
+        let productId = $(this).data('product-id');
+        let $btn = $(this);
+        
+        if ($btn.hasClass('loading') || $btn.closest('.out-of-stock').length) return;
+        
+        $btn.addClass('loading').text('Adding...');
+        
+        $.ajax({
+            url: '<?= route_to('api_cart_add') ?>',
+            type: 'POST',
+            data: {
+                product_id: productId,
+                quantity: 1,
+                <?= csrf_token() ?>: '<?= csrf_hash() ?>'
+            },
+            success: function(response) {
+                if (response.success) {
+                    showToast('success', response.message);
+                    updateCartCount(response.cart_count);
+                } else {
+                    showToast('error', response.message);
+                }
+            },
+            error: function() {
+                showToast('error', 'Có lỗi xảy ra, vui lòng thử lại');
+            },
+            complete: function() {
+                $btn.removeClass('loading').text('+ Add to cart');
+            }
+        });
+    });
+
+    // Wishlist functionality
+    $(document).on('click', '.wishlist-btn', function(e) {
+        e.preventDefault();
+        let productId = parseInt($(this).data('product-id'));
+        let $btn = $(this);
+        
+        if ($btn.hasClass('loading')) return;
+        
+        $btn.addClass('loading');
+        
+        $.ajax({
+            url: '<?= route_to('api_wishlist_add') ?>',
+            type: 'POST',
+            data: {
+                product_id: productId,
+                <?= csrf_token() ?>: '<?= csrf_hash() ?>'
+            },
+            success: function(response) {
+                if (response.success) {
+                    if (response.action === 'added') {
+                        $btn.addClass('active');
+                        wishlistItems.push(productId);
+                        showToast('success', response.message);
+                    } else {
+                        $btn.removeClass('active');
+                        wishlistItems = wishlistItems.filter(id => id !== productId);
+                        showToast('info', response.message);
+                    }
+                    updateWishlistCount();
+                } else {
+                    showToast('error', response.message);
+                }
+            },
+            error: function() {
+                showToast('error', 'Có lỗi xảy ra, vui lòng thử lại');
+            },
+            complete: function() {
+                $btn.removeClass('loading');
+            }
+        });
+    });
+
+    // Pagination click handler
+    $(document).on('click', '.pagination a', function(e) {
+        e.preventDefault();
+        let page = $(this).data('page');
+        if (page) {
+            currentFilters.page = parseInt(page);
+            loadProducts();
+        }
+    });
+
+    // Load products via AJAX
+    function loadProducts() {
+        $('#loading-overlay').show();
+        $('#products-container').addClass('loading');
+
+        $.ajax({
+            url: '<?= route_to('api_products_filter') ?>',
+            type: 'POST',
+            data: {
+                ...currentFilters,
+                <?= csrf_token() ?>: '<?= csrf_hash() ?>'
+            },
+            success: function(response) {
+                if (response.success) {
+                    updateProductCount(response.total);
+
+                    let currentPage = parseInt(response.page);
+                    let totalPages = parseInt(response.total_pages);
+
+                    // Build products HTML
+                    let productsHtml = '<div class="row align-items-stretch latest_product_inner">';
+                    
+                    if (response.products && response.products.length > 0) {
+                        response.products.forEach(function(product) {
+                            let outOfStockClass = product.stock_status === 'out_of_stock' ? 'out-of-stock' : '';
+                            let addToCartText = product.stock_status === 'out_of_stock' ? 'Out of Stock' : '+ Add to cart';
+                            let stockIndicator = '';
+                            
+                            if (product.stock_status === 'low_stock') {
+                                stockIndicator = `<div class="stock-indicator">Only ${product.stock_quantity} left!</div>`;
+                            }
+
+                            // FIX: Kiểm tra sale_price > 0 VÀ < price
+                            let saleBadge = '';
+                            let priceSection = '';
+                            
+                            if (product.sale_price && product.sale_price > 0 && product.sale_price < product.price) {
+                                let discountPercent = Math.round((1 - product.sale_price / product.price) * 100);
+                                saleBadge = `<div class="sale-badge">-${discountPercent}%</div>`;
+                                priceSection = `
+                                    <h3 class="sale-price">${formatCurrency(product.sale_price)}₫</h3>
+                                    <span class="original-price">${formatCurrency(product.price)}₫</span>
+                                `;
+                            } else {
+                                priceSection = `<h3>${formatCurrency(product.price)}₫</h3>`;
+                            }
+
+                            // FIX: Thêm link vào product detail
+                            let productUrl = `<?= site_url('single-product/') ?>${product.slug || product.id}`;
+
+                            productsHtml += `
+                                <div class="col-lg-4 col-sm-6">
+                                    <div class="single_product_item product-item ${outOfStockClass}" data-product-id="${product.id}">
+                                        <img src="${product.main_image || '<?= base_url('aranoz-master/img/product/product_1.png') ?>'}" 
+                                             alt="${escapeHtml(product.name)}">
+                                        <div class="single_product_text">
+                                            <h4>
+                                                <a href="${productUrl}">${escapeHtml(product.name)}</a>
+                                            </h4>
+                                            <div class="price-section">${priceSection}</div>
+                                            <div class="product-actions">
+                                                <a href="#" class="add_cart add-to-cart-btn" data-product-id="${product.id}">
+                                                    ${addToCartText}
+                                                </a>
+                                                <button class="wishlist-btn" data-product-id="${product.id}" title="Add to Wishlist">
+                                                    <i class="ti-heart"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        ${stockIndicator}
+                                        ${saleBadge}
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        productsHtml += `
+                            <div class="col-12">
+                                <div class="text-center py-5">
+                                    <h4>Không tìm thấy sản phẩm nào</h4>
+                                    <p>Hãy thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    productsHtml += '</div>';
+
+                    // Build pagination HTML
+                    let paginationHtml = '';
+                    if (totalPages > 1) {
+                        paginationHtml = `
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <div class="pageination">
+                                        <nav aria-label="Page navigation example">
+                                            <ul class="pagination justify-content-center">
+                        `;
+                        
+                        if (currentPage > 1) {
+                            paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${currentPage - 1}" aria-label="Previous"><i class="ti-angle-double-left"></i></a></li>`;
+                        }
+                        
+                        let startPage = Math.max(1, currentPage - 2);
+                        let endPage = Math.min(totalPages, startPage + 4);
+                        
+                        if (endPage - startPage < 4) {
+                            startPage = Math.max(1, endPage - 4);
+                        }
+                        
+                        for (let i = startPage; i <= endPage; i++) {
+                            let activeClass = i === currentPage ? 'active' : '';
+                            paginationHtml += `<li class="page-item ${activeClass}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+                        }
+                        
+                        if (currentPage < totalPages) {
+                            paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${currentPage + 1}" aria-label="Next"><i class="ti-angle-double-right"></i></a></li>`;
+                        }
+                        
+                        paginationHtml += `
+                                            </ul>
+                                        </nav>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    // Update entire container
+                    $('#products-container').html(productsHtml + paginationHtml);
+
+                    updateWishlistButtons();
+                } else {
+                    showToast('error', 'Không thể tải sản phẩm');
+                }
+            },
+            error: function() {
+                showToast('error', 'Có lỗi xảy ra khi tải sản phẩm');
+            },
+            complete: function() {
+                $('#loading-overlay').hide();
+                $('#products-container').removeClass('loading');
+            }
+        });
+    }
+
+    // FIX: Đảm bảo wishlist buttons được update đúng
+    function updateWishlistButtons() {
+        if (!isWishlistLoaded) return;
+        
+        $('.wishlist-btn').each(function() {
+            let productId = parseInt($(this).data('product-id'));
+            if (wishlistItems.includes(productId)) {
+                $(this).addClass('active');
+            } else {
+                $(this).removeClass('active');
+            }
+        });
+    }
+
+    function updateWishlistCount() {
+        $('.wishlist-count').text(wishlistItems.length);
+    }
+
+    function updateCartCount(count) {
+        $('.cart-count').text(count);
+    }
+
+    function updateProductCount(total) {
+        $('#product-count').text(formatNumber(total));
+    }
+
+    function showToast(type, message) {
+        let toastClass = type === 'success' ? 'alert-success' : 
+                       type === 'error' ? 'alert-danger' : 'alert-info';
+        
+        let toast = `
+            <div class="alert ${toastClass} alert-dismissible fade show position-fixed" 
+                 style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+                ${message}
+                <button type="button" class="close" data-dismiss="alert">
+                    <span>&times;</span>
+                </button>
+            </div>
+        `;
+        
+        $('body').append(toast);
+        
+        setTimeout(function() {
+            $('.alert').fadeOut(function() {
+                $(this).remove();
+            });
+        }, 3000);
+    }
+
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('vi-VN').format(amount);
+    }
+
+    function formatNumber(num) {
+        return new Intl.NumberFormat('vi-VN').format(num);
+    }
+
+    function escapeHtml(text) {
+        let map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+
+    function initializeFromURL() {
+        let urlParams = new URLSearchParams(window.location.search);
+        
+        if (urlParams.get('category')) {
+            currentFilters.category_id = parseInt(urlParams.get('category'));
+            $(`.category-filter[data-category="${currentFilters.category_id}"]`).addClass('active');
+        }
+        
+        if (urlParams.get('brand')) {
+            currentFilters.brand_id = parseInt(urlParams.get('brand'));
+            $(`.brand-filter[data-brand="${currentFilters.brand_id}"]`).addClass('active');
+        }
+        
+        if (urlParams.get('search')) {
+            currentFilters.search = urlParams.get('search');
+            $('#search-input').val(currentFilters.search);
+        }
+        
+        if (urlParams.get('sort')) {
+            currentFilters.sort_by = urlParams.get('sort');
+            let sortText = currentFilters.sort_by === 'price_asc' ? 'Price: Low to High' : 
+                          currentFilters.sort_by === 'price_desc' ? 'Price: High to Low' : 'Name';
+            $('.sorting .current').text(sortText);
+        }
+        
+        if (urlParams.get('per_page')) {
+            currentFilters.per_page = parseInt(urlParams.get('per_page'));
+            $('.show .current').text(currentFilters.per_page);
+        }
+
+        if (urlParams.get('page')) {
+            currentFilters.page = parseInt(urlParams.get('page'));
+        }
+    }
+});
     </script>
 <?= $this->endSection() ?>

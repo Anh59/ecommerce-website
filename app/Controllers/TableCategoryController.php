@@ -33,7 +33,8 @@ class TableCategoryController extends BaseController
         $page = $this->request->getGet('page') ?? 1;
 
         // Lấy dữ liệu categories và brands
-        $categories = $this->categoryModel->getCategoriesTree();
+        // $categories = $this->categoryModel->getCategoriesTree();
+        $categories = $this->categoryModel->getCategoriesWithProductCount();
         $brands = $this->brandModel->where('is_active', 1)->orderBy('name', 'ASC')->findAll();
 
         // Build query cho products
@@ -85,13 +86,12 @@ class TableCategoryController extends BaseController
                 break;
         }
 
+        // Count total products trước paginate
+        $totalProducts = $builder->countAllResults(false);
+
         // Pagination
         $pager = \Config\Services::pager();
         $products = $builder->paginate($perPage, 'default', $page);
-        $pagerLinks = $pager->links();
-
-        // Count total products
-        $totalProducts = $builder->countAllResults(false);
 
         // Get min and max prices for slider
         $priceRange = $this->productModel->select('MIN(price) as min_price, MAX(price) as max_price')
@@ -102,9 +102,9 @@ class TableCategoryController extends BaseController
             'products' => $products,
             'categories' => $categories,
             'brands' => $brands,
-            'pagerLinks' => $pagerLinks,
             'totalProducts' => $totalProducts,
             'currentPage' => $page,
+            'totalPages' => $pager->getPageCount(),
             'perPage' => $perPage,
             'minPrice' => $priceRange['min_price'] ?? 0,
             'maxPrice' => $priceRange['max_price'] ?? 1000000,
@@ -187,9 +187,9 @@ class TableCategoryController extends BaseController
     }
 
     // Sử dụng paginate thay vì limit
+    $totalProducts = $builder->countAllResults(false);
     $pager = \Config\Services::pager();
     $products = $builder->paginate($perPage, 'default', $page);
-    $totalProducts = $builder->countAllResults(false);
 
     $response = [
         'success' => true,

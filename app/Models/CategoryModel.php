@@ -126,6 +126,37 @@ class CategoryModel extends Model
         }
         return $tree;
     }
+
+    // Trong CategoryModel, thêm phương thức này:
+public function getCategoriesWithProductCount()
+{
+    $productModel = new ProductModel();
+    
+    // Lấy tất cả categories
+    $categories = $this->orderBy('sort_order', 'ASC')->findAll();
+    
+    // Đếm số lượng sản phẩm cho mỗi category
+    foreach ($categories as &$category) {
+        $productCount = $productModel->where('category_id', $category['id'])
+                                   ->where('is_active', 1)
+                                   ->countAllResults();
+        $category['product_count'] = $productCount;
+    }
+    
+    return $this->buildTreeWithCount($categories);
+}
+
+private function buildTreeWithCount($categories, $parentId = null)
+{
+    $tree = [];
+    foreach ($categories as $category) {
+        if ($category['parent_id'] == $parentId) {
+            $category['children'] = $this->buildTreeWithCount($categories, $category['id']);
+            $tree[] = $category;
+        }
+    }
+    return $tree;
+}   
     // Dates
     protected $useTimestamps = true;
     protected $dateFormat    = 'datetime';
