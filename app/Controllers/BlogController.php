@@ -22,16 +22,29 @@ class BlogController extends BaseController
      */
     public function index()
     {
-        $perPage = 5;
+        $perPage = 2;
         $page = (int) ($this->request->getVar('page') ?? 1);
         
-        // Get published posts with pagination
-        $posts = $this->blogPostModel
-            ->where('status', 'published')
-            ->orderBy('published_at', 'DESC')
-            ->paginate($perPage, 'default', $page);
+        $keyword = $this->request->getVar('keyword') ?? '';
+        $categoryFilter = $this->request->getVar('category') ?? '';
+        
+        $builder = $this->blogPostModel->where('status', 'published');
 
-        // Get pagination links
+        if (!empty($keyword)) {
+            $builder->groupStart()
+                   ->like('title', $keyword)
+                   ->orLike('excerpt', $keyword)
+                   ->orLike('content', $keyword)
+                   ->groupEnd();
+        }
+
+        if (!empty($categoryFilter)) {
+            $builder->where('category', $categoryFilter);
+        }
+
+        $posts = $builder->orderBy('published_at', 'DESC')
+                        ->paginate($perPage, 'default', $page);
+
         $pager = $this->blogPostModel->pager;
 
         // Get featured posts for sidebar
@@ -47,13 +60,24 @@ class BlogController extends BaseController
             ->limit(4)
             ->findAll();
 
+        // Set title
+        $title = 'Blog - Latest News & Articles';
+        if (!empty($keyword)) {
+            $title = 'Search Results for "' . esc($keyword) . '" - Blog';
+        } elseif (!empty($categoryFilter)) {
+            $title = 'Category: ' . esc($categoryFilter) . ' - Blog';
+        }
+
         $data = [
-            'title' => 'Blog - Latest News & Articles',
+            'title' => $title,
             'posts' => $posts,
             'pager' => $pager,
             'featuredPosts' => $featuredPosts,
             'categories' => $categories,
             'recentPosts' => $recentPosts,
+            'searchKeyword' => $keyword,
+            'currentCategory' => $categoryFilter,
+            'totalResults' => $pager->getTotal(),
             'currentPage' => $page,
             'totalPages' => $pager->getPageCount()
         ];
@@ -200,63 +224,6 @@ class BlogController extends BaseController
     }
 
     /**
-     * Search blog posts
-     */
-    public function search()
-    {
-        $keyword = $this->request->getVar('keyword') ?? '';
-        $category = $this->request->getVar('category') ?? '';
-        $perPage = 5;
-        $page = (int) ($this->request->getVar('page') ?? 1);
-
-        $builder = $this->blogPostModel->where('status', 'published');
-
-        // Search by keyword
-        if (!empty($keyword)) {
-            $builder->groupStart()
-                   ->like('title', $keyword)
-                   ->orLike('excerpt', $keyword)
-                   ->orLike('content', $keyword)
-                   ->groupEnd();
-        }
-
-        // Filter by category
-        if (!empty($category)) {
-            $builder->where('category', $category);
-        }
-
-        $posts = $builder->orderBy('published_at', 'DESC')
-                        ->paginate($perPage, 'default', $page);
-
-        $pager = $this->blogPostModel->pager;
-
-        // Get sidebar data
-        $featuredPosts = $this->blogPostModel->getFeaturedPosts(4);
-        $categories = $this->getCategories();
-        $recentPosts = $this->blogPostModel
-            ->where('status', 'published')
-            ->orderBy('published_at', 'DESC')
-            ->limit(4)
-            ->findAll();
-
-        $data = [
-            'title' => 'Search Results - Blog',
-            'posts' => $posts,
-            'pager' => $pager,
-            'featuredPosts' => $featuredPosts,
-            'categories' => $categories,
-            'recentPosts' => $recentPosts,
-            'searchKeyword' => $keyword,
-            'searchCategory' => $category,
-            'currentPage' => $page,
-            'totalPages' => $pager->getPageCount(),
-            'totalResults' => $pager->getTotal()
-        ];
-
-        return view('Customers/blog', $data);
-    }
-
-    /**
      * Get categories with post count
      */
     private function getCategories()
@@ -268,45 +235,5 @@ class BlogController extends BaseController
             ->findAll();
 
         return $categories;
-    }
-
-    /**
-     * Get posts by category
-     */
-    public function category($category)
-    {
-        $perPage = 5;
-        $page = (int) ($this->request->getVar('page') ?? 1);
-        
-        $posts = $this->blogPostModel
-            ->where('category', urldecode($category))
-            ->where('status', 'published')
-            ->orderBy('published_at', 'DESC')
-            ->paginate($perPage, 'default', $page);
-
-        $pager = $this->blogPostModel->pager;
-
-        // Get sidebar data
-        $featuredPosts = $this->blogPostModel->getFeaturedPosts(4);
-        $categories = $this->getCategories();
-        $recentPosts = $this->blogPostModel
-            ->where('status', 'published')
-            ->orderBy('published_at', 'DESC')
-            ->limit(4)
-            ->findAll();
-
-        $data = [
-            'title' => 'Category: ' . urldecode($category) . ' - Blog',
-            'posts' => $posts,
-            'pager' => $pager,
-            'featuredPosts' => $featuredPosts,
-            'categories' => $categories,
-            'recentPosts' => $recentPosts,
-            'currentCategory' => urldecode($category),
-            'currentPage' => $page,
-            'totalPages' => $pager->getPageCount()
-        ];
-
-        return view('Customers/blog', $data);
     }
 }

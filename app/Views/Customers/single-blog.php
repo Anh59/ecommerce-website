@@ -269,8 +269,8 @@
                                 <?php if (!empty($categories)): ?>
                                     <?php foreach ($categories as $category): ?>
                                         <li>
-                                            <a href="<?= base_url('blog/category/' . urlencode($category['category'])) ?>" 
-                                               class="d-flex <?= $category['category'] === $post['category'] ? 'text-primary font-weight-bold' : '' ?>">
+                                            <a href="<?= base_url('blog?category=' . urlencode($category['category'])) ?>" class="d-flex category-link">
+                                             
                                                 <p><?= esc($category['category']) ?></p>
                                                 <p>(<?= $category['post_count'] ?>)</p>
                                             </a>
@@ -287,9 +287,10 @@
                                 <?php foreach ($recentPosts as $recentPost): ?>
                                     <div class="media post_item">
                                         <img src="<?= base_url($recentPost['featured_image'] ?? 'aranoz-master/img/post/post_1.png') ?>" 
-                                             alt="<?= esc($recentPost['title']) ?>">
+                                             alt="<?= esc($recentPost['title']) ?>"
+                                              style="width: 80px; height: 60px; object-fit: cover;">
                                         <div class="media-body">
-                                            <a href="<?= base_url('blog/' . $recentPost['slug']) ?>">
+                                            <a href="<?= base_url('blog/post/' . $recentPost['slug']) ?>">
                                                 <h3><?= esc(strlen($recentPost['title']) > 40 ? substr($recentPost['title'], 0, 40) . '...' : $recentPost['title']) ?></h3>
                                             </a>
                                             <p><?= date('F j, Y', strtotime($recentPost['published_at'])) ?></p>

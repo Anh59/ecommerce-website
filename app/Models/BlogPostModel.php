@@ -30,9 +30,9 @@ class BlogPostModel extends Model
         'status'           => 'required|in_list[draft,published,archived]',
         'meta_title'       => 'max_length[255]',
         'meta_description' => 'max_length[500]',
-        'reading_time'     => 'permit_empty|integer|greater_than[0]',
+        'reading_time'     => 'permit_empty|is_natural', 
         'is_featured'      => 'permit_empty|in_list[0,1]', 
-        'view_count'       => 'permit_empty|integer'
+        'view_count'       => 'permit_empty|is_natural'
     ];
 
     // Đã xóa slug khỏi validation messages
@@ -191,7 +191,28 @@ public function generateUniqueSlug($title, $id = null)
         $wordCount = str_word_count(strip_tags($content));
         return max(1, ceil($wordCount / 200));
     }
-
+    /**
+ * Tự động publish các bài viết archived đã đến hạn
+ */
+public function autoPublishScheduledPosts()
+{
+    $now = date('Y-m-d H:i:s');
+    
+    // Tìm các bài viết archived có published_at <= now
+    $posts = $this->where('status', 'archived')
+                  ->where('published_at <=', $now)
+                  ->where('published_at IS NOT NULL')
+                  ->findAll();
+    
+    if (!empty($posts)) {
+        foreach ($posts as $post) {
+            $this->update($post['id'], ['status' => 'published']);
+            log_message('info', "Auto-published post ID {$post['id']}: {$post['title']}");
+        }
+    }
+    
+    return count($posts);
+}
     // Dates
     protected $useTimestamps = true;
     protected $dateFormat    = 'datetime';

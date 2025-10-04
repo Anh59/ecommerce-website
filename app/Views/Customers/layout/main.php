@@ -49,7 +49,7 @@
     <ul class="navbar-nav">
         <!-- Home -->
         <li class="nav-item">
-            <a class="nav-link" href="<?= route_to('home_about') ?>">Home</a>
+            <a class="nav-link" href="<?= route_to('home_index') ?>">Home</a>
         </li>
 
         <!-- Shop -->

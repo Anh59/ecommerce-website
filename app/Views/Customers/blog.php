@@ -30,26 +30,19 @@
                     <div class="blog_left_sidebar">
                         
                         <!-- Search Form -->
-                        <?php if (isset($searchKeyword) || isset($searchCategory)): ?>
+                        <?php if ((isset($searchKeyword) && $searchKeyword) || (isset($currentCategory) && $currentCategory)): ?>
                             <div class="blog-search-form">
                                 <div class="alert alert-info">
                                     <i class="ti-search"></i>
                                     <?php if (isset($searchKeyword) && $searchKeyword): ?>
                                         Search results for: <strong>"<?= esc($searchKeyword) ?>"</strong>
                                     <?php endif; ?>
-                                    <?php if (isset($searchCategory) && $searchCategory): ?>
-                                        Category: <strong><?= esc($searchCategory) ?></strong>
+                                    <?php if (isset($currentCategory) && $currentCategory): ?>
+                                        Category: <strong><?= esc($currentCategory) ?></strong>
                                     <?php endif; ?>
                                     <?php if (isset($totalResults)): ?>
                                         - <?= $totalResults ?> result(s) found
                                     <?php endif; ?>
-                                </div>
-                            </div>
-                        <?php elseif (isset($currentCategory)): ?>
-                            <div class="blog-search-form">
-                                <div class="alert alert-primary">
-                                    <i class="ti-folder"></i>
-                                    Posts in category: <strong><?= esc($currentCategory) ?></strong>
                                 </div>
                             </div>
                         <?php endif; ?>
@@ -61,8 +54,9 @@
                                     <div class="blog_item_img">
                                         <img class="card-img rounded-0" 
                                              src="<?= base_url($post['featured_image'] ?? 'aranoz-master/img/blog/single_blog_1.png') ?>" 
-                                             alt="<?= esc($post['image_alt'] ?? $post['title']) ?>">
-                                        <a href="<?= base_url('blog/' . $post['slug']) ?>" class="blog_item_date">
+                                             alt="<?= esc($post['image_alt'] ?? $post['title']) ?>"
+                                             style="width: 100%;height: 600px; ">
+                                        <a href="<?= base_url('blog/post/' . $post['slug']) ?>" class="blog_item_date">
                                             <h3><?= date('j', strtotime($post['published_at'])) ?></h3>
                                             <p><?= date('M', strtotime($post['published_at'])) ?></p>
                                         </a>
@@ -76,7 +70,7 @@
                                         
                                         <ul class="blog-info-link blog-meta">
                                             <li>
-                                                <a href="<?= base_url('blog/category/' . urlencode($post['category'])) ?>">
+                                                <a href="<?= base_url('blog?category=' . urlencode($post['category'])) ?>">
                                                     <i class="ti-folder"></i> <?= esc($post['category']) ?>
                                                 </a>
                                             </li>
@@ -109,39 +103,39 @@
                             </div>
                         <?php endif; ?>
 
-                        <!-- Pagination -->
-                        <?php if (isset($pager) && $pager->getPageCount() > 1): ?>
-                            <nav class="blog-pagination justify-content-center d-flex">
-                                <ul class="pagination">
-                                    <!-- Previous Page -->
-                                    <?php if ($pager->hasPreviousPage()): ?>
-                                        <li class="page-item">
-                                            <a href="<?= $pager->getPreviousPageURI() ?>" class="page-link" aria-label="Previous">
-                                                <i class="ti-angle-left"></i>
-                                            </a>
-                                        </li>
-                                    <?php endif; ?>
+                       <!-- Pagination -->
+<?php if (isset($pager) && $pager->getPageCount() > 1): ?>
+    <nav class="blog-pagination justify-content-center d-flex">
+        <ul class="pagination">
+            <!-- Previous Page -->
+            <?php if ($pager->getCurrentPage() > 1): ?>
+                <li class="page-item">
+                    <a href="<?= $pager->getPageURI($pager->getCurrentPage() - 1) ?>" class="page-link" aria-label="Previous">
+                        <i class="ti-angle-left"></i>
+                    </a>
+                </li>
+            <?php endif; ?>
 
-                                    <!-- Page Numbers -->
-                                    <?php foreach ($pager->links() as $link): ?>
-                                        <li class="page-item <?= $link['active'] ? 'active' : '' ?>">
-                                            <a href="<?= $link['uri'] ?>" class="page-link">
-                                                <?= $link['title'] ?>
-                                            </a>
-                                        </li>
-                                    <?php endforeach; ?>
+            <!-- Page Numbers (Manual loop thay vì foreach links()) -->
+            <?php for ($i = 1; $i <= $pager->getPageCount(); $i++): ?>
+                <li class="page-item <?= ($i == $pager->getCurrentPage()) ? 'active' : '' ?>">
+                    <a href="<?= $pager->getPageURI($i) ?>" class="page-link">
+                        <?= $i ?>
+                    </a>
+                </li>
+            <?php endfor; ?>
 
-                                    <!-- Next Page -->
-                                    <?php if ($pager->hasNextPage()): ?>
-                                        <li class="page-item">
-                                            <a href="<?= $pager->getNextPageURI() ?>" class="page-link" aria-label="Next">
-                                                <i class="ti-angle-right"></i>
-                                            </a>
-                                        </li>
-                                    <?php endif; ?>
-                                </ul>
-                            </nav>
-                        <?php endif; ?>
+            <!-- Next Page -->
+            <?php if ($pager->getCurrentPage() < $pager->getPageCount()): ?>
+                <li class="page-item">
+                    <a href="<?= $pager->getPageURI($pager->getCurrentPage() + 1) ?>" class="page-link" aria-label="Next">
+                        <i class="ti-angle-right"></i>
+                    </a>
+                </li>
+            <?php endif; ?>
+        </ul>
+    </nav>
+<?php endif; ?>
                     </div>
                 </div>
 
@@ -151,7 +145,7 @@
                         
                         <!-- Search Widget -->
                         <aside class="single_sidebar_widget search_widget">
-                            <form action="<?= base_url('blog/search') ?>" method="GET">
+                            <form action="<?= base_url('blog') ?>" method="GET">
                                 <div class="form-group">
                                     <div class="input-group mb-3">
                                         <input type="text" name="keyword" class="form-control" 
@@ -177,7 +171,7 @@
                                 <?php if (!empty($categories)): ?>
                                     <?php foreach ($categories as $category): ?>
                                         <li>
-                                            <a href="<?= base_url('blog/category/' . urlencode($category['category'])) ?>" class="d-flex category-link">
+                                            <a href="<?= base_url('blog?category=' . urlencode($category['category'])) ?>" class="d-flex category-link">
                                                 <p><?= esc($category['category']) ?></p>
                                                 <p>(<?= $category['post_count'] ?>)</p>
                                             </a>
@@ -196,9 +190,10 @@
                                 <?php foreach ($recentPosts as $recentPost): ?>
                                     <div class="media post_item">
                                         <img src="<?= base_url($recentPost['featured_image'] ?? 'aranoz-master/img/post/post_1.png') ?>" 
-                                             alt="<?= esc($recentPost['title']) ?>">
+                                             alt="<?= esc($recentPost['title']) ?>"
+                                             style="width: 80px; height: 60px; object-fit: cover;">
                                         <div class="media-body">
-                                            <a href="<?= base_url('blog/' . $recentPost['slug']) ?>">
+                                            <a href="<?= base_url('blog/post/' . $recentPost['slug']) ?>">
                                                 <h3><?= esc(strlen($recentPost['title']) > 40 ? substr($recentPost['title'], 0, 40) . '...' : $recentPost['title']) ?></h3>
                                             </a>
                                             <p><?= date('F j, Y', strtotime($recentPost['published_at'])) ?></p>
@@ -215,9 +210,10 @@
                                 <?php foreach ($featuredPosts as $featured): ?>
                                     <div class="media post_item">
                                         <img src="<?= base_url($featured['featured_image'] ?? 'aranoz-master/img/post/post_1.png') ?>" 
-                                             alt="<?= esc($featured['title']) ?>">
+                                             alt="<?= esc($featured['title']) ?>"
+                                             style="width: 80px; height: 60px; object-fit: cover;">
                                         <div class="media-body">
-                                            <a href="<?= base_url('blog/' . $featured['slug']) ?>">
+                                            <a href="<?= base_url('blog/post/' . $featured['slug']) ?>">
                                                 <h3><?= esc(strlen($featured['title']) > 40 ? substr($featured['title'], 0, 40) . '...' : $featured['title']) ?></h3>
                                             </a>
                                             <p><?= date('F j, Y', strtotime($featured['published_at'])) ?></p>

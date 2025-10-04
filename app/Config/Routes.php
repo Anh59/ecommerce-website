@@ -27,6 +27,7 @@ $routes->get('/feature', 'Home::feature',['as'=>'home_feature']);
 $routes->get('blog', 'BlogController::index',['as'=>'blog']);
 $routes->get('blog/post/(:segment)', 'BlogController::single/$1');
 $routes->get('blog/category/(:segment)', 'BlogController::category/$1');
+$routes->get('blog/search', 'BlogController::search');
 $routes->post('blog/add-comment', 'BlogController::addComment');
 // Thêm các routes sau vào file app/Config/Routes.php
 // Single product AJAX (trả JSON)
