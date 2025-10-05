@@ -82,10 +82,10 @@
                             <a href="<?= route_to('wishlist') ?>"><i class="ti-heart"></i></a>
 
                             <div class="cart">
-    <a href="<?= route_to('cart') ?>" id="navbarCart">
-        <i class="fas fa-cart-plus"></i>
-    </a>
-</div>
+                                <a href="<?= route_to('cart') ?>" id="navbarCart">
+                                    <i class="fas fa-cart-plus"></i>
+                                </a>
+                            </div>
 
                             <div class="dropdown user">
                                 <?php if (session()->has('user')): ?>
@@ -97,7 +97,7 @@
                                     </a>
                                     <div class="dropdown-menu" aria-labelledby="userDropdown">
                                         <a class="dropdown-item" href="<?= route_to('profile') ?>">My Profile</a>
-                                        <a class="dropdown-item" href="<?= base_url('orders') ?>">My Orders</a>
+                                        <!-- <a class="dropdown-item" href="<?= base_url('orders') ?>">My Orders</a> -->
                                         <div class="dropdown-divider"></div>
                                         <a class="dropdown-item" href="<?= route_to('Customers_logout') ?>">Logout</a>
                                     </div>
