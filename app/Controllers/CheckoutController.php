@@ -7,6 +7,7 @@ use App\Models\ProductModel;
 use App\Models\CustomerModel;
 use App\Models\OrderModel;
 use App\Models\OrderItemModel;
+use App\Models\DiscountCouponModel; 
 use App\Libraries\MomoService; 
 class CheckoutController extends BaseController
 {
@@ -16,6 +17,7 @@ class CheckoutController extends BaseController
     protected $orderModel;
     protected $orderItemModel;
      protected $momoService;
+       protected $discountCouponModel;
     public function __construct()
     {
         $this->cartModel = new CartModel();
@@ -24,6 +26,7 @@ class CheckoutController extends BaseController
         $this->orderModel = new OrderModel();
         $this->orderItemModel = new OrderItemModel();
         $this->momoService = new MomoService(); 
+         $this->discountCouponModel = new DiscountCouponModel();
     }
 
     public function index()
@@ -237,7 +240,7 @@ class CheckoutController extends BaseController
         return false;
     }
 
-    public function processOrder()
+  public function processOrder()
     {
         if (!$this->request->isAJAX()) {
             return $this->response->setStatusCode(404);
@@ -334,24 +337,31 @@ class CheckoutController extends BaseController
             $shippingOptions = $this->getShippingOptions();
             $shippingFee = isset($shippingOptions[$shippingMethod]) 
                 ? $shippingOptions[$shippingMethod]['price'] 
-                : 30000; // Default standard shipping
+                : 30000;
 
             // Free shipping for orders over 500k
             if ($subtotal >= 500000) {
                 $shippingFee = 0;
             }
 
-            // Apply coupon discount (simplified)
+            // ===== XỬ LÝ VOUCHER - BƯỚC 1: LẤY THÔNG TIN =====
             $appliedCoupon = $session->get('applied_coupon');
             $discountAmount = 0;
+            $couponCode = null;
+            
             if ($appliedCoupon) {
                 $discountAmount = $appliedCoupon['discount'] ?? 0;
+                $couponCode = $appliedCoupon['code'] ?? null;
+                
                 if ($appliedCoupon['free_shipping'] ?? false) {
                     $shippingFee = 0;
                 }
+                
+                log_message('debug', "Applying coupon: {$couponCode}, Discount: {$discountAmount}");
             }
+            // ===== HẾT BƯỚC 1 =====
 
-            // Calculate final total: subtotal - discount + shipping
+            // Calculate final total
             $finalSubtotal = $subtotal - $discountAmount;
             $total = $finalSubtotal + $shippingFee;
 
@@ -360,24 +370,26 @@ class CheckoutController extends BaseController
                 'name' => $this->request->getPost('shipping_name'),
                 'phone' => $this->request->getPost('shipping_phone'),
                 'address' => $this->request->getPost('shipping_address'),
-                'ward' => '', // Để trống vì không có trong form
-                'district' => '', // Để trống vì không có trong form  
-                'city' => '', // Để trống vì không có trong form
-                'postal_code' => '' // Để trống vì không có trong form
+                'ward' => '',
+                'district' => '',
+                'city' => '',
+                'postal_code' => ''
             ];
 
-            // Create order - CHỈ SỬ DỤNG CÁC TRƯỜNG CÓ TRONG DATABASE
+            // ===== TẠO ORDER VỚI THÔNG TIN VOUCHER =====
             $orderData = [
                 'customer_id' => $customerId,
                 'order_number' => $this->generateOrderNumber(),
                 'status' => 'pending',
                 'payment_method' => $this->request->getPost('payment_method'),
                 'payment_status' => 'pending',
-                'subtotal' => $finalSubtotal, // Subtotal sau khi đã trừ discount
+                'subtotal' => $finalSubtotal,
                 'shipping_fee' => $shippingFee,
                 'total_amount' => $total,
+                'coupon_code' => $couponCode,        // THÊM DÒNG NÀY
+                'discount_amount' => $discountAmount, // THÊM DÒNG NÀY
                 'shipping_address' => json_encode($shippingAddressData),
-                'billing_address' => json_encode($shippingAddressData), // Same as shipping
+                'billing_address' => json_encode($shippingAddressData),
                 'notes' => $this->request->getPost('notes'),
                 'tracking_number' => null,
                 'shipped_at' => null,
@@ -436,6 +448,25 @@ class CheckoutController extends BaseController
                 }
             }
 
+            // ===== XỬ LÝ VOUCHER - BƯỚC 2: TĂNG USED_COUNT =====
+            if ($couponCode) {
+                $coupon = $this->discountCouponModel->where('code', $couponCode)->first();
+                
+                if ($coupon) {
+                    // Tăng số lần sử dụng
+                    $updateResult = $this->discountCouponModel->incrementUsage($coupon['id']);
+                    
+                    if ($updateResult) {
+                        log_message('info', "Coupon '{$couponCode}' used_count incremented for order {$orderId}");
+                    } else {
+                        log_message('error', "Failed to increment used_count for coupon '{$couponCode}'");
+                    }
+                } else {
+                    log_message('warning', "Coupon '{$couponCode}' not found in database when processing order {$orderId}");
+                }
+            }
+            // ===== HẾT BƯỚC 2 =====
+
             $db->transComplete();
 
             if ($db->transStatus() === FALSE) {
@@ -445,7 +476,7 @@ class CheckoutController extends BaseController
                     'message' => 'Có lỗi xảy ra trong quá trình tạo đơn hàng'
                 ]);
             }
-
+            
             log_message('info', 'Order processed successfully. Order ID: ' . $orderId . ', Order Number: ' . $orderData['order_number']);
 
             // Clear cart/session data based on checkout type

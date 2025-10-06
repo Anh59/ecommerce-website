@@ -65,6 +65,7 @@
             <th>Ngày đặt</th>
             <th>Số lượng</th>
             <th>Tổng tiền</th>
+            <th>Giảm giá</th>
             <th>Trạng thái</th>
             <th>Thanh toán</th>
             <th>Phương thức</th>
@@ -147,6 +148,27 @@
                             </div>
                         </div>
                         
+                        <!-- ✅ THÊM: Thông tin voucher -->
+                        <div class="card mb-4" id="couponInfoCard" style="display: none;">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0"><i class="fas fa-tag me-2"></i>Thông tin giảm giá</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-2">
+                                    <strong>Mã giảm giá:</strong>
+                                    <span class="badge bg-success ms-2" id="couponCodeDisplay"></span>
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Số tiền giảm:</strong>
+                                    <span class="text-success fw-bold" id="discountAmountDisplay"></span>
+                                </div>
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Voucher đã được áp dụng thành công
+                                </small>
+                            </div>
+                        </div>
+                        
                         <div class="card">
                             <div class="card-header">
                                 <h6 class="mb-0">Tổng cộng</h6>
@@ -156,13 +178,16 @@
                                     <span>Tạm tính:</span>
                                     <span id="subtotalAmount">0 VND</span>
                                 </div>
+                                
+                                <!-- ✅ THÊM: Dòng giảm giá -->
+                                <div class="d-flex justify-content-between mb-2" id="discountRow" style="display: none !important;">
+                                    <span>Giảm giá:</span>
+                                    <span class="text-success" id="discountAmount">-0 VND</span>
+                                </div>
+                                
                                 <div class="d-flex justify-content-between mb-2">
                                     <span>Phí vận chuyển:</span>
                                     <span id="shippingFee">0 VND</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Giảm giá:</span>
-                                    <span id="discountAmount">0 VND</span>
                                 </div>
                                 <hr>
                                 <div class="d-flex justify-content-between mb-2 fw-bold">
@@ -242,6 +267,18 @@
 .order-number {
     font-family: monospace;
     font-weight: bold;
+}
+.coupon-badge {
+    background: #28a745;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+.discount-amount {
+    color: #28a745;
+    font-weight: 600;
 }
 </style>
 
@@ -341,6 +378,22 @@ $(document).ready(function(){
             { 
                 data: 'total_amount',
                 render: d => `<strong>${formatCurrency(d)}</strong>`,
+                width: '120px'
+            },
+            { 
+                // ✅ THÊM: Cột giảm giá
+                data: null,
+                render: (d, t, r) => {
+                    if (r.coupon_code && r.discount_amount > 0) {
+                        return `
+                            <div>
+                                <span class="coupon-badge">${r.coupon_code}</span><br>
+                                <small class="discount-amount">-${formatCurrency(r.discount_amount)}</small>
+                            </div>
+                        `;
+                    }
+                    return '<span class="text-muted">Không có</span>';
+                },
                 width: '120px'
             },
             { 
@@ -451,32 +504,31 @@ $(document).ready(function(){
         table.ajax.reload();
     });
 
-  // View order details
-$('#ordersTable').on('click', '.btn-view', function(){
-    const orderId = $(this).data('id');
-    // LƯU ORDER ID VÀO MODAL
-    $('#orderModal').data('order-id', orderId);
-    loadOrderDetails(orderId);
-});
-
-// Load order details
-function loadOrderDetails(orderId) {
-    console.log('Loading order details for ID:', orderId);
-    $.get(`<?= site_url('Dashboard/orders') ?>/${orderId}/details`)
-    .done(function(res){
-        if (res.status === 'success') {
-            updateToken(res.token);
-            displayOrderDetails(res.order);
-            $('#orderModal').modal('show');
-        } else {
-            showToast('error', res.message || 'Lỗi khi tải chi tiết đơn hàng');
-        }
-    })
-    .fail(function(xhr, status, error) {
-        console.error('Error loading order details:', error);
-        showToast('error', 'Lỗi kết nối khi tải chi tiết đơn hàng');
+    // View order details
+    $('#ordersTable').on('click', '.btn-view', function(){
+        const orderId = $(this).data('id');
+        $('#orderModal').data('order-id', orderId);
+        loadOrderDetails(orderId);
     });
-}
+
+    // Load order details
+    function loadOrderDetails(orderId) {
+        console.log('Loading order details for ID:', orderId);
+        $.get(`<?= site_url('Dashboard/orders') ?>/${orderId}/details`)
+        .done(function(res){
+            if (res.status === 'success') {
+                updateToken(res.token);
+                displayOrderDetails(res.order);
+                $('#orderModal').modal('show');
+            } else {
+                showToast('error', res.message || 'Lỗi khi tải chi tiết đơn hàng');
+            }
+        })
+        .fail(function(xhr, status, error) {
+            console.error('Error loading order details:', error);
+            showToast('error', 'Lỗi kết nối khi tải chi tiết đơn hàng');
+        });
+    }
 
     // Display order details in modal
     function displayOrderDetails(order) {
@@ -485,6 +537,15 @@ function loadOrderDetails(orderId) {
         $('#paymentStatus').val(order.payment_status);
         $('#trackingNumber').val(order.tracking_number || '');
         $('#orderNotes').val(order.notes || '');
+        
+        // ✅ THÊM: Hiển thị thông tin voucher
+        if (order.coupon_code && order.discount_amount > 0) {
+            $('#couponInfoCard').show();
+            $('#couponCodeDisplay').text(order.coupon_code);
+            $('#discountAmountDisplay').text('-' + formatCurrency(order.discount_amount));
+        } else {
+            $('#couponInfoCard').hide();
+        }
         
         // Display order items
         const $itemsTable = $('#orderItemsTable tbody');
@@ -520,11 +581,27 @@ function loadOrderDetails(orderId) {
             });
         }
         
-        // Display totals
-        $('#subtotalAmount').text(formatCurrency(order.subtotal));
-        $('#shippingFee').text(formatCurrency(order.shipping_fee || 0));
-        $('#discountAmount').text(formatCurrency(order.discount_amount || 0));
-        $('#totalAmount').text(formatCurrency(order.total_amount));
+        // ✅ CẬP NHẬT: Hiển thị tổng cộng với thông tin giảm giá
+        const subtotal = parseFloat(order.subtotal) || 0;
+        const discount = parseFloat(order.discount_amount) || 0;
+        const shipping = parseFloat(order.shipping_fee) || 0;
+        const total = parseFloat(order.total_amount) || 0;
+        
+        // Tính subtotal trước giảm giá
+        const originalSubtotal = subtotal + discount;
+        
+        $('#subtotalAmount').text(formatCurrency(originalSubtotal));
+        
+        // Hiển thị dòng giảm giá nếu có
+        if (discount > 0) {
+            $('#discountRow').show();
+            $('#discountAmount').text('-' + formatCurrency(discount));
+        } else {
+            $('#discountRow').hide();
+        }
+        
+        $('#shippingFee').text(formatCurrency(shipping));
+        $('#totalAmount').text(formatCurrency(total));
         
         // Display addresses
         $('#shippingAddress').html(formatAddress(order.shipping_address));
@@ -557,77 +634,75 @@ function loadOrderDetails(orderId) {
         return `<pre>${address}</pre>`;
     }
 
-// Save order changes
-$('#btnSaveOrder').on('click', function(){
-    // LẤY ORDER ID TỪ MODAL
-    const orderId = $('#orderModal').data('order-id');
-    console.log('Saving order with ID:', orderId);
-    
-    if (!orderId) {
-        showToast('error', 'Không tìm thấy ID đơn hàng');
-        return;
-    }
-    
-    const status = $('#orderStatus').val();
-    const paymentStatus = $('#paymentStatus').val();
-    const trackingNumber = $('#trackingNumber').val();
-    const notes = $('#orderNotes').val();
-    
-    const $btn = $(this);
-    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang lưu...');
-    
-    console.log('Sending update data:', {
-        status: status,
-        payment_status: paymentStatus,
-        tracking_number: trackingNumber,
-        notes: notes
-    });
-    
-    $.ajax({
-        url: `<?= site_url('Dashboard/orders') ?>/${orderId}/update`,
-        method: 'POST',
-        data: {
-            '<?= csrf_token() ?>': csrfToken(),
+    // Save order changes
+    $('#btnSaveOrder').on('click', function(){
+        const orderId = $('#orderModal').data('order-id');
+        console.log('Saving order with ID:', orderId);
+        
+        if (!orderId) {
+            showToast('error', 'Không tìm thấy ID đơn hàng');
+            return;
+        }
+        
+        const status = $('#orderStatus').val();
+        const paymentStatus = $('#paymentStatus').val();
+        const trackingNumber = $('#trackingNumber').val();
+        const notes = $('#orderNotes').val();
+        
+        const $btn = $(this);
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang lưu...');
+        
+        console.log('Sending update data:', {
             status: status,
             payment_status: paymentStatus,
             tracking_number: trackingNumber,
             notes: notes
-        },
-        dataType: 'json'
-    })
-    .done(function(res){
-        console.log('Update response:', res);
-        if (res.token) updateToken(res.token);
+        });
         
-        if (res.status === 'success') {
-            $('#orderModal').modal('hide');
-            table.ajax.reload(null, false);
-            showToast('success', res.message);
-        } else {
-            let errorMessage = res.message || 'Có lỗi xảy ra';
-            if (res.errors) {
-                errorMessage += '<br>' + Object.values(res.errors).join('<br>');
+        $.ajax({
+            url: `<?= site_url('Dashboard/orders') ?>/${orderId}/update`,
+            method: 'POST',
+            data: {
+                '<?= csrf_token() ?>': csrfToken(),
+                status: status,
+                payment_status: paymentStatus,
+                tracking_number: trackingNumber,
+                notes: notes
+            },
+            dataType: 'json'
+        })
+        .done(function(res){
+            console.log('Update response:', res);
+            if (res.token) updateToken(res.token);
+            
+            if (res.status === 'success') {
+                $('#orderModal').modal('hide');
+                table.ajax.reload(null, false);
+                showToast('success', res.message);
+            } else {
+                let errorMessage = res.message || 'Có lỗi xảy ra';
+                if (res.errors) {
+                    errorMessage += '<br>' + Object.values(res.errors).join('<br>');
+                }
+                showToast('error', errorMessage);
+            }
+        })
+        .fail(function(xhr, status, error){
+            console.error('AJAX Error:', status, error);
+            console.error('Response:', xhr.responseText);
+            
+            let errorMessage = 'Lỗi kết nối: ';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMessage += response.message || xhr.statusText;
+            } else {
+                errorMessage += xhr.statusText || error;
             }
             showToast('error', errorMessage);
-        }
-    })
-    .fail(function(xhr, status, error){
-        console.error('AJAX Error:', status, error);
-        console.error('Response:', xhr.responseText);
-        
-        let errorMessage = 'Lỗi kết nối: ';
-        if (xhr.responseJSON && xhr.responseJSON.message) {
-            errorMessage += response.message || xhr.statusText;
-        } else {
-            errorMessage += xhr.statusText || error;
-        }
-        showToast('error', errorMessage);
-    })
-    .always(function(){
-        $btn.prop('disabled', false).html('<i class="fas fa-save"></i> Cập nhật');
+        })
+        .always(function(){
+            $btn.prop('disabled', false).html('<i class="fas fa-save"></i> Cập nhật');
+        });
     });
-});
-
 
     // Print order
     $('#ordersTable').on('click', '.btn-print', function(){

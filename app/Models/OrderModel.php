@@ -9,7 +9,8 @@ class OrderModel extends Model
     protected $table = 'orders';
     protected $primaryKey = 'id';
     protected $allowedFields = [
-        'order_number', 'customer_id', 'status', 'payment_method', 'payment_status',
+        'order_number', 'customer_id', 'status', 'payment_method', 'payment_status','coupon_code',        // THÊM
+        'discount_amount',
         'subtotal', 'shipping_fee', 'total_amount',
         'shipping_address', 'billing_address', 'notes', 'tracking_number',
         'shipped_at', 'delivered_at'
@@ -30,6 +31,8 @@ class OrderModel extends Model
         'discount_amount' => 'permit_empty|decimal',
         'total_amount' => 'required|decimal',
         'shipping_address' => 'required',
+         'coupon_code'      => 'permit_empty|max_length[50]',     // THÊM
+        'discount_amount'  => 'permit_empty|decimal', 
         'billing_address' => 'required'
     ];
 
@@ -70,7 +73,54 @@ class OrderModel extends Model
         
         return $builder->first();
     }
+// ===== THÊM METHOD MỚI ĐỂ LẤY ĐƠN HÀNG CÓ DÙNG VOUCHER =====
+    public function getOrdersWithCoupon($couponCode = null)
+    {
+        $builder = $this->select('orders.*, customers.name as customer_name, customers.email as customer_email')
+                        ->join('customers', 'customers.id = orders.customer_id', 'left')
+                        ->where('orders.coupon_code IS NOT NULL');
+        
+        if ($couponCode) {
+            $builder->where('orders.coupon_code', $couponCode);
+        }
+        
+        return $builder->orderBy('orders.created_at', 'DESC')->findAll();
+    }
 
+    // Tính tổng discount đã áp dụng
+    public function getTotalDiscountByCoupon($couponCode, $startDate = null, $endDate = null)
+    {
+        $builder = $this->selectSum('discount_amount')
+                        ->where('coupon_code', $couponCode)
+                        ->where('payment_status', 'paid'); // Chỉ tính đơn đã thanh toán
+        
+        if ($startDate) {
+            $builder->where('created_at >=', $startDate);
+        }
+        
+        if ($endDate) {
+            $builder->where('created_at <=', $endDate);
+        }
+        
+        $result = $builder->first();
+        return $result['discount_amount'] ?? 0;
+    }
+
+    // Đếm số đơn hàng dùng voucher
+    public function countOrdersWithCoupon($couponCode, $startDate = null, $endDate = null)
+    {
+        $builder = $this->where('coupon_code', $couponCode);
+        
+        if ($startDate) {
+            $builder->where('created_at >=', $startDate);
+        }
+        
+        if ($endDate) {
+            $builder->where('created_at <=', $endDate);
+        }
+        
+        return $builder->countAllResults();
+    }
     /**
      * Get orders for a specific customer
      */

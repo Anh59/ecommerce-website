@@ -117,6 +117,13 @@
     padding: 15px; 
     margin: 20px 0; 
 }
+.coupon-info { 
+    background: #d4edda; 
+    border: 1px solid #c3e6cb; 
+    border-radius: 5px; 
+    padding: 15px; 
+    margin: 20px 0; 
+}
 .info-row {
     margin-bottom: 10px;
 }
@@ -136,6 +143,31 @@
 .status-processing {
     background: #cce5ff;
     color: #004085;
+}
+.status-info {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+.status-success {
+    background: #d4edda;
+    color: #155724;
+}
+.status-danger {
+    background: #f8d7da;
+    color: #721c24;
+}
+.coupon-badge {
+    background: #28a745;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 10px;
+}
+.discount-amount {
+    color: #28a745;
+    font-weight: 600;
 }
 </style>
 <?= $this->endSection() ?>
@@ -226,6 +258,29 @@
                 <?php endif; ?>
             </div>
 
+            <!-- ✅ THÊM: Hiển thị thông tin voucher nếu có -->
+            <?php if (!empty($order['coupon_code']) && $order['discount_amount'] > 0): ?>
+                <div class="coupon-info">
+                    <h6><i class="ti-tag mr-2"></i>Thông tin giảm giá</h6>
+                    <div class="text-left">
+                        <div class="info-row">
+                            <strong>Mã giảm giá:</strong> 
+                            <span class="coupon-badge"><?= esc($order['coupon_code']) ?></span>
+                        </div>
+                        <div class="info-row">
+                            <strong>Số tiền giảm:</strong> 
+                            <span class="discount-amount">-<?= number_format($order['discount_amount']) ?>₫</span>
+                        </div>
+                        <div class="info-row">
+                            <small class="text-muted">
+                                <i class="ti-info-alt mr-1"></i>
+                                Voucher đã được áp dụng thành công cho đơn hàng này
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+
             <!-- Payment Info for Bank Transfer -->
             <?php if ($order['payment_method'] === 'bank_transfer'): ?>
                 <div class="payment-info">
@@ -277,8 +332,21 @@
                 <h5 class="mb-3">Tổng kết đơn hàng</h5>
                 <div class="order-summary-item">
                     <span>Tạm tính:</span>
-                    <span><?= number_format($order['subtotal']) ?>₫</span>
+                    <span><?= number_format($order['subtotal'] + $order['discount_amount']) ?>₫</span>
                 </div>
+                
+                <!-- ✅ THÊM: Hiển thị discount nếu có -->
+                <?php if ($order['discount_amount'] > 0): ?>
+                    <div class="order-summary-item">
+                        <span>Giảm giá:</span>
+                        <span class="discount-amount">-<?= number_format($order['discount_amount']) ?>₫</span>
+                    </div>
+                    <div class="order-summary-item">
+                        <span>Tạm tính sau giảm:</span>
+                        <span><?= number_format($order['subtotal']) ?>₫</span>
+                    </div>
+                <?php endif; ?>
+                
                 <div class="order-summary-item">
                     <span>Phí vận chuyển:</span>
                     <span><?= $order['shipping_fee'] > 0 ? number_format($order['shipping_fee']) . '₫' : 'Miễn phí' ?></span>
