@@ -12,7 +12,7 @@
                 <li><a class="dropdown-item filter-status" data-status="all" href="#">Tất cả đơn hàng</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item filter-status" data-status="pending" href="#">Chờ xử lý</a></li>
-                <li><a class="dropdown-item filter-status" data-status="processing" href="#">Đang xử lý</a></li>
+                <li><a class="dropdown-item filter-status" data-status="processing" href="#">Xác nhận</a></li>
                 <li><a class="dropdown-item filter-status" data-status="shipped" href="#">Đang giao</a></li>
                 <li><a class="dropdown-item filter-status" data-status="delivered" href="#">Đã giao</a></li>
                 <li><a class="dropdown-item filter-status" data-status="cancelled" href="#">Đã hủy</a></li>
@@ -122,7 +122,7 @@
                                     <strong>Trạng thái:</strong>
                                     <select class="form-select mt-1" id="orderStatus">
                                         <option value="pending">Chờ xử lý</option>
-                                        <option value="processing">Đang xử lý</option>
+                                        <option value="processing">Xác nhận</option>
                                         <option value="shipped">Đang giao</option>
                                         <option value="delivered">Đã giao</option>
                                         <option value="cancelled">Đã hủy</option>
@@ -434,7 +434,7 @@ $(document).ready(function(){
     function getStatusText(status) {
         const statusMap = {
             'pending': 'Chờ xử lý',
-            'processing': 'Đang xử lý',
+            'processing': 'Xác nhận',
             'shipped': 'Đang giao',
             'delivered': 'Đã giao',
             'cancelled': 'Đã hủy'

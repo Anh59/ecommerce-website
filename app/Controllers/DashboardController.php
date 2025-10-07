@@ -101,25 +101,60 @@ class DashboardController extends BaseController
     /**
      * THÊM MỚI: Lấy tổng doanh thu từ các đơn hàng đã giao
      */
-    private function getTotalRevenue()
-    {
-        try {
-            $db = \Config\Database::connect();
-            
-            $query = $db->query("
-                SELECT COALESCE(SUM(total_amount), 0) as total_revenue 
-                FROM orders 
-                WHERE status = 'delivered' 
-                AND payment_status = 'paid'
-            ");
-            
-            $result = $query->getRow();
-            return $result ? $result->total_revenue : 0;
-        } catch (\Exception $e) {
-            log_message('error', 'Total revenue error: ' . $e->getMessage());
-            return 0;
+    /**
+ * Lấy tổng doanh thu thực tế (chỉ tính đơn đã thanh toán, trừ đơn hoàn tiền).
+ */
+private function getTotalRevenue()
+{
+    try {
+        $db = \Config\Database::connect();
+
+        // Nếu có bảng refunds => trừ đi
+        if ($db->tableExists('refunds')) {
+            $sql = "
+                SELECT COALESCE(SUM(o.total_amount), 0) - COALESCE(SUM(r.refund_amount), 0) AS total_revenue
+                FROM orders o
+                LEFT JOIN (
+                    SELECT order_id, SUM(amount) AS refund_amount
+                    FROM refunds
+                    WHERE status IN ('completed','refunded')
+                    GROUP BY order_id
+                ) r ON o.id = r.order_id
+                WHERE o.payment_status = 'paid'
+            ";
+            $query = $db->query($sql);
+            $row = $query->getRow();
+            return $row ? (float)$row->total_revenue : 0.0;
         }
+
+        // Nếu có bảng payments => tính từ payments đã success
+        if ($db->tableExists('payments')) {
+            $sql = "
+                SELECT COALESCE(SUM(amount), 0) AS total_revenue
+                FROM payments
+                WHERE status IN ('success','captured')
+            ";
+            $query = $db->query($sql);
+            $row = $query->getRow();
+            return $row ? (float)$row->total_revenue : 0.0;
+        }
+
+        // Nếu không có bảng phụ -> fallback về orders
+        $sql = "
+            SELECT COALESCE(SUM(total_amount), 0) AS total_revenue
+            FROM orders
+            WHERE payment_status = 'paid'
+        ";
+        $query = $db->query($sql);
+        $row = $query->getRow();
+        return $row ? (float)$row->total_revenue : 0.0;
+
+    } catch (\Exception $e) {
+        log_message('error', 'Total revenue error: ' . $e->getMessage());
+        return 0.0;
     }
+}
+
 
     /**
      * THAY ĐỔI: Lấy doanh thu theo tháng (thay cho trạng thái kho hàng)

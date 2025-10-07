@@ -9,6 +9,7 @@ use App\Models\OrderModel;
 use App\Models\OrderItemModel;
 use App\Models\DiscountCouponModel; 
 use App\Libraries\MomoService; 
+
 class CheckoutController extends BaseController
 {
     protected $cartModel;
@@ -16,8 +17,9 @@ class CheckoutController extends BaseController
     protected $customerModel;
     protected $orderModel;
     protected $orderItemModel;
-     protected $momoService;
-       protected $discountCouponModel;
+    protected $momoService;
+    protected $discountCouponModel;
+
     public function __construct()
     {
         $this->cartModel = new CartModel();
@@ -26,7 +28,7 @@ class CheckoutController extends BaseController
         $this->orderModel = new OrderModel();
         $this->orderItemModel = new OrderItemModel();
         $this->momoService = new MomoService(); 
-         $this->discountCouponModel = new DiscountCouponModel();
+        $this->discountCouponModel = new DiscountCouponModel();
     }
 
     public function index()
@@ -46,36 +48,27 @@ class CheckoutController extends BaseController
                            ->with('error', 'Thông tin tài khoản không hợp lệ');
         }
 
-        // FIXED: Determine checkout type with correct priority
-        $checkoutType = 'cart'; // Default
+        // Xác định loại checkout với độ ưu tiên đúng
+        $checkoutType = 'cart';
         $checkoutItems = [];
 
-        log_message('debug', 'CheckoutController - Session data: ' . json_encode([
-            'buy_now_mode' => $session->get('buy_now_mode'),
-            'checkout_selected_items' => $session->get('checkout_selected_items') ? 'exists' : 'not_exists'
-        ]));
-
-        // Priority 1: Check for selected items from cart (HIGHEST PRIORITY)
+        // Ưu tiên 1: Items được chọn từ giỏ hàng
         $selectedItems = $session->get('checkout_selected_items');
         if ($selectedItems && !empty($selectedItems)) {
-            log_message('debug', 'CheckoutController - Using selected items from cart');
             $checkoutType = 'selected';
             $checkoutItems = $selectedItems;
             
-            // Clear buy_now_mode if exists to avoid conflicts
+            // Clear buy_now_mode nếu tồn tại để tránh xung đột
             if ($session->get('buy_now_mode')) {
                 $session->remove('buy_now_mode');
-                log_message('debug', 'CheckoutController - Cleared buy_now_mode due to selected items');
             }
         }
-        // Priority 2: Check for buy now mode (only if no selected items)
+        // Ưu tiên 2: Chế độ mua ngay
         else {
             $buyNowMode = $session->get('buy_now_mode');
             if ($buyNowMode && isset($buyNowMode['product_id'])) {
-                log_message('debug', 'CheckoutController - Using buy now mode');
                 $checkoutType = 'buy_now';
                 
-                // Get single product for buy now
                 $product = $this->productModel->find($buyNowMode['product_id']);
                 if ($product) {
                     $price = !empty($product['sale_price']) && $product['sale_price'] > 0 
@@ -96,9 +89,8 @@ class CheckoutController extends BaseController
             }
         }
         
-        // Priority 3: Fallback to all cart items
+        // Ưu tiên 3: Tất cả items trong giỏ hàng
         if (empty($checkoutItems)) {
-            log_message('debug', 'CheckoutController - Using all cart items as fallback');
             $checkoutType = 'cart';
             $cartItems = $this->cartModel->getCartWithProducts($customerId);
             
@@ -123,25 +115,23 @@ class CheckoutController extends BaseController
             }
         }
 
-        log_message('debug', 'CheckoutController - Final checkout type: ' . $checkoutType . ', Items count: ' . count($checkoutItems));
-
-        // Validate all checkout items
+        // Validate items
         $validatedItems = $this->validateCheckoutItems($checkoutItems);
         if (!$validatedItems['valid']) {
             return redirect()->to('/cart')
                            ->with('error', 'Có sản phẩm trong đơn hàng không hợp lệ: ' . implode(', ', $validatedItems['errors']));
         }
 
-        // Calculate totals
+        // Tính toán tổng tiền
         $subtotal = array_sum(array_map(function($item) {
             return $item['quantity'] * $item['price'];
         }, $checkoutItems));
 
-        // Get shipping options and calculate shipping fee
+        // Lấy options vận chuyển và tính phí
         $shippingOptions = $this->getShippingOptions();
         $shippingFee = $this->calculateShippingFee($subtotal, $customer);
         
-        // Apply coupon if any (simplified - no database integration yet)
+        // Áp dụng coupon nếu có
         $appliedCoupon = $session->get('applied_coupon');
         $discount = 0;
         if ($appliedCoupon) {
@@ -151,7 +141,7 @@ class CheckoutController extends BaseController
             }
         }
 
-        // Calculate total (subtotal already includes discount, so total = subtotal + shipping)
+        // Tính tổng cộng
         $total = $subtotal - $discount + $shippingFee;
 
         $data = [
@@ -176,71 +166,7 @@ class CheckoutController extends BaseController
         return view('Customers/checkout-test', $data);
     }
 
-    // FIXED: Updated clearCheckoutData method with correct priority
-    private function clearCheckoutData($customerId)
-    {
-        $session = session();
-
-        // Determine what to clear based on what was used for checkout
-        $selectedItems = $session->get('checkout_selected_items');
-        $buyNowMode = $session->get('buy_now_mode');
-
-        log_message('debug', 'clearCheckoutData - Selected items: ' . ($selectedItems ? 'exists' : 'none') . 
-                             ', Buy now mode: ' . ($buyNowMode ? 'exists' : 'none'));
-
-        // Priority 1: If we had selected items, only clear those (don't clear entire cart)
-        if ($selectedItems && !empty($selectedItems)) {
-            log_message('debug', 'clearCheckoutData - Clearing selected items, keeping cart');
-            $session->remove('checkout_selected_items');
-            
-            // Optionally remove the selected items from cart
-            // Uncomment this if you want to remove purchased items from cart
-            /*
-            foreach ($selectedItems as $item) {
-                $this->cartModel->removeFromCart($customerId, $item['product_id']);
-            }
-            */
-        }
-        // Priority 2: If we had buy now mode, clear it
-        else if ($buyNowMode) {
-            log_message('debug', 'clearCheckoutData - Clearing buy now mode');
-            $session->remove('buy_now_mode');
-            
-            // For buy now, we typically don't want to clear the entire cart
-            // since buy now is separate from cart items
-        }
-        // Priority 3: Clear entire cart (fallback case)
-        else {
-            log_message('debug', 'clearCheckoutData - Clearing entire cart');
-            $this->cartModel->clearCart($customerId);
-        }
-        
-        // Always clear coupon after successful order
-        $session->remove('applied_coupon');
-        
-        log_message('debug', 'clearCheckoutData - Cleanup completed');
-    }
-
-    // Add new method to clear expired buy_now sessions
-    public function clearExpiredBuyNow()
-    {
-        $session = session();
-        $buyNowMode = $session->get('buy_now_mode');
-        
-        if ($buyNowMode && isset($buyNowMode['timestamp'])) {
-            // Clear buy_now_mode if older than 30 minutes
-            $thirtyMinutesAgo = time() - (30 * 60);
-            if ($buyNowMode['timestamp'] < $thirtyMinutesAgo) {
-                $session->remove('buy_now_mode');
-                log_message('debug', 'Cleared expired buy_now_mode session');
-                return true;
-            }
-        }
-        
-        return false;
-    }
-
-  public function processOrder()
+    public function processOrder()
     {
         if (!$this->request->isAJAX()) {
             return $this->response->setStatusCode(404);
@@ -265,29 +191,6 @@ class CheckoutController extends BaseController
             'shipping_phone' => 'required|min_length[10]|max_length[15]',
             'shipping_name' => 'required|min_length[2]|max_length[100]',
             'notes' => 'permit_empty|max_length[500]'
-        ], [
-            'payment_method' => [
-                'required' => 'Vui lòng chọn phương thức thanh toán',
-                'in_list' => 'Phương thức thanh toán không hợp lệ'
-            ],
-            'shipping_method' => [
-                'required' => 'Vui lòng chọn phương thức giao hàng',
-                'in_list' => 'Phương thức giao hàng không hợp lệ'
-            ],
-            'shipping_name' => [
-                'required' => 'Vui lòng nhập họ tên người nhận',
-                'min_length' => 'Họ tên phải có ít nhất 2 ký tự',
-                'max_length' => 'Họ tên không được quá 100 ký tự'
-            ],
-            'shipping_phone' => [
-                'required' => 'Vui lòng nhập số điện thoại',
-                'min_length' => 'Số điện thoại phải có ít nhất 10 số',
-                'max_length' => 'Số điện thoại không được quá 15 số'
-            ],
-            'shipping_address' => [
-                'required' => 'Vui lòng nhập địa chỉ giao hàng',
-                'min_length' => 'Địa chỉ phải có ít nhất 10 ký tự'
-            ]
         ]);
 
         if (!$validation->withRequest($this->request)->run()) {
@@ -302,7 +205,7 @@ class CheckoutController extends BaseController
         $db->transStart();
 
         try {
-            // Get checkout items
+            // Lấy items để xử lý
             $checkoutItems = $this->getCheckoutItemsForProcessing($customerId);
             
             if (empty($checkoutItems)) {
@@ -313,9 +216,7 @@ class CheckoutController extends BaseController
                 ]);
             }
 
-            log_message('debug', 'processOrder - Processing ' . count($checkoutItems) . ' items');
-
-            // Validate items again
+            // Validate items lần nữa (chỉ kiểm tra, không trừ kho)
             $validatedItems = $this->validateCheckoutItems($checkoutItems);
             if (!$validatedItems['valid']) {
                 $db->transRollback();
@@ -325,10 +226,7 @@ class CheckoutController extends BaseController
                 ]);
             }
 
-            // Get customer info
-            $customer = $this->customerModel->find($customerId);
-
-            // Calculate order totals
+            // Tính toán tổng tiền
             $subtotal = array_sum(array_map(function($item) {
                 return $item['quantity'] * $item['price'];
             }, $checkoutItems));
@@ -339,12 +237,12 @@ class CheckoutController extends BaseController
                 ? $shippingOptions[$shippingMethod]['price'] 
                 : 30000;
 
-            // Free shipping for orders over 500k
+            // Miễn phí vận chuyển cho đơn hàng trên 500k
             if ($subtotal >= 500000) {
                 $shippingFee = 0;
             }
 
-            // ===== XỬ LÝ VOUCHER - BƯỚC 1: LẤY THÔNG TIN =====
+            // Xử lý voucher
             $appliedCoupon = $session->get('applied_coupon');
             $discountAmount = 0;
             $couponCode = null;
@@ -356,16 +254,13 @@ class CheckoutController extends BaseController
                 if ($appliedCoupon['free_shipping'] ?? false) {
                     $shippingFee = 0;
                 }
-                
-                log_message('debug', "Applying coupon: {$couponCode}, Discount: {$discountAmount}");
             }
-            // ===== HẾT BƯỚC 1 =====
 
-            // Calculate final total
+            // Tính tổng cộng cuối cùng
             $finalSubtotal = $subtotal - $discountAmount;
             $total = $finalSubtotal + $shippingFee;
 
-            // Prepare shipping address JSON
+            // Chuẩn bị địa chỉ giao hàng
             $shippingAddressData = [
                 'name' => $this->request->getPost('shipping_name'),
                 'phone' => $this->request->getPost('shipping_phone'),
@@ -376,32 +271,37 @@ class CheckoutController extends BaseController
                 'postal_code' => ''
             ];
 
-            // ===== TẠO ORDER VỚI THÔNG TIN VOUCHER =====
+            $paymentMethod = $this->request->getPost('payment_method');
+            
+            // Xác định trạng thái thanh toán ban đầu
+            $initialPaymentStatus = 'pending';
+            
+            // Tạo order - KHÔNG trừ kho ở bước này
             $orderData = [
                 'customer_id' => $customerId,
                 'order_number' => $this->generateOrderNumber(),
-                'status' => 'pending',
-                'payment_method' => $this->request->getPost('payment_method'),
-                'payment_status' => 'pending',
+                'status' => 'pending', // Đơn hàng mới, chờ xác nhận
+                'payment_method' => $paymentMethod,
+                'payment_status' => $initialPaymentStatus,
                 'subtotal' => $finalSubtotal,
                 'shipping_fee' => $shippingFee,
                 'total_amount' => $total,
-                'coupon_code' => $couponCode,        // THÊM DÒNG NÀY
-                'discount_amount' => $discountAmount, // THÊM DÒNG NÀY
+                'coupon_code' => $couponCode,
+                'discount_amount' => $discountAmount,
                 'shipping_address' => json_encode($shippingAddressData),
                 'billing_address' => json_encode($shippingAddressData),
                 'notes' => $this->request->getPost('notes'),
+                'shipping_method' => $shippingMethod,
                 'tracking_number' => null,
                 'shipped_at' => null,
-                'delivered_at' => null
+                'delivered_at' => null,
+                'paid_at' => null // Chưa thanh toán
             ];
 
             $orderId = $this->orderModel->insert($orderData);
 
             if (!$orderId) {
                 $errors = $this->orderModel->errors();
-                log_message('error', 'Order creation failed. Validation errors: ' . print_r($errors, true));
-                
                 $db->transRollback();
                 return $this->response->setJSON([
                     'success' => false,
@@ -409,10 +309,8 @@ class CheckoutController extends BaseController
                 ]);
             }
 
-            log_message('debug', 'Order created with ID: ' . $orderId);
-
-            // Create order items
-            foreach ($checkoutItems as $index => $item) {
+            // Tạo order items - CHỈ lưu thông tin, không trừ kho
+            foreach ($checkoutItems as $item) {
                 $orderItemData = [
                     'order_id' => $orderId,
                     'product_id' => $item['product_id'],
@@ -423,71 +321,37 @@ class CheckoutController extends BaseController
                     'total' => $item['quantity'] * $item['price']
                 ];
 
-                $insertResult = $this->orderItemModel->insert($orderItemData);
-                if (!$insertResult) {
-                    $itemErrors = $this->orderItemModel->errors();
-                    log_message('error', 'Order item creation failed for item ' . $index . '. Validation errors: ' . print_r($itemErrors, true));
-                    
-                    $db->transRollback();
-                    return $this->response->setJSON([
-                        'success' => false,
-                        'message' => 'Không thể tạo chi tiết đơn hàng cho sản phẩm: ' . $item['name'] . '. Lỗi: ' . implode(', ', $itemErrors)
-                    ]);
-                }
-
-                // Update product stock
-                $product = $this->productModel->find($item['product_id']);
-                if ($product) {
-                    $newStock = max(0, $product['stock_quantity'] - $item['quantity']);
-                    $stockStatus = $this->determineStockStatus($newStock, $product['min_stock_level'] ?? 0);
-                    
-                    $this->productModel->update($item['product_id'], [
-                        'stock_quantity' => $newStock,
-                        'stock_status' => $stockStatus
-                    ]);
-                }
+                $this->orderItemModel->insert($orderItemData);
+                
+                // QUAN TRỌNG: KHÔNG trừ kho ở đây - sẽ trừ khi admin xác nhận đơn hàng
             }
 
-            // ===== XỬ LÝ VOUCHER - BƯỚC 2: TĂNG USED_COUNT =====
+            // Tăng số lần sử dụng voucher
             if ($couponCode) {
                 $coupon = $this->discountCouponModel->where('code', $couponCode)->first();
-                
                 if ($coupon) {
-                    // Tăng số lần sử dụng
-                    $updateResult = $this->discountCouponModel->incrementUsage($coupon['id']);
-                    
-                    if ($updateResult) {
-                        log_message('info', "Coupon '{$couponCode}' used_count incremented for order {$orderId}");
-                    } else {
-                        log_message('error', "Failed to increment used_count for coupon '{$couponCode}'");
-                    }
-                } else {
-                    log_message('warning', "Coupon '{$couponCode}' not found in database when processing order {$orderId}");
+                    $this->discountCouponModel->incrementUsage($coupon['id']);
                 }
             }
-            // ===== HẾT BƯỚC 2 =====
 
             $db->transComplete();
 
             if ($db->transStatus() === FALSE) {
-                log_message('error', 'Transaction failed during order processing');
                 return $this->response->setJSON([
                     'success' => false,
                     'message' => 'Có lỗi xảy ra trong quá trình tạo đơn hàng'
                 ]);
             }
-            
-            log_message('info', 'Order processed successfully. Order ID: ' . $orderId . ', Order Number: ' . $orderData['order_number']);
 
-            // Clear cart/session data based on checkout type
+            // Clear dữ liệu checkout (giỏ hàng, session)
             $this->clearCheckoutData($customerId);
 
-            // Process payment if needed
+            // Xử lý thanh toán nếu là MoMo
             $paymentResult = $this->processPayment($orderId, $orderData);
 
             return $this->response->setJSON([
                 'success' => true,
-                'message' => 'Đặt hàng thành công!',
+                'message' => 'Đặt hàng thành công! Đơn hàng đang chờ xác nhận.',
                 'order_id' => $orderId,
                 'order_number' => $orderData['order_number'],
                 'total_amount' => $total,
@@ -498,7 +362,6 @@ class CheckoutController extends BaseController
 
         } catch (\Exception $e) {
             $db->transRollback();
-            log_message('error', 'Checkout process error: ' . $e->getMessage() . "\nStack trace: " . $e->getTraceAsString());
             return $this->response->setJSON([
                 'success' => false,
                 'message' => 'Có lỗi xảy ra trong quá trình đặt hàng: ' . $e->getMessage()
@@ -506,203 +369,98 @@ class CheckoutController extends BaseController
         }
     }
 
-    // FIXED: Updated getCheckoutItemsForProcessing with correct priority
-    private function getCheckoutItemsForProcessing($customerId)
+    /**
+     * Xử lý thanh toán
+     */
+    private function processPayment($orderId, $orderData)
     {
-        $session = session();
-        $checkoutItems = [];
-
-        // Priority 1: Selected items from cart (HIGHEST PRIORITY)
-        $selectedItems = $session->get('checkout_selected_items');
-        if ($selectedItems && !empty($selectedItems)) {
-            log_message('debug', 'getCheckoutItemsForProcessing - Using selected items');
-            return $selectedItems;
-        }
-
-        // Priority 2: Buy now mode (only if no selected items)
-        $buyNowMode = $session->get('buy_now_mode');
-        if ($buyNowMode && isset($buyNowMode['product_id'])) {
-            log_message('debug', 'getCheckoutItemsForProcessing - Using buy now mode');
-            $product = $this->productModel->find($buyNowMode['product_id']);
-            if ($product) {
-                $price = !empty($product['sale_price']) && $product['sale_price'] > 0 
-                    ? $product['sale_price'] 
-                    : $product['price'];
+        $paymentMethod = $orderData['payment_method'];
+        
+        switch ($paymentMethod) {
+            case 'cod':
+                return [
+                    'status' => 'success',
+                    'message' => 'Đơn hàng đã được tạo thành công. Bạn sẽ thanh toán khi nhận hàng.'
+                ];
                 
-                return [[
-                    'product_id' => $product['id'],
-                    'name' => $product['name'],
-                    'quantity' => $buyNowMode['quantity'],
-                    'price' => $price,
-                    'sku' => $product['sku'] ?? ''
-                ]];
-            }
-        }
-
-        // Priority 3: All cart items (fallback)
-        log_message('debug', 'getCheckoutItemsForProcessing - Using all cart items');
-        $cartItems = $this->cartModel->getCartWithProducts($customerId);
-        foreach ($cartItems as $item) {
-            $checkoutItems[] = [
-                'product_id' => $item['product_id'],
-                'name' => $item['name'],
-                'quantity' => $item['quantity'],
-                'price' => $item['price'],
-                'sku' => $item['sku'] ?? ''
-            ];
-        }
-
-        return $checkoutItems;
-    }
-
-    // Rest of the methods remain the same...
-    private function validateCheckoutItems($items)
-    {
-        $errors = [];
-        $validItems = [];
-
-        foreach ($items as $item) {
-            // Check if product_id exists
-            if (!isset($item['product_id'])) {
-                $errors[] = 'Thiếu ID sản phẩm';
-                continue;
-            }
-
-            $product = $this->productModel->find($item['product_id']);
-            
-            if (!$product) {
-                $errors[] = $item['name'] . ' không còn tồn tại';
-                continue;
-            }
-
-            if (!$product['is_active']) {
-                $errors[] = $item['name'] . ' đã ngừng kinh doanh';
-                continue;
-            }
-
-            if ($product['stock_status'] === 'out_of_stock' || $product['stock_quantity'] < $item['quantity']) {
-                $errors[] = $item['name'] . ' không đủ hàng (còn ' . $product['stock_quantity'] . ')';
-                continue;
-            }
-
-            $validItems[] = $item;
-        }
-
-        return [
-            'valid' => empty($errors),
-            'errors' => $errors,
-            'items' => $validItems
-        ];
-    }
-
-    private function generateOrderNumber()
-    {
-        $prefix = 'DH';
-        $date = date('Ymd');
-        $random = sprintf('%04d', mt_rand(1, 9999));
-        return $prefix . $date . $random;
-    }
-
-    private function calculateShippingFee($subtotal, $customer = null)
-    {
-        // Free shipping for orders over 500k
-        if ($subtotal >= 500000) {
-            return 0;
-        }
-
-        return 30000; // Standard shipping fee
-    }
-
-    private function determineStockStatus($quantity, $minLevel = 0)
-    {
-        if ($quantity <= 0) {
-            return 'out_of_stock';
-        } elseif ($quantity <= $minLevel) {
-            return 'low_stock';
-        } else {
-            return 'in_stock';
+            case 'momo':
+                $momoResult = $this->processMomoPayment($orderId, $orderData);
+                return $momoResult;
+                
+            case 'bank_transfer':
+                return [
+                    'status' => 'pending',
+                    'message' => 'Vui lòng chuyển khoản theo thông tin đã cung cấp',
+                    'bank_info' => [
+                        'bank_name' => 'Ngân hàng ABC',
+                        'account_number' => '1234567890',
+                        'account_name' => 'CONG TY XYZ'
+                    ]
+                ];
+                
+            default:
+                return [
+                    'status' => 'failed',
+                    'message' => 'Phương thức thanh toán không hỗ trợ'
+                ];
         }
     }
-    //Xử lý thanh toán MoMo
-     
-   /**
- * Xử lý thanh toán MoMo - SỬA LẠI METHOD NÀY
- */
-/**
- * Xử lý thanh toán MoMo - SỬA LẠI HOÀN TOÀN
- */
-public function processMomoPayment($orderId, $orderData)
-{
-    try {
-        $session = session();
-        $customerId = $session->get('customer_id');
-        
-        // Tạo request ID duy nhất
-        $requestId = time() . '_' . $customerId . '_' . $orderId;
-        
-        // Lấy config
-        $config = $this->momoService->getConfig();
-        
-        log_message('debug', 'Momo Config: ' . json_encode($config));
-        
-        $momoData = [
-            'request_id' => $requestId,
-            'order_id' => $orderId . '_' . time(),
-            'order_number' => $orderData['order_number'],
-            'amount' => intval($orderData['total_amount']),
-            'order_info' => 'Thanh toán đơn hàng ' . $orderData['order_number'],
-            'return_url' => base_url('checkout/momo-callback'),
-            'ipn_url' => base_url('checkout/momo-ipn'),
-            'customer_id' => $customerId
-        ];
-
-        log_message('debug', 'Momo Payment Data: ' . json_encode($momoData));
-
-        $paymentResult = $this->momoService->createPayment($momoData);
-
-        log_message('debug', 'Momo Payment Result: ' . json_encode($paymentResult));
-
-        if ($paymentResult['success']) {
-            // Lưu thông tin thanh toán vào session
-            $session->set('momo_payment_' . $orderId, [
-                'request_id' => $requestId,
-                'momo_order_id' => $momoData['order_id'],
-                'order_id' => $orderId,
-                'amount' => $momoData['amount'],
-                'timestamp' => time()
-            ]);
-
-            return [
-                'status' => 'redirect',
-                'message' => 'Đang chuyển hướng đến MoMo...',
-                'redirect_url' => $paymentResult['payment_url']
-            ];
-        } else {
-            // NẾU MOMO TRẢ VỀ LỖI, KHÔNG ĐƯỢC COI LÀ THÀNH CÔNG
-            // Cập nhật trạng thái đơn hàng thành failed
-            $this->updateOrderPaymentStatus($orderId, 'failed', 'MoMo error: ' . $paymentResult['message']);
-            
-            return [
-                'status' => 'failed', // QUAN TRỌNG: phải là 'failed'
-                'message' => 'Không thể khởi tạo thanh toán MoMo: ' . $paymentResult['message']
-            ];
-        }
-
-    } catch (\Exception $e) {
-        log_message('error', 'Momo Payment Processing Error: ' . $e->getMessage());
-        
-        // Cập nhật trạng thái đơn hàng thành failed
-        $this->updateOrderPaymentStatus($orderId, 'failed', 'MoMo exception: ' . $e->getMessage());
-        
-        return [
-            'status' => 'failed',
-            'message' => 'Lỗi xử lý thanh toán MoMo: ' . $e->getMessage()
-        ];
-    }
-}
 
     /**
-     * Callback từ MoMo sau khi thanh toán
+     * Xử lý thanh toán MoMo
+     */
+    public function processMomoPayment($orderId, $orderData)
+    {
+        try {
+            $session = session();
+            $customerId = $session->get('customer_id');
+            
+            $requestId = time() . '_' . $customerId . '_' . $orderId;
+            
+            $momoData = [
+                'request_id' => $requestId,
+                'order_id' => $orderId . '_' . time(),
+                'order_number' => $orderData['order_number'],
+                'amount' => intval($orderData['total_amount']),
+                'order_info' => 'Thanh toán đơn hàng ' . $orderData['order_number'],
+                'return_url' => base_url('checkout/momo-callback'),
+                'ipn_url' => base_url('checkout/momo-ipn'),
+                'customer_id' => $customerId
+            ];
+
+            $paymentResult = $this->momoService->createPayment($momoData);
+
+            if ($paymentResult['success']) {
+                $session->set('momo_payment_' . $orderId, [
+                    'request_id' => $requestId,
+                    'momo_order_id' => $momoData['order_id'],
+                    'order_id' => $orderId,
+                    'amount' => $momoData['amount'],
+                    'timestamp' => time()
+                ]);
+
+                return [
+                    'status' => 'redirect',
+                    'message' => 'Đang chuyển hướng đến MoMo...',
+                    'redirect_url' => $paymentResult['payment_url']
+                ];
+            } else {
+                return [
+                    'status' => 'failed',
+                    'message' => 'Không thể khởi tạo thanh toán MoMo: ' . $paymentResult['message']
+                ];
+            }
+
+        } catch (\Exception $e) {
+            return [
+                'status' => 'failed',
+                'message' => 'Lỗi xử lý thanh toán MoMo: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Callback từ MoMo
      */
     public function momoCallback()
     {
@@ -725,14 +483,16 @@ public function processMomoPayment($orderId, $orderData)
         $realOrderId = $parts[0];
 
         if ($resultCode == 0) {
-            // Thanh toán thành công
+            // QUAN TRỌNG: Thanh toán MoMo thành công - CẬP NHẬT payment_status thành 'paid'
+            // NHƯNG vẫn giữ order_status là 'pending' (chờ admin xác nhận)
+            // VÀ KHÔNG trừ kho ở đây
             $this->updateOrderPaymentStatus($realOrderId, 'paid', 'Thanh toán MoMo thành công');
             
             // Clear cart data
             $customerId = $session->get('customer_id');
             $this->clearCheckoutData($customerId);
             
-            $session->setFlashdata('success', 'Thanh toán MoMo thành công!');
+            $session->setFlashdata('success', 'Thanh toán MoMo thành công! Đơn hàng đang chờ xác nhận.');
             return redirect()->to('/checkout/success/' . $this->getOrderNumber($realOrderId));
         } else {
             // Thanh toán thất bại
@@ -777,7 +537,8 @@ public function processMomoPayment($orderId, $orderData)
             $parts = explode('_', $json['orderId']);
             $orderId = $parts[0];
 
-            // Cập nhật trạng thái đơn hàng
+            // QUAN TRỌNG: IPN - Cập nhật payment_status thành 'paid'
+            // NHƯNG KHÔNG trừ kho, vẫn giữ order_status là 'pending'
             $this->updateOrderPaymentStatus($orderId, 'paid', 
                 'IPN: Thanh toán MoMo thành công. TransId: ' . $json['transId']);
 
@@ -839,12 +600,18 @@ public function processMomoPayment($orderId, $orderData)
             'message' => 'Chưa thanh toán'
         ]);
     }
- private function updateOrderPaymentStatus($orderId, $status, $notes = '')
+
+    /**
+     * Cập nhật trạng thái thanh toán đơn hàng
+     */
+    private function updateOrderPaymentStatus($orderId, $status, $notes = '')
     {
         $updateData = ['payment_status' => $status];
         
         if ($status === 'paid') {
             $updateData['paid_at'] = date('Y-m-d H:i:s');
+            // QUAN TRỌNG: Khi thanh toán thành công, TIỀN ĐÃ VỀ TÀI KHOẢN
+            // Nhưng vẫn KHÔNG trừ kho ở đây
         }
         
         if ($notes) {
@@ -856,15 +623,160 @@ public function processMomoPayment($orderId, $orderData)
 
         return $this->orderModel->update($orderId, $updateData);
     }
-private function getOrderNumber($orderId)
+
+    /**
+     * Lấy checkout items để xử lý với độ ưu tiên đúng
+     */
+    private function getCheckoutItemsForProcessing($customerId)
+    {
+        $session = session();
+        $checkoutItems = [];
+
+        // Ưu tiên 1: Items được chọn từ giỏ hàng
+        $selectedItems = $session->get('checkout_selected_items');
+        if ($selectedItems && !empty($selectedItems)) {
+            return $selectedItems;
+        }
+
+        // Ưu tiên 2: Chế độ mua ngay
+        $buyNowMode = $session->get('buy_now_mode');
+        if ($buyNowMode && isset($buyNowMode['product_id'])) {
+            $product = $this->productModel->find($buyNowMode['product_id']);
+            if ($product) {
+                $price = !empty($product['sale_price']) && $product['sale_price'] > 0 
+                    ? $product['sale_price'] 
+                    : $product['price'];
+                
+                return [[
+                    'product_id' => $product['id'],
+                    'name' => $product['name'],
+                    'quantity' => $buyNowMode['quantity'],
+                    'price' => $price,
+                    'sku' => $product['sku'] ?? ''
+                ]];
+            }
+        }
+
+        // Ưu tiên 3: Tất cả items trong giỏ hàng
+        $cartItems = $this->cartModel->getCartWithProducts($customerId);
+        foreach ($cartItems as $item) {
+            $checkoutItems[] = [
+                'product_id' => $item['product_id'],
+                'name' => $item['name'],
+                'quantity' => $item['quantity'],
+                'price' => $item['price'],
+                'sku' => $item['sku'] ?? ''
+            ];
+        }
+
+        return $checkoutItems;
+    }
+
+    /**
+     * Validate checkout items - CHỈ kiểm tra, không trừ kho
+     */
+    private function validateCheckoutItems($items)
+    {
+        $errors = [];
+        $validItems = [];
+
+        foreach ($items as $item) {
+            if (!isset($item['product_id'])) {
+                $errors[] = 'Thiếu ID sản phẩm';
+                continue;
+            }
+
+            $product = $this->productModel->find($item['product_id']);
+            
+            if (!$product) {
+                $errors[] = $item['name'] . ' không còn tồn tại';
+                continue;
+            }
+
+            if (!$product['is_active']) {
+                $errors[] = $item['name'] . ' đã ngừng kinh doanh';
+                continue;
+            }
+
+            // QUAN TRỌNG: Chỉ kiểm tra tồn kho, không trừ
+            if ($product['stock_status'] === 'out_of_stock' || $product['stock_quantity'] < $item['quantity']) {
+                $errors[] = $item['name'] . ' không đủ hàng (còn ' . $product['stock_quantity'] . ')';
+                continue;
+            }
+
+            $validItems[] = $item;
+        }
+
+        return [
+            'valid' => empty($errors),
+            'errors' => $errors,
+            'items' => $validItems
+        ];
+    }
+
+    /**
+     * Clear checkout data sau khi đặt hàng thành công
+     */
+    private function clearCheckoutData($customerId)
+    {
+        $session = session();
+
+        $selectedItems = $session->get('checkout_selected_items');
+        $buyNowMode = $session->get('buy_now_mode');
+
+        // Ưu tiên 1: Xóa selected items
+        if ($selectedItems && !empty($selectedItems)) {
+            $session->remove('checkout_selected_items');
+        }
+        // Ưu tiên 2: Xóa buy now mode
+        else if ($buyNowMode) {
+            $session->remove('buy_now_mode');
+        }
+        // Ưu tiên 3: Xóa toàn bộ giỏ hàng
+        else {
+            $this->cartModel->clearCart($customerId);
+        }
+        
+        // Luôn xóa coupon sau khi đặt hàng thành công
+        $session->remove('applied_coupon');
+    }
+
+    /**
+     * Helper methods
+     */
+    private function generateOrderNumber()
+    {
+        $prefix = 'DH';
+        $date = date('Ymd');
+        $random = sprintf('%04d', mt_rand(1, 9999));
+        return $prefix . $date . $random;
+    }
+
+    private function calculateShippingFee($subtotal, $customer = null)
+    {
+        if ($subtotal >= 500000) {
+            return 0;
+        }
+        return 30000;
+    }
+
+    private function determineStockStatus($quantity, $minLevel = 0)
+    {
+        if ($quantity <= 0) {
+            return 'out_of_stock';
+        } elseif ($quantity <= $minLevel) {
+            return 'low_stock';
+        } else {
+            return 'in_stock';
+        }
+    }
+
+    private function getOrderNumber($orderId)
     {
         $order = $this->orderModel->find($orderId);
         return $order ? $order['order_number'] : null;
     }
 
-    /**
-     * Lấy thông báo lỗi từ MoMo
-     */
     private function getMomoErrorMessage($resultCode)
     {
         $errors = [
@@ -893,67 +805,24 @@ private function getOrderNumber($orderId)
 
         return $errors[$resultCode] ?? 'Lỗi không xác định (' . $resultCode . ')';
     }
-    private function processPayment($orderId, $orderData)
-    {
-        $paymentMethod = $orderData['payment_method'];
-        
-        switch ($paymentMethod) {
-            case 'cod':
-                // Cash on delivery - no additional processing needed
-                return [
-                    'status' => 'success',
-                    'message' => 'Đơn hàng đã được tạo thành công. Bạn sẽ thanh toán khi nhận hàng.'
-                ];
-                
-            case 'momo':
-                // MoMo payment - currently disabled
-               $momoResult = $this->processMomoPayment($orderId, $orderData);
-            
-            // QUAN TRỌNG: Nếu MoMo trả về failed, không được clear cart
-            if ($momoResult['status'] === 'failed') {
-                // KHÔNG clear cart ở đây, để người dùng thử lại
-                log_message('debug', 'MoMo payment failed, keeping cart data');
-            }
-            
-            return $momoResult;
-                
-            case 'bank_transfer':
-                // Bank transfer
-                return [
-                    'status' => 'pending',
-                    'message' => 'Vui lòng chuyển khoản theo thông tin đã cung cấp',
-                    'bank_info' => [
-                        'bank_name' => 'Ngân hàng ABC',
-                        'account_number' => '1234567890',
-                        'account_name' => 'CONG TY XYZ'
-                    ]
-                ];
-                
-            default:
-                return [
-                    'status' => 'failed',
-                    'message' => 'Phương thức thanh toán không hỗ trợ'
-                ];
-        }
-    }
 
     private function getShippingOptions()
     {
         return [
             'standard' => [
-                'name' => 'Standard Delivery',
+                'name' => 'Giao hàng tiêu chuẩn',
                 'price' => 30000,
                 'time' => '3-5 ngày làm việc',
                 'description' => 'Giao hàng tiêu chuẩn'
             ],
             'express' => [
-                'name' => 'Express Delivery',
+                'name' => 'Giao hàng nhanh',
                 'price' => 50000,
                 'time' => '1-2 ngày làm việc',
                 'description' => 'Giao hàng nhanh'
             ],
             'same_day' => [
-                'name' => 'Same Day Delivery',
+                'name' => 'Giao trong ngày',
                 'price' => 80000,
                 'time' => 'Trong ngày',
                 'description' => 'Giao hàng trong ngày (chỉ TP.HCM, HN, DN)'
@@ -974,7 +843,7 @@ private function getOrderNumber($orderId)
                 'name' => 'Ví MoMo',
                 'description' => 'Thanh toán qua ví điện tử MoMo',
                 'icon' => 'ti-mobile',
-                'available' => true // Tạm thời tắt
+                'available' => true
             ],
             'bank_transfer' => [
                 'name' => 'Chuyển khoản ngân hàng',
@@ -1018,5 +887,24 @@ private function getOrderNumber($orderId)
         ];
 
         return view('Customers/order-success', $data);
+    }
+
+    /**
+     * Clear expired buy_now sessions
+     */
+    public function clearExpiredBuyNow()
+    {
+        $session = session();
+        $buyNowMode = $session->get('buy_now_mode');
+        
+        if ($buyNowMode && isset($buyNowMode['timestamp'])) {
+            $thirtyMinutesAgo = time() - (30 * 60);
+            if ($buyNowMode['timestamp'] < $thirtyMinutesAgo) {
+                $session->remove('buy_now_mode');
+                return true;
+            }
+        }
+        
+        return false;
     }
 }

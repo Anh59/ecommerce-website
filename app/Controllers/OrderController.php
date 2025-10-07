@@ -5,25 +5,28 @@ namespace App\Controllers;
 use App\Controllers\BaseController;
 use App\Models\OrderModel;
 use App\Models\OrderItemModel;
+use App\Models\ProductModel;
 
 class OrderController extends BaseController
 {
     protected $orderModel;
     protected $orderItemModel;
+    protected $productModel;
 
     public function __construct()
     {
         $this->orderModel = new OrderModel();
         $this->orderItemModel = new OrderItemModel();
+        $this->productModel = new ProductModel();
     }
 
-    // Danh sách đơn hàng
+    // ... các method khác giữ nguyên (index, list, details, print, stats, export) ...
+
     public function index()
     {
         return view('Dashboard/Orders/table');
     }
 
-    // Danh sách cho DataTables
     public function list()
     {
         if (!$this->request->isAJAX()) {
@@ -35,7 +38,6 @@ class OrderController extends BaseController
         $search = $this->request->getGet('search') ?? '';
         $date = $this->request->getGet('date') ?? date('Y-m-d');
 
-        // Build query
         $builder = $this->orderModel->select('orders.*, 
             customers.name as customer_name, 
             customers.email as customer_email, 
@@ -43,22 +45,18 @@ class OrderController extends BaseController
             (SELECT COUNT(*) FROM order_items WHERE order_items.order_id = orders.id) as total_items')
            ->join('customers', 'customers.id = orders.customer_id', 'left');
 
-        // Filter by status
         if ($status !== 'all') {
             $builder->where('orders.status', $status);
         }
 
-        // Filter by payment status
         if ($paymentStatus !== 'all') {
             $builder->where('orders.payment_status', $paymentStatus);
         }
 
-        // Filter by date
         if ($date) {
             $builder->where('DATE(orders.created_at)', $date);
         }
 
-        // Search
         if (!empty($search)) {
             $builder->groupStart()
                    ->like('orders.order_number', $search)
@@ -68,8 +66,7 @@ class OrderController extends BaseController
                    ->groupEnd();
         }
 
-        $orders = $builder->orderBy('orders.created_at', 'DESC')
-                         ->findAll();
+        $orders = $builder->orderBy('orders.created_at', 'DESC')->findAll();
 
         return $this->response->setJSON([
             'status' => 'success',
@@ -78,7 +75,6 @@ class OrderController extends BaseController
         ]);
     }
 
-    // Chi tiết đơn hàng
     public function details($id)
     {
         if (!$this->request->isAJAX()) {
@@ -102,83 +98,309 @@ class OrderController extends BaseController
         ]);
     }
 
-    // Cập nhật đơn hàng
-   // Cập nhật đơn hàng
-public function update($id)
-{
-    if (!$this->request->isAJAX()) {
-        return $this->response->setStatusCode(400);
-    }
+    /**
+     * ===== LOGIC CẬP NHẬT ĐƠN HÀNG THEO QUY TRÌNH MỚI =====
+     */
+    public function update($id)
+    {
+        if (!$this->request->isAJAX()) {
+            return $this->response->setStatusCode(400);
+        }
 
-    $order = $this->orderModel->find($id);
-    if (!$order) {
-        return $this->response->setJSON([
-            'status' => 'error',
-            'message' => 'Không tìm thấy đơn hàng',
-            'token' => csrf_hash()
-        ]);
-    }
-
-    $data = $this->request->getPost([
-        'status', 'payment_status', 'tracking_number', 'notes'
-    ]);
-
-    // Additional data for specific status changes
-    $additionalData = [];
-    if ($data['status'] === 'shipped' && $order['status'] !== 'shipped') {
-        $additionalData['shipped_at'] = date('Y-m-d H:i:s');
-    } elseif ($data['status'] === 'delivered' && $order['status'] !== 'delivered') {
-        $additionalData['delivered_at'] = date('Y-m-d H:i:s');
-    }
-
-    try {
-        if ($this->orderModel->update($id, array_merge($data, $additionalData))) {
-            return $this->response->setJSON([
-                'status' => 'success',
-                'message' => 'Cập nhật đơn hàng thành công',
-                'token' => csrf_hash()
-            ]);
-        } else {
+        $order = $this->orderModel->find($id);
+        if (!$order) {
             return $this->response->setJSON([
                 'status' => 'error',
-                'message' => 'Lỗi khi cập nhật đơn hàng',
-                'errors' => $this->orderModel->errors(),
+                'message' => 'Không tìm thấy đơn hàng',
                 'token' => csrf_hash()
             ]);
         }
-    } catch (\Exception $e) {
-        return $this->response->setJSON([
-            'status' => 'error',
-            'message' => 'Lỗi hệ thống: ' . $e->getMessage(),
-            'token' => csrf_hash()
+
+        $oldStatus = $order['status'];
+        $newStatus = $this->request->getPost('status');
+        $newPaymentStatus = $this->request->getPost('payment_status');
+        $trackingNumber = $this->request->getPost('tracking_number');
+        $notes = $this->request->getPost('notes');
+
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        try {
+            // ===== XỬ LÝ CHUYỂN TRẠNG THÁI =====
+            $statusChangeResult = $this->handleStatusChange($id, $oldStatus, $newStatus, $order);
+            
+            if (!$statusChangeResult['success']) {
+                $db->transRollback();
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => $statusChangeResult['message'],
+                    'token' => csrf_hash()
+                ]);
+            }
+
+            // ===== CẬP NHẬT DỮ LIỆU ĐƠN HÀNG =====
+            $updateData = [
+                'status' => $newStatus,
+                'payment_status' => $newPaymentStatus,
+                'tracking_number' => $trackingNumber,
+                'notes' => $notes
+            ];
+
+            // Thêm timestamps cho các trạng thái cụ thể
+            if ($newStatus === 'shipped' && $oldStatus !== 'shipped') {
+                $updateData['shipped_at'] = date('Y-m-d H:i:s');
+            } elseif ($newStatus === 'delivered' && $oldStatus !== 'delivered') {
+                $updateData['delivered_at'] = date('Y-m-d H:i:s');
+                
+                // Tự động cập nhật payment_status = paid nếu COD
+                if ($order['payment_method'] === 'cod' && $order['payment_status'] === 'pending') {
+                    $updateData['payment_status'] = 'paid';
+                }
+            }
+
+            $this->orderModel->update($id, $updateData);
+
+            $db->transComplete();
+
+            if ($db->transStatus() === FALSE) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Lỗi khi cập nhật đơn hàng',
+                    'token' => csrf_hash()
+                ]);
+            }
+
+            log_message('info', "Order #{$order['order_number']} status changed: {$oldStatus} → {$newStatus}");
+
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => $statusChangeResult['message'],
+                'token' => csrf_hash()
+            ]);
+
+        } catch (\Exception $e) {
+            $db->transRollback();
+            log_message('error', 'Error updating order: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Lỗi hệ thống: ' . $e->getMessage(),
+                'token' => csrf_hash()
+            ]);
+        }
+    }
+
+    /**
+     * Xử lý logic chuyển trạng thái đơn hàng
+     */
+    private function handleStatusChange($orderId, $oldStatus, $newStatus, $order)
+    {
+        // Nếu không đổi trạng thái
+        if ($oldStatus === $newStatus) {
+            return ['success' => true, 'message' => 'Cập nhật đơn hàng thành công'];
+        }
+
+        // ===== PENDING → PROCESSING (XÁC NHẬN ĐƠN, TRỪ KHO) =====
+        if ($oldStatus === 'pending' && $newStatus === 'processing') {
+            $deductResult = $this->deductStock($orderId);
+            if (!$deductResult['success']) {
+                return [
+                    'success' => false,
+                    'message' => 'Không thể xác nhận đơn: ' . $deductResult['message']
+                ];
+            }
+            return [
+                'success' => true,
+                'message' => 'Đã xác nhận đơn hàng và trừ kho thành công'
+            ];
+        }
+
+        // ===== PROCESSING → SHIPPED (CHUYỂN CHO SHIPPER) =====
+        if ($oldStatus === 'processing' && $newStatus === 'shipped') {
+            return [
+                'success' => true,
+                'message' => 'Đơn hàng đã được giao cho đơn vị vận chuyển'
+            ];
+        }
+
+        // ===== SHIPPED → DELIVERED (GIAO THÀNH CÔNG) =====
+        if ($oldStatus === 'shipped' && $newStatus === 'delivered') {
+            return [
+                'success' => true,
+                'message' => 'Đơn hàng đã được giao thành công'
+            ];
+        }
+
+        // ===== HỦY ĐƠN HÀNG =====
+        if ($newStatus === 'cancelled') {
+            // Nếu đã xác nhận (đã trừ kho) → hoàn kho
+            if (in_array($oldStatus, ['processing', 'shipped'])) {
+                $restoreResult = $this->restoreStock($orderId);
+                if (!$restoreResult['success']) {
+                    return [
+                        'success' => false,
+                        'message' => 'Không thể hủy đơn: ' . $restoreResult['message']
+                    ];
+                }
+                return [
+                    'success' => true,
+                    'message' => 'Đã hủy đơn hàng và hoàn lại kho thành công'
+                ];
+            }
+            
+            // Nếu chưa xác nhận (pending) → hủy trực tiếp
+            return [
+                'success' => true,
+                'message' => 'Đã hủy đơn hàng'
+            ];
+        }
+
+        // ===== KHÔNG CHO PHÉP CHUYỂN NGƯỢC LẠI =====
+        $statusFlow = ['pending', 'processing', 'shipped', 'delivered'];
+        $oldIndex = array_search($oldStatus, $statusFlow);
+        $newIndex = array_search($newStatus, $statusFlow);
+
+        if ($oldIndex !== false && $newIndex !== false && $newIndex < $oldIndex) {
+            return [
+                'success' => false,
+                'message' => 'Không thể chuyển đơn hàng từ trạng thái "' . $this->getStatusText($oldStatus) . 
+                            '" về "' . $this->getStatusText($newStatus) . '"'
+            ];
+        }
+
+        return ['success' => true, 'message' => 'Cập nhật trạng thái đơn hàng thành công'];
+    }
+
+    /**
+     * Trừ kho khi xác nhận đơn (pending → processing)
+     */
+    private function deductStock($orderId)
+    {
+        $orderItems = $this->orderItemModel->getOrderItems($orderId);
+        
+        if (empty($orderItems)) {
+            return ['success' => false, 'message' => 'Không tìm thấy sản phẩm trong đơn hàng'];
+        }
+
+        $errors = [];
+
+        foreach ($orderItems as $item) {
+            $product = $this->productModel->find($item['product_id']);
+            
+            if (!$product) {
+                $errors[] = "Sản phẩm {$item['product_name']} không tồn tại";
+                continue;
+            }
+
+            // Kiểm tra tồn kho
+            if ($product['stock_quantity'] < $item['quantity']) {
+                $errors[] = "Sản phẩm {$item['product_name']} không đủ hàng (còn {$product['stock_quantity']}, cần {$item['quantity']})";
+                continue;
+            }
+
+            // Trừ kho
+            $newStock = $product['stock_quantity'] - $item['quantity'];
+            $stockStatus = $this->determineStockStatus($newStock, $product['min_stock_level'] ?? 0);
+            
+            $this->productModel->update($item['product_id'], [
+                'stock_quantity' => $newStock,
+                'stock_status' => $stockStatus
+            ]);
+
+            log_message('info', "Deducted stock for product #{$item['product_id']}: {$item['quantity']} units. New stock: {$newStock}");
+        }
+
+        if (!empty($errors)) {
+            return ['success' => false, 'message' => implode(', ', $errors)];
+        }
+
+        return ['success' => true, 'message' => 'Trừ kho thành công'];
+    }
+
+    /**
+     * Hoàn kho khi hủy đơn đã xác nhận
+     */
+    private function restoreStock($orderId)
+    {
+        $orderItems = $this->orderItemModel->getOrderItems($orderId);
+        
+        if (empty($orderItems)) {
+            return ['success' => false, 'message' => 'Không tìm thấy sản phẩm trong đơn hàng'];
+        }
+
+        foreach ($orderItems as $item) {
+            $product = $this->productModel->find($item['product_id']);
+            
+            if (!$product) {
+                log_message('warning', "Product #{$item['product_id']} not found when restoring stock");
+                continue;
+            }
+
+            // Hoàn kho
+            $newStock = $product['stock_quantity'] + $item['quantity'];
+            $stockStatus = $this->determineStockStatus($newStock, $product['min_stock_level'] ?? 0);
+            
+            $this->productModel->update($item['product_id'], [
+                'stock_quantity' => $newStock,
+                'stock_status' => $stockStatus
+            ]);
+
+            log_message('info', "Restored stock for product #{$item['product_id']}: {$item['quantity']} units. New stock: {$newStock}");
+        }
+
+        return ['success' => true, 'message' => 'Hoàn kho thành công'];
+    }
+
+    /**
+     * Xác định trạng thái tồn kho
+     */
+    private function determineStockStatus($quantity, $minLevel = 0)
+    {
+        if ($quantity <= 0) {
+            return 'out_of_stock';
+        } elseif ($quantity <= $minLevel) {
+            return 'low_stock';
+        } else {
+            return 'in_stock';
+        }
+    }
+
+    /**
+     * Lấy text hiển thị của trạng thái
+     */
+    private function getStatusText($status)
+    {
+        $statusMap = [
+            'pending' => 'Chờ xử lý',
+            'processing' => 'Xác nhận',
+            'shipped' => 'Đang giao',
+            'delivered' => 'Đã giao',
+            'cancelled' => 'Đã hủy'
+        ];
+        return $statusMap[$status] ?? $status;
+    }
+
+    // ... các method khác giữ nguyên (print, stats, export, etc.) ...
+
+    public function print($id)
+    {
+        $order = $this->orderModel->getOrderWithItems($id);
+        
+        if (!$order) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
+        }
+
+        $customer = null;
+        if ($order['customer_id']) {
+            $customerModel = new \App\Models\CustomerModel();
+            $customer = $customerModel->find($order['customer_id']);
+        }
+
+        return view('Dashboard/Orders/print', [
+            'order' => $order,
+            'customer' => $customer
         ]);
     }
-}
 
-    // In đơn hàng
-  // Trong phương thức print() của OrderController
-public function print($id)
-{
-    $order = $this->orderModel->getOrderWithItems($id);
-    
-    if (!$order) {
-        throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
-    }
-
-    // Lấy thông tin khách hàng nếu có
-    $customer = null;
-    if ($order['customer_id']) {
-        $customerModel = new \App\Models\CustomerModel();
-        $customer = $customerModel->find($order['customer_id']);
-    }
-
-    return view('Dashboard/Orders/print', [
-        'order' => $order,
-        'customer' => $customer
-    ]);
-}
-
-    // Thống kê đơn hàng
     public function stats()
     {
         if (!$this->request->isAJAX()) {
@@ -299,7 +521,6 @@ public function print($id)
         ];
     }
 
-    // Xuất Excel đơn hàng
     public function export()
     {
         $startDate = $this->request->getGet('start_date');
@@ -321,8 +542,7 @@ public function print($id)
             $builder->where('orders.status', $status);
         }
 
-        $orders = $builder->orderBy('orders.created_at', 'DESC')
-                         ->findAll();
+        $orders = $builder->orderBy('orders.created_at', 'DESC')->findAll();
 
         // Tạo file Excel
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
@@ -368,22 +588,10 @@ public function print($id)
         exit;
     }
 
-    private function getStatusText($status)
-    {
-        $statusMap = [
-            'pending' => 'Chờ xử lý',
-            'processing' => 'Đang xử lý',
-            'shipped' => 'Đang giao',
-            'delivered' => 'Đã giao',
-            'cancelled' => 'Đã hủy'
-        ];
-        return $statusMap[$status] ?? $status;
-    }
-
     private function getPaymentStatusText($status)
     {
         $statusMap = [
-            'pending' => 'Chờ thanh toán',
+            'pending' => 'Chưa thanh toán',
             'paid' => 'Đã thanh toán',
             'failed' => 'Thất bại',
             'refunded' => 'Đã hoàn tiền'
