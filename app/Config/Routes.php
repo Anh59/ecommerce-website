@@ -124,14 +124,16 @@ $routes->group('api_Customers',function($routes) {
     $routes->get('customers_logout','CustomersController::logout',['as' => 'Customers_logout']);
     $routes->get('testEmail', 'CustomersController::testEmail', ['as' => 'testEmail']);
     
+    
 
     $routes->get('customers_forgot_password', 'CustomersController::forgotPassword',['as' => 'customes_forgot_password']);
     $routes->post('customers_forgot_password', 'CustomersController::processForgotPassword',['as'=>'Customers_processForgotPassword']);
     $routes->post('customers_pass_verify_otp', 'CustomersController::pass_verifyOTP',['as'=>'Customers_processPassVerifyOTP']);
     $routes->post('customers_reset_password', 'CustomersController::resetPassword',['as' => 'Customers_resetPassword']);
 
-    $routes->get('google_login', 'GoogleController::googleLogin', ['as' => 'google_login']);
-    $routes->get('google_callback', 'GoogleController::googleCallback', ['as' => 'google_callback']);
+    $routes->get('google-login', 'GoogleController::googleLogin', ['as' => 'google_login']);
+$routes->get('E-commerce-google-callback', 'GoogleController::googleCallback', ['as' => 'google_callback']);
+$routes->get('google-auth-url', 'GoogleController::getGoogleAuthUrl', ['as' => 'google_auth_url']);
     
     $routes->get('profile', 'CustomersController::profile', ['as' => 'profile']);
     $routes->post('profile/update', 'CustomersController::updateProfile', ['as' => 'update_profile']);

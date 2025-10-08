@@ -103,6 +103,18 @@
 <?= $this->section('scripts') ?>
 <script>
 $(document).ready(function(){
+    $('#googleLoginBtn').on('click', function(e){
+        // Hiển thị loading
+        const $btn = $(this);
+        const originalHtml = $btn.html();
+        $btn.html('<i class="fa fa-spinner fa-spin"></i> Đang chuyển hướng...')
+            .prop('disabled', true);
+        
+        // Cho phép chuyển hướng
+        setTimeout(() => {
+            $btn.html(originalHtml).prop('disabled', false);
+        }, 1000);
+    });
     // Hàm toggle password visibility
     window.togglePasswordVisibility = function() {
         const passwordField = document.getElementById('password');
@@ -247,6 +259,7 @@ $(document).ready(function(){
     // Auto focus vào email khi trang load
     $('#email').focus();
 });
+
 </script>
 
 <style>
