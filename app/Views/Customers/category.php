@@ -299,8 +299,8 @@
                 <div class="col-lg-8">
                     <div class="breadcrumb_iner">
                         <div class="breadcrumb_iner_item">
-                            <h2>Shop Category</h2>
-                            <p>Home <span>-</span> Shop Category</p>
+                            <h2>Danh mục sản phẩm</h2>
+                            <p>Trang chủ <span>-</span> Danh mục sản phẩm</p>
                         </div>
                     </div>
                 </div>
@@ -317,7 +317,7 @@
                     <div class="left_sidebar_area">
                         <aside class="left_widgets p_filter_widgets">
                             <div class="l_w_title">
-                                <h3>Browse Categories</h3>
+                                <h3>Danh mục</h3>
                             </div>
                             <div class="widgets_inner">
                                 <ul class="list">
@@ -344,13 +344,13 @@
                                 </ul>
                             </div>
                             <div class="filter-actions">
-                                <button class="btn btn-sm btn-outline-secondary clear-filters">Clear Category Filter</button>
+                                <button class="btn btn-sm btn-outline-secondary clear-filters">Xóa bộ lọc danh mục</button>
                             </div>
                         </aside>
 
                         <aside class="left_widgets p_filter_widgets">
                             <div class="l_w_title">
-                                <h3>Brand Filter</h3>
+                                <h3>Thương hiệu</h3>
                             </div>
                             <div class="widgets_inner">
                                 <ul class="list">
@@ -365,31 +365,31 @@
                                 </ul>
                             </div>
                             <div class="filter-actions">
-                                <button class="btn btn-sm btn-outline-secondary clear-filters">Clear Brand Filter</button>
+                                <button class="btn btn-sm btn-outline-secondary clear-filters">Xóa bộ lọc thương hiệu</button>
                             </div>
                         </aside>
 
                         <aside class="left_widgets p_filter_widgets price_rangs_aside">
                             <div class="l_w_title">
-                                <h3>Price Filter</h3>
+                                <h3>Giá</h3>
                             </div>
                             <div class="widgets_inner">
                                 <div class="range_item">
                                     <input type="text" class="js-range-slider" value="" />
                                     <div class="d-flex">
                                         <div class="price_text">
-                                            <p>Price :</p>
+                                            <p>Giá :</p>
                                         </div>
                                         <div class="price_value d-flex justify-content-center">
                                             <input type="text" class="js-input-from" id="min_price" readonly />
-                                            <span>to</span>
+                                            <span>đến</span>
                                             <input type="text" class="js-input-to" id="max_price" readonly />
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="filter-actions">
-                                <button class="btn btn-sm btn-outline-secondary clear-filters">Clear Price Filter</button>
+                                <button class="btn btn-sm btn-outline-secondary clear-filters">Xóa bộ lọc giá</button>
                             </div>
                         </aside>
                     </div>
@@ -399,26 +399,26 @@
                         <div class="col-lg-12">
                             <div class="product_top_bar d-flex justify-content-between align-items-center">
                                 <div class="single_product_menu">
-                                    <p><span id="product-count"><?= number_format($totalProducts) ?></span> Products Found</p>
+                                    <p><span id="product-count"><?= number_format($totalProducts) ?></span> Sản phẩm</p>
                                 </div>
                                 <div class="single_product_menu d-flex">
-                                    <h5>Sort by : </h5>
+                                    <h5>Sắp xếp theo : </h5>
                                     <div class="left_dorp">
                                         <div class="nice-select sorting" tabindex="0">
                                             <span class="current" id="sort-current">
-                                                <?= $filters['sort'] == 'price_asc' ? 'Price: Low to High' : 
-                                                   ($filters['sort'] == 'price_desc' ? 'Price: High to Low' : 'Name') ?>
+                                                <?= $filters['sort'] == 'price_asc' ? 'Giá: Thấp đến Cao' : 
+                                                   ($filters['sort'] == 'price_desc' ? 'Giá: Cao đến Thấp' : 'Tên') ?>
                                             </span>
                                             <ul class="list">
-                                                <li data-value="name" class="option <?= $filters['sort'] == 'name' ? 'selected' : '' ?>">Name</li>
-                                                <li data-value="price_asc" class="option <?= $filters['sort'] == 'price_asc' ? 'selected' : '' ?>">Price: Low to High</li>
-                                                <li data-value="price_desc" class="option <?= $filters['sort'] == 'price_desc' ? 'selected' : '' ?>">Price: High to Low</li>
+                                                <li data-value="name" class="option <?= $filters['sort'] == 'name' ? 'selected' : '' ?>">Tên</li>
+                                                <li data-value="price_asc" class="option <?= $filters['sort'] == 'price_asc' ? 'selected' : '' ?>">Giá: Thấp đến Cao</li>
+                                                <li data-value="price_desc" class="option <?= $filters['sort'] == 'price_desc' ? 'selected' : '' ?>">Giá: Cao đến Thấp</li>
                                             </ul>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="single_product_menu d-flex">
-                                    <h5>Show :</h5>
+                                    <h5>Hiển thị :</h5>
                                     <div class="left_dorp">
                                         <div class="nice-select show" tabindex="0">
                                             <span class="current" id="show-current"><?= $perPage ?></span>
@@ -432,7 +432,7 @@
                                 </div>
                                 <div class="single_product_menu d-flex">
                                     <div class="input-group">
-                                        <input type="text" class="form-control" id="search-input" placeholder="Search products..." 
+                                        <input type="text" class="form-control" id="search-input" placeholder="Tìm kiếm sản phẩm..." 
                                                value="<?= esc($filters['search']) ?>"
                                                aria-describedby="inputGroupPrepend">
                                         <div class="input-group-prepend">
@@ -470,7 +470,7 @@
                                         </div>
                                         <div class="product-actions">
                                             <a href="#" class="add_cart add-to-cart-btn" data-product-id="<?= $product['id'] ?>">
-                                                <?= $product['stock_status'] == 'out_of_stock' ? 'Out of Stock' : '+ Add to cart' ?>
+                                                <?= $product['stock_status'] == 'out_of_stock' ? 'Hết hàng' : '+ Thêm giỏ hàng' ?>
                                             </a>
                                             <button class="wishlist-btn" data-product-id="<?= $product['id'] ?>" title="Add to Wishlist">
                                                 <i class="ti-heart"></i>
@@ -551,8 +551,8 @@
     <!-- Best Sellers -->
 <?= render_best_sellers([
     'limit' => 8,
-    'title' => 'Best Sellers',
-    'subtitle' => 'shop',
+    'title' => 'Sản phẩm bán chạy',
+    'subtitle' => 'Cửa hàng',
     'type' => 'best_sellers'
 ]) ?>
 
@@ -748,7 +748,7 @@ $(document).ready(function() {
                 showToast('error', 'Có lỗi xảy ra, vui lòng thử lại');
             },
             complete: function() {
-                $btn.removeClass('loading').text('+ Add to cart');
+                $btn.removeClass('loading').text('+ Thêm giỏ hàng');
             }
         });
     });
@@ -830,7 +830,7 @@ $(document).ready(function() {
                     if (response.products && response.products.length > 0) {
                         response.products.forEach(function(product) {
                             let outOfStockClass = product.stock_status === 'out_of_stock' ? 'out-of-stock' : '';
-                            let addToCartText = product.stock_status === 'out_of_stock' ? 'Out of Stock' : '+ Add to cart';
+                            let addToCartText = product.stock_status === 'out_of_stock' ? 'Hết hàng' : '+ Thêm giỏ hàng';
                             let stockIndicator = '';
                             
                             if (product.stock_status === 'low_stock') {

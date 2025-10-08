@@ -44,8 +44,8 @@
                 <div class="col-lg-8">
                     <div class="breadcrumb_iner">
                         <div class="breadcrumb_iner_item">
-                            <h2>Blog Details</h2>
-                            <p>Home <span>-</span> Blog <span>-</span> <?= esc($post['title']) ?></p>
+                            <h2>Chi tiết bài viết</h2>
+                            <p>Trang chủ <span>-</span> Bài viết <span>-</span> <?= esc($post['title']) ?></p>
                         </div>
                     </div>
                 </div>
@@ -72,21 +72,21 @@
                             <div class="blog_details mt-4">
                                 <h2><?= esc($post['title']) ?>
                                     <?php if ($post['is_featured']): ?>
-                                        <span class="featured-badge">Featured</span>
+                                        <span class="featured-badge">Nổi bật</span>
                                     <?php endif; ?>
                                 </h2>
                                 
                                 <div class="blog-meta">
-                                    <span><i class="ti-user"></i> By <?= esc($post['author_name']) ?></span>
+                                    <span><i class="ti-user"></i> Bởi <?= esc($post['author_name']) ?></span>
                                     <span><i class="ti-calendar"></i> <?= date('F j, Y', strtotime($post['published_at'])) ?></span>
                                     <span><i class="ti-folder"></i> 
                                         <a href="<?= base_url('blog/category/' . urlencode($post['category'])) ?>" class="text-primary">
                                             <?= esc($post['category']) ?>
                                         </a>
                                     </span>
-                                    <span><i class="ti-eye"></i> <?= number_format($post['view_count']) ?> views</span>
-                                    <span><i class="ti-time"></i> <?= $post['reading_time'] ?> min read</span>
-                                    <span><i class="ti-comment"></i> <?= $commentCount ?> comments</span>
+                                    <span><i class="ti-eye"></i> <?= number_format($post['view_count']) ?> lượt xem</span>
+                                    <span><i class="ti-time"></i> <?= $post['reading_time'] ?> phút đọc</span>
+                                    <span><i class="ti-comment"></i> <?= $commentCount ?> bình luận</span>
                                 </div>
                                 
                                 <div class="blog-content mt-4">
@@ -118,7 +118,7 @@
                                         <?php if ($previousPost): ?>
                                             <a href="<?= base_url('blog/post/' . $previousPost['slug']) ?>" class="nav-post">
                                                 <div class="nav-direction">
-                                                    <i class="ti-arrow-left"></i> Previous Post
+                                                    <i class="ti-arrow-left"></i> Bài viết trước
                                                 </div>
                                                 <img src="<?= base_url($previousPost['featured_image'] ?? 'aranoz-master/img/blog/single_blog_1.png') ?>" 
                                                      alt="<?= esc($previousPost['title']) ?>">
@@ -139,7 +139,7 @@
                                                 <img src="<?= base_url($nextPost['featured_image'] ?? 'aranoz-master/img/blog/single_blog_1.png') ?>" 
                                                      alt="<?= esc($nextPost['title']) ?>">
                                                 <div class="nav-direction">
-                                                    Next Post <i class="ti-arrow-right"></i>
+                                                    Bài viết tiếp theo <i class="ti-arrow-right"></i>
                                                 </div>
                                             </a>
                                         <?php endif; ?>
@@ -151,7 +151,7 @@
                         <!-- Related Posts -->
                         <?php if (!empty($relatedPosts)): ?>
                             <div class="related-posts">
-                                <h4>Related Posts</h4>
+                                <h4>Bài viết liên quan</h4>
                                 <div class="row">
                                     <?php foreach ($relatedPosts as $related): ?>
                                         <div class="col-md-4 related-post-item">
@@ -178,7 +178,7 @@
 
                         <!-- Comments Section -->
                         <div class="comments-section">
-                            <h4>Comments (<?= $commentCount ?>)</h4>
+                            <h4>Bình luận (<?= $commentCount ?>)</h4>
                             
                             <!-- Comments List -->
                             <div class="comments-list mt-4">
@@ -189,14 +189,14 @@
                                 <?php else: ?>
                                     <div class="text-center py-4">
                                         <i class="ti-comment" style="font-size: 3rem; color: #ddd;"></i>
-                                        <p class="mt-2 text-muted">No comments yet. Be the first to comment!</p>
+                                        <p class="mt-2 text-muted">Chưa có bình luận nào. Hãy là người đầu tiên bình luận!</p>
                                     </div>
                                 <?php endif; ?>
                             </div>
 
                             <!-- Comment Form -->
                             <div class="comment-form">
-                                <h5>Leave a Comment</h5>
+                                <h5>Để lại bình luận</h5>
                                 <form id="comment-form">
                                     <input type="hidden" name="post_id" value="<?= $post['id'] ?>">
                                     <input type="hidden" name="parent_id" value="" id="parent-comment-id">
@@ -223,13 +223,13 @@
                                     
                                     <div class="form-group">
                                         <button type="submit" class="btn_1">
-                                            <span class="btn-text">Post Comment</span>
+                                            <span class="btn-text">Đăng bình luận</span>
                                             <span class="btn-loading" style="display: none;">
-                                                <i class="fa fa-spinner fa-spin"></i> Posting...
+                                                <i class="fa fa-spinner fa-spin"></i> Đang đăng...
                                             </span>
                                         </button>
                                         <button type="button" class="btn btn-secondary ml-2" id="cancel-reply" style="display: none;">
-                                            Cancel Reply
+                                            Hủy trả lời
                                         </button>
                                     </div>
                                 </form>
@@ -248,23 +248,23 @@
                                 <div class="form-group">
                                     <div class="input-group mb-3">
                                         <input type="text" name="keyword" class="form-control" 
-                                               placeholder='Search Posts'
+                                               placeholder='Tìm kiếm bài viết'
                                                onfocus="this.placeholder = ''"
-                                               onblur="this.placeholder = 'Search Posts'">
+                                               onblur="this.placeholder = 'Tìm kiếm bài viết'">
                                         <div class="input-group-append">
                                             <button class="btn" type="submit"><i class="ti-search"></i></button>
                                         </div>
                                     </div>
                                 </div>
                                 <button class="button rounded-0 primary-bg text-white w-100 btn_1" type="submit">
-                                    Search
+                                    Tìm kiếm
                                 </button>
                             </form>
                         </aside>
 
                         <!-- Categories Widget -->
                         <aside class="single_sidebar_widget post_category_widget">
-                            <h4 class="widget_title">Categories</h4>
+                            <h4 class="widget_title">Danh mục</h4>
                             <ul class="list cat-list">
                                 <?php if (!empty($categories)): ?>
                                     <?php foreach ($categories as $category): ?>
@@ -282,7 +282,7 @@
 
                         <!-- Recent Posts Widget -->
                         <aside class="single_sidebar_widget popular_post_widget">
-                            <h3 class="widget_title">Recent Posts</h3>
+                            <h3 class="widget_title">Bài viết gần đây</h3>
                             <?php if (!empty($recentPosts)): ?>
                                 <?php foreach ($recentPosts as $recentPost): ?>
                                     <div class="media post_item">
@@ -302,7 +302,7 @@
 
                         <!-- Newsletter Widget -->
                         <aside class="single_sidebar_widget newsletter_widget">
-                            <h4 class="widget_title">Newsletter</h4>
+                            <h4 class="widget_title">Bản Tin</h4>
                             <form action="#" method="POST" id="newsletter-form">
                                 <div class="form-group">
                                     <input type="email" name="email" class="form-control" 
@@ -311,7 +311,7 @@
                                            placeholder='Enter email' required>
                                 </div>
                                 <button class="button rounded-0 primary-bg text-white w-100 btn_1" type="submit">
-                                    Subscribe
+                                    Đăng ký
                                 </button>
                             </form>
                         </aside>

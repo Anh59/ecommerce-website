@@ -12,8 +12,8 @@
                 <div class="col-lg-8">
                     <div class="breadcrumb_iner">
                         <div class="breadcrumb_iner_item">
-                            <h2>Blog</h2>
-                            <p>Home <span>-</span> Blog</p>
+                            <h2>Bản Tin</h2>
+                            <p>Trang chủ <span>-</span> Bản Tin</p>
                         </div>
                     </div>
                 </div>
@@ -35,13 +35,13 @@
                                 <div class="alert alert-info">
                                     <i class="ti-search"></i>
                                     <?php if (isset($searchKeyword) && $searchKeyword): ?>
-                                        Search results for: <strong>"<?= esc($searchKeyword) ?>"</strong>
+                                        Kết quả tìm kiếm cho: <strong>"<?= esc($searchKeyword) ?>"</strong>
                                     <?php endif; ?>
                                     <?php if (isset($currentCategory) && $currentCategory): ?>
-                                        Category: <strong><?= esc($currentCategory) ?></strong>
+                                        Danh mục: <strong><?= esc($currentCategory) ?></strong>
                                     <?php endif; ?>
                                     <?php if (isset($totalResults)): ?>
-                                        - <?= $totalResults ?> result(s) found
+                                        - <?= $totalResults ?> kết quả tìm thấy
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -87,7 +87,7 @@
                                         
                                         <div class="mt-3">
                                             <a href="<?= base_url('blog/post/' . $post['slug']) ?>" class="btn_3">
-                                                Read More <i class="ti-arrow-right"></i>
+                                                Xem thêm <i class="ti-arrow-right"></i>
                                             </a>
                                         </div>
                                     </div>
@@ -97,9 +97,9 @@
                             <!-- No Results -->
                             <div class="no-results">
                                 <i class="ti-search"></i>
-                                <h3>No blog posts found</h3>
-                                <p>We couldn't find any posts matching your criteria.</p>
-                                <a href="<?= base_url('blog') ?>" class="btn_1">View All Posts</a>
+                                <h3>Không tìm thấy bài viết nào</h3>
+                                <p>Chúng tôi không thể tìm thấy bất kỳ bài viết nào phù hợp với tiêu chí của bạn.</p>
+                                <a href="<?= base_url('blog') ?>" class="btn_1">Xem tất cả bài viết</a>
                             </div>
                         <?php endif; ?>
 
@@ -150,23 +150,23 @@
                                     <div class="input-group mb-3">
                                         <input type="text" name="keyword" class="form-control" 
                                                value="<?= esc($searchKeyword ?? '') ?>"
-                                               placeholder='Search Posts'
+                                               placeholder='Tìm kiểm bài viết'
                                                onfocus="this.placeholder = ''"
-                                               onblur="this.placeholder = 'Search Posts'">
+                                               onblur="this.placeholder = 'Tìm kiểm bài viết'">
                                         <div class="input-group-append">
                                             <button class="btn" type="submit"><i class="ti-search"></i></button>
                                         </div>
                                     </div>
                                 </div>
                                 <button class="button rounded-0 primary-bg text-white w-100 btn_1" type="submit">
-                                    Search
+                                    Tìm kiếm
                                 </button>
                             </form>
                         </aside>
 
                         <!-- Categories Widget -->
                         <aside class="single_sidebar_widget post_category_widget">
-                            <h4 class="widget_title">Categories</h4>
+                            <h4 class="widget_title">Danh mục</h4>
                             <ul class="list cat-list">
                                 <?php if (!empty($categories)): ?>
                                     <?php foreach ($categories as $category): ?>
@@ -178,14 +178,14 @@
                                         </li>
                                     <?php endforeach; ?>
                                 <?php else: ?>
-                                    <li><p>No categories found</p></li>
+                                    <li><p>Không tìm thấy danh mục nào</p></li>
                                 <?php endif; ?>
                             </ul>
                         </aside>
 
                         <!-- Recent Posts Widget -->
                         <aside class="single_sidebar_widget popular_post_widget">
-                            <h3 class="widget_title">Recent Posts</h3>
+                            <h3 class="widget_title">Bài viết gần đây</h3>
                             <?php if (!empty($recentPosts)): ?>
                                 <?php foreach ($recentPosts as $recentPost): ?>
                                     <div class="media post_item">
@@ -206,7 +206,7 @@
                         <!-- Featured Posts Widget -->
                         <?php if (!empty($featuredPosts)): ?>
                             <aside class="single_sidebar_widget popular_post_widget">
-                                <h3 class="widget_title">Featured Posts</h3>
+                                <h3 class="widget_title">Bài viết nổi bật</h3>
                                 <?php foreach ($featuredPosts as $featured): ?>
                                     <div class="media post_item">
                                         <img src="<?= base_url($featured['featured_image'] ?? 'aranoz-master/img/post/post_1.png') ?>" 
@@ -218,7 +218,7 @@
                                             </a>
                                             <p><?= date('F j, Y', strtotime($featured['published_at'])) ?></p>
                                             <small class="text-warning">
-                                                <i class="ti-star"></i> Featured
+                                                <i class="ti-star"></i> Nổi bật
                                             </small>
                                         </div>
                                     </div>
@@ -228,7 +228,7 @@
 
                         <!-- Newsletter Widget -->
                         <aside class="single_sidebar_widget newsletter_widget">
-                            <h4 class="widget_title">Newsletter</h4>
+                            <h4 class="widget_title">Bản Tin</h4>
                             <form action="#" method="POST" id="newsletter-form">
                                 <div class="form-group">
                                     <input type="email" name="email" class="form-control" 
@@ -237,7 +237,7 @@
                                            placeholder='Enter email' required>
                                 </div>
                                 <button class="button rounded-0 primary-bg text-white w-100 btn_1" type="submit">
-                                    Subscribe
+                                    Đăng ký
                                 </button>
                             </form>
                         </aside>

@@ -8,8 +8,8 @@
             <div class="col-lg-8">
                 <div class="breadcrumb_iner">
                     <div class="breadcrumb_iner_item">
-                        <h2>Register</h2>
-                        <p>Home <span>-</span> Register</p>
+                        <h2>Đăng Ký</h2>
+                        <p>Trang chủ <span>-</span> Đăng Ký</p>
                     </div>
                 </div>
             </div>
@@ -22,17 +22,17 @@
         <div class="row align-items-center">
             <div class="col-lg-6 col-md-6">
                 <div class="login_part_text text-center">
-                    <h2>Already have an account?</h2>
-                    <p>Login now to continue shopping.</p>
-                    <a href="<?= route_to('Customers_sign'); ?>" class="btn_3">Login</a>
-                    
+                    <h2>Đã có tài khoản?</h2>
+                    <p>Đăng nhập ngay để tiếp tục mua sắm.</p>
+                    <a href="<?= route_to('Customers_sign'); ?>" class="btn_3">Đăng Nhập</a>
+
                     <!-- Social Sign-in Options -->
                     <div style="margin-top: 20px;">
                         <a href="<?= route_to('google_login') ?>" class="btn btn-danger btn-block mb-2">
-                            <i class="fab fa-google"></i> Sign in With Google
+                            <i class="fab fa-google"></i> Đăng Nhập bằng Google
                         </a>
                         <a href="#" class="btn btn-primary btn-block">
-                            <i class="fab fa-facebook-f"></i> Sign in With Facebook
+                            <i class="fab fa-facebook-f"></i> Đăng Nhập bằng Facebook
                         </a>
                     </div>
                 </div>
@@ -43,7 +43,7 @@
                     <div class="login_part_form_iner">
                         <!-- Registration Form -->
                         <div id="registerSection">
-                            <h3>Create Your Account</h3>
+                            <h3>Tạo Tài Khoản Của Bạn</h3>
                             <form class="row contact_form" id="registerForm"
                                   method="post"
                                   action="<?= base_url('api_Customers/customers_register') ?>"
@@ -51,36 +51,36 @@
                                 <?= csrf_field() ?>
 
                                 <div class="col-md-12 form-group">
-                                    <input type="text" name="name" class="form-control" placeholder="Full Name" required>
+                                    <input type="text" name="name" class="form-control" placeholder="Họ và tên" required>
                                 </div>
                                 <div class="col-md-12 form-group">
                                     <input type="email" name="email" class="form-control" placeholder="Email" required>
                                 </div>
                                 <div class="col-md-12 form-group">
-                                    <input type="text" name="phone" class="form-control" placeholder="Phone Number" required>
+                                    <input type="text" name="phone" class="form-control" placeholder="Số điện thoại" required>
                                 </div>
                                 <div class="col-md-12 form-group">
-                                    <input type="text" name="address" class="form-control" placeholder="Address" required>
+                                    <input type="text" name="address" class="form-control" placeholder="Địa chỉ" required>
                                 </div>
 
                                 <!-- Password with toggle eye -->
                                 <div class="col-md-12 form-group p_star" style="position: relative;">
                                     <input type="password" class="form-control" id="password" name="password"
-                                           placeholder="Password " required>
+                                           placeholder="Mật khẩu " required>
                                     <i class="fa fa-eye" id="togglePassword"
                                        style="position:absolute; right:15px; top:50%; transform:translateY(-50%); cursor:pointer;"></i>
                                 </div>
 
                                 <div class="col-md-12 form-group">
-                                    <button type="submit" class="btn_3 w-100">Register</button>
+                                    <button type="submit" class="btn_3 w-100">Đăng Ký</button>
                                 </div>
                             </form>
                         </div>
 
                         <!-- OTP Verification Form -->
                         <div id="otpSection" style="display:none;">
-                            <h3>OTP Verification</h3>
-                            <p class="text-center mb-4">We have sent an OTP code to your email. Please enter the code below:</p>
+                            <h3>Xác Thực OTP</h3>
+                            <p class="text-center mb-4">Chúng tôi đã gửi mã OTP đến email của bạn. Vui lòng nhập mã bên dưới:</p>
                             <form class="row contact_form" id="otpForm"
                                   method="post"
                                   action="<?= base_url('api_Customers/customers_verify_otp') ?>"
@@ -93,11 +93,11 @@
                                 </div>
 
                                 <div class="col-md-12 form-group">
-                                    <button type="submit" class="btn_3 w-100">Verify OTP</button>
+                                    <button type="submit" class="btn_3 w-100">Xác Thực OTP</button>
                                 </div>
                                 
                                 <div class="col-md-12 text-center">
-                                    <small class="text-muted">Didn't receive the code? Check your spam folder or try again.</small>
+                                    <small class="text-muted">Không nhận được mã? Kiểm tra thư mục spam hoặc thử lại.</small>
                                 </div>
                             </form>
                         </div>

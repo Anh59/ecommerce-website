@@ -8,8 +8,8 @@
             <div class="col-lg-8">
                 <div class="breadcrumb_iner">
                     <div class="breadcrumb_iner_item">
-                        <h2>Forgot Password</h2>
-                        <p>Home <span>-</span> Forgot Password</p>
+                        <h2>Quên Mật Khẩu</h2>
+                        <p>Trang chủ <span>-</span> Quên Mật Khẩu</p>
                     </div>
                 </div>
             </div>
@@ -26,8 +26,8 @@
 
                         <!-- Nhập email -->
                         <div id="emailSection">
-                            <h3>Reset Your Password</h3>
-                            <p class="mb-4">Enter your email to receive an OTP code.</p>
+                            <h3>Đặt Lại Mật Khẩu Của Bạn</h3>
+                            <p class="mb-4">Nhập email của bạn để nhận mã OTP.</p>
                             <form id="emailForm" class="row contact_form"
                                   method="post"
                                   action="<?= base_url('api_Customers/customers_forgot_password') ?>"
@@ -37,15 +37,15 @@
                                     <input type="email" name="email" class="form-control" placeholder="Your Email" required>
                                 </div>
                                 <div class="col-md-12 form-group">
-                                    <button type="submit" class="btn_3 w-100">Send OTP</button>
+                                    <button type="submit" class="btn_3 w-100">Gửi OTP</button>
                                 </div>
                             </form>
                         </div>
 
                         <!-- Nhập OTP -->
                         <div id="otpSection" style="display:none;">
-                            <h3>OTP Verification</h3>
-                            <p class="mb-4">We sent a code to your email. Please enter it below:</p>
+                            <h3>Xác Thực OTP</h3>
+                            <p class="mb-4">Chúng tôi đã gửi mã đến email của bạn. Vui lòng nhập mã bên dưới:</p>
                             <form id="otpForm" class="row contact_form"
                                   method="post"
                                   action="<?= base_url('api_Customers/customers_pass_verify_otp') ?>"
@@ -56,14 +56,14 @@
                                     <input type="hidden" name="email">
                                 </div>
                                 <div class="col-md-12 form-group">
-                                    <button type="submit" class="btn_3 w-100">Verify OTP</button>
+                                    <button type="submit" class="btn_3 w-100">Xác Thực OTP</button>
                                 </div>
                             </form>
                         </div>
 
                         <!-- Reset mật khẩu -->
                         <div id="resetPasswordSection" style="display:none;">
-                            <h3>Create New Password</h3>
+                            <h3>Đặt Lại Mật Khẩu</h3>
                             <form id="resetPasswordForm" class="row contact_form"
                                   method="post"
                                   action="<?= base_url('api_Customers/customers_reset_password') ?>"
@@ -77,7 +77,7 @@
                                 </div>
                                 <input type="hidden" name="email">
                                 <div class="col-md-12 form-group">
-                                    <button type="submit" class="btn_3 w-100">Reset Password</button>
+                                    <button type="submit" class="btn_3 w-100">Đặt Lại</button>
                                 </div>
                             </form>
                         </div>

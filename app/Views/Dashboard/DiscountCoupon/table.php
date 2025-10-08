@@ -157,7 +157,6 @@
 
                                     <div id="product_selection" style="display: none;">
                                         <label class="form-label">Chọn sản phẩm</label>
-                                        <!-- Thay thế textarea product_skus bằng product_skus -->
                                         <textarea name="product_skus" id="product_skus" class="form-control" rows="3"
                                             placeholder="Nhập SKU sản phẩm, cách nhau bởi dấu phẩy. VD: IPHONE14, SAMSUNGS23, MACBOOK2023"></textarea>
                                         <small class="text-muted">Nhập SKU sản phẩm, cách nhau bởi dấu phẩy</small>
@@ -313,10 +312,43 @@ $(document).ready(function(){
         return new Intl.NumberFormat('vi-VN').format(amount) + ' VND';
     };
 
+    // ===== FUNCTION KIỂM TRA TRẠNG THÁI VOUCHER =====
+    const getVoucherStatus = (coupon) => {
+        // Nếu is_active = 0 → Ngưng
+        if (coupon.is_active != 1) {
+            return { class: 'status-inactive', text: 'Ngưng' };
+        }
+
+        const now = new Date();
+        const endDate = coupon.end_date ? new Date(coupon.end_date) : null;
+        const usedCount = parseInt(coupon.used_count) || 0;
+        const usageLimit = coupon.usage_limit ? parseInt(coupon.usage_limit) : null;
+
+        // Debug log
+        console.log('Voucher:', coupon.code, {
+            usedCount: usedCount,
+            usageLimit: usageLimit,
+            comparison: usageLimit ? `${usedCount} >= ${usageLimit}` : 'no limit'
+        });
+
+        // Kiểm tra hết hạn theo thời gian
+        if (endDate && endDate < now) {
+            return { class: 'status-expired', text: 'Hết hạn' };
+        }
+
+        // ✅ SỬA: Kiểm tra hết lượt - CHỈ KHI CÓ usage_limit
+        if (usageLimit !== null && usedCount >= usageLimit) {
+            return { class: 'status-expired', text: 'Hết lượt' };
+        }
+
+        // Voucher đang hoạt động bình thường
+        return { class: 'status-active', text: 'Hoạt động' };
+    };
+
     // DataTable
     const table = $('#couponsTable').DataTable({
         processing: true,
-        serverSide: true,
+        serverSide: false, // ✅ Đổi thành false để xử lý ở client
         language: { 
             processing: 'Đang tải dữ liệu...',
             search: 'Tìm kiếm:',
@@ -331,16 +363,17 @@ $(document).ready(function(){
         },
         ajax: {
             url: "<?= site_url('Dashboard/discount-coupons/list') ?>",
-            dataSrc: 'data',
-            complete: function(xhr) {
-                const json = xhr.responseJSON;
+            dataSrc: function(json) {
                 if (json?.token) updateToken(json.token);
+                // ✅ Debug: In ra data để kiểm tra
+                console.log('Coupon Data:', json.data);
+                return json.data;
             }
         },
         columns: [
             { 
                 data: null, 
-                render: (d, t, r, m) => m.row + 1,
+                render: (d, t, r, m) => m.row + m.settings._iDisplayStart + 1,
                 width: '50px',
                 orderable: false
             },
@@ -375,25 +408,26 @@ $(document).ready(function(){
             { 
                 data: null,
                 render: (d, t, r) => {
-                    const used = r.used_count || 0;
-                    const limit = r.usage_limit;
+                    const used = parseInt(r.used_count) || 0;
+                    const limit = r.usage_limit ? parseInt(r.usage_limit) : null;
                     
                     if (limit) {
                         const percentage = (used / limit) * 100;
                         let progressClass = 'bg-success';
-                        if (percentage > 80) progressClass = 'bg-danger';
-                        else if (percentage > 60) progressClass = 'bg-warning';
+                        if (percentage >= 100) progressClass = 'bg-danger';
+                        else if (percentage > 80) progressClass = 'bg-warning';
+                        else if (percentage > 60) progressClass = 'bg-info';
                         
                         return `
                             <div class="usage-progress">
                                 <div class="progress" style="width: 60px;">
-                                    <div class="progress-bar ${progressClass}" style="width: ${percentage}%"></div>
+                                    <div class="progress-bar ${progressClass}" style="width: ${Math.min(percentage, 100)}%"></div>
                                 </div>
                                 <span class="progress-label">${used}/${limit}</span>
                             </div>
                         `;
                     } else {
-                        return `<span class="badge bg-secondary">${used}</span>`;
+                        return `<span class="badge bg-secondary">${used} / ∞</span>`;
                     }
                 },
                 width: '120px',
@@ -424,28 +458,8 @@ $(document).ready(function(){
             { 
                 data: null,
                 render: (d, t, r) => {
-                    let statusClass = 'status-inactive';
-                    let statusText = 'Ngưng';
-                    
-                    if (r.is_active == 1) {
-                        // Kiểm tra thời gian và usage
-                        const now = new Date();
-                        const endDate = r.end_date ? new Date(r.end_date) : null;
-                        const usageExhausted = r.usage_limit && r.used_count >= r.usage_limit;
-                        
-                        if (endDate && endDate < now) {
-                            statusClass = 'status-expired';
-                            statusText = 'Hết hạn';
-                        } else if (usageExhausted) {
-                            statusClass = 'status-expired';
-                            statusText = 'Hết lượt';
-                        } else {
-                            statusClass = 'status-active';
-                            statusText = 'Hoạt động';
-                        }
-                    }
-                    
-                    return `<span class="badge ${statusClass} badge-status">${statusText}</span>`;
+                    const status = getVoucherStatus(r);
+                    return `<span class="badge ${status.class} badge-status">${status.text}</span>`;
                 },
                 width: '100px'
             },
@@ -472,8 +486,11 @@ $(document).ready(function(){
                 orderable: false
             }
         ],
-        order: [[0, 'desc']]
+        order: [[0, 'asc']]
     });
+
+    // ... Phần còn lại giữ nguyên như code cũ ...
+    // (Type change, Apply all, Show add modal, Generate code, etc.)
 
     // Type change handler
     $('#type').on('change', function() {
@@ -603,13 +620,13 @@ $(document).ready(function(){
         
         // Apply all
         if (coupon.apply_all == 1) {
-        $('#apply_all_yes').prop('checked', true);
-        $('#product_selection').hide();
-    } else {
-        $('#apply_all_no').prop('checked', true);
-        $('#product_selection').show();
-        $('#product_skus').val(productSkus.join(', ')); // Đổi từ product_skus thành product_skus
-    }
+            $('#apply_all_yes').prop('checked', true);
+            $('#product_selection').hide();
+        } else {
+            $('#apply_all_no').prop('checked', true);
+            $('#product_selection').show();
+            $('#product_skus').val(productSkus.join(', '));
+        }
         
         // Usage info
         $('#used_count_display').text(coupon.used_count || 0);
@@ -754,6 +771,7 @@ $(document).ready(function(){
                 
                 if (res.status === 'success') {
                     $('#used_count_display').text('0');
+                    table.ajax.reload(null, false);
                     showToast('success', res.message);
                 } else {
                     showToast('error', res.message);

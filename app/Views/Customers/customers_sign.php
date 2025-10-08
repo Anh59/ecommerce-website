@@ -12,8 +12,8 @@
             <div class="col-lg-8">
                 <div class="breadcrumb_iner">
                     <div class="breadcrumb_iner_item">
-                        <h2>Login</h2>
-                        <p>Home <span>-</span> Login</p>
+                        <h2>Đăng Nhập</h2>
+                        <p>Trang chủ <span>-</span> Đăng Nhập</p>
                     </div>
                 </div>
             </div>
@@ -30,9 +30,19 @@
             <div class="col-lg-6 col-md-6">
                 <div class="login_part_text text-center">
                     <div class="login_part_text_iner">
-                        <h2>New to our Shop?</h2>
-                        <p>Join us today and enjoy exclusive benefits.</p>
-                        <a href="<?= route_to('Customers_Register'); ?>" class="btn_3">Create an Account</a>
+                        <h2>Mới đến cửa hàng của chúng tôi?</h2>
+                        <p>Tham gia cùng chúng tôi hôm nay và tận hưởng những lợi ích độc quyền.</p>
+                        <a href="<?= route_to('Customers_Register'); ?>" class="btn_3">Tạo tài khoản</a>
+
+                        <!-- Social Sign-in Options - Giống trang đăng ký -->
+                        <div style="margin-top: 20px;">
+                            <a href="<?= route_to('google_login') ?>" class="btn btn-danger btn-block mb-2">
+                                <i class="fab fa-google"></i> Đăng Nhập bằng Google
+                            </a>
+                            <a href="#" class="btn btn-primary btn-block">
+                                <i class="fab fa-facebook-f"></i> Đăng Nhập bằng Facebook
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -41,8 +51,8 @@
             <div class="col-lg-6 col-md-6">
                 <div class="login_part_form">
                     <div class="login_part_form_iner">
-                        <h3>Welcome Back ! <br>
-                            Please Sign in now</h3>
+                        <h3>Chào mừng bạn trở lại! <br>
+                            Vui lòng đăng nhập ngay</h3>
 
                         <!-- Form login -->
                         <form id="loginForm" class="row contact_form" method="post">
@@ -56,7 +66,7 @@
 
                             <div class="col-md-12 form-group p_star" style="position: relative;">
                                 <input type="password" class="form-control" id="password" name="password" 
-                                    placeholder="Password" required>
+                                    placeholder="Mật khẩu" required>
                                 <i class="fa fa-eye" id="togglePassword" 
                                    onclick="togglePasswordVisibility()" 
                                    style="position:absolute; right:15px; top:50%; transform:translateY(-50%); cursor:pointer; color: #999;">
@@ -67,26 +77,20 @@
                             <div class="col-md-12 form-group">
                                 <div class="creat_account d-flex align-items-center">
                                     <input type="checkbox" id="remember_me" name="remember_me">
-                                    <label for="remember_me">Remember me</label>
+                                    <label for="remember_me">Ghi nhớ tôi</label>
                                 </div>
 
                                 <button type="submit" class="btn_3" id="loginBtn">
-                                    <span id="loginBtnText">Log In</span>
+                                    <span id="loginBtnText">Đăng Nhập</span>
                                     <span id="loginSpinner" class="d-none">
-                                        <i class="fa fa-spinner fa-spin"></i> Logging in...
+                                        <i class="fa fa-spinner fa-spin"></i> Đang đăng nhập...
                                     </span>
                                 </button>
-                                <a class="lost_pass" href="<?= route_to('customes_forgot_password'); ?>">Forget password?</a>
+                                <a class="lost_pass" href="<?= route_to('customes_forgot_password'); ?>">Quên mật khẩu?</a>
                             </div>
                         </form>
 
-                        <!-- Google Login -->
-                        <div class="col-md-12 text-center mt-3">
-                            <a href="<?= route_to('google_login'); ?>" class="btn btn-outline-danger">
-                                <i class="fab fa-google"></i> Login with Google
-                            </a>
-                        </div>
-
+                        <!-- Đã chuyển Google Login sang phần bên trái -->
                     </div>
                 </div>
             </div>
@@ -244,4 +248,37 @@ $(document).ready(function(){
     $('#email').focus();
 });
 </script>
+
+<style>
+/* Social login buttons styling - Giống trang đăng ký */
+.btn-danger, .btn-primary {
+    border-radius: 25px;
+    padding: 10px 20px;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+    border: none;
+    color: white !important;
+}
+.btn-danger:hover, .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    text-decoration: none;
+    color: white;
+}
+.btn-danger {
+    background: linear-gradient(45deg, #ea4335, #d14836);
+}
+.btn-primary {
+    background: linear-gradient(45deg, #1877f2, #166fe5);
+}
+.btn_3:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+</style>
 <?= $this->endSection() ?>

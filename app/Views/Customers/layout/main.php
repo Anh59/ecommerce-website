@@ -49,13 +49,13 @@
     <ul class="navbar-nav">
         <!-- Home -->
         <li class="nav-item">
-            <a class="nav-link" href="<?= route_to('home_index') ?>">Home</a>
+            <a class="nav-link" href="<?= route_to('home_index') ?>">Trang chủ</a>
         </li>
 
         <!-- Shop -->
         <li class="nav-item">
     <a class="nav-link" href="<?= route_to('category') ?>">
-        Shop
+        Cửa hàng
     </a>
 </li>
 
@@ -66,13 +66,13 @@
         <!-- Blog -->
               <li class="nav-item">
     <a class="nav-link" href="<?= route_to('blog') ?>">
-        Blog
+        Bản Tin
     </a>
 </li>
 
         <!-- Contact -->
         <li class="nav-item">
-            <a class="nav-link" href="<?= route_to('home_contact') ?>">Contact</a>
+            <a class="nav-link" href="<?= route_to('home_contact') ?>">Liên hệ</a>
         </li>
     </ul>
 </div>
@@ -96,16 +96,16 @@
                                         <?= esc(session('user')['name']) ?>
                                     </a>
                                     <div class="dropdown-menu" aria-labelledby="userDropdown">
-                                        <a class="dropdown-item" href="<?= route_to('profile') ?>">My Profile</a>
+                                        <a class="dropdown-item" href="<?= route_to('profile') ?>">Hồ sơ của tôi</a>
                                         <!-- <a class="dropdown-item" href="<?= base_url('orders') ?>">My Orders</a> -->
                                         <div class="dropdown-divider"></div>
-                                        <a class="dropdown-item" href="<?= route_to('Customers_logout') ?>">Logout</a>
+                                        <a class="dropdown-item" href="<?= route_to('Customers_logout') ?>">Đăng xuất</a>
                                     </div>
                                 <?php else: ?>
                                     <!-- Khi chưa đăng nhập -->
                                     <a href="<?= route_to('Customers_sign') ?>">
                                         <i class="fas fa-user"></i>
-                                        Login
+                                        Đăng nhập
                                     </a>
                                 <?php endif; ?>
                             </div>
@@ -127,97 +127,113 @@
 
     <?= $this->renderSection('content') ?>
 
-    <footer class="footer_part">
+   <footer class="footer_part">
+    <div class="container">
+        <div class="row justify-content-around">
+            <!-- Sản phẩm hàng đầu -->
+            <div class="col-sm-6 col-lg-2">
+                <div class="single_footer_part">
+                    <h4>Sản phẩm nổi bật</h4>
+                    <ul class="list-unstyled">
+                        <li><a href="#">Quản lý website</a></li>
+                        <li><a href="#">Quản lý thương hiệu</a></li>
+                        <li><a href="#">Công cụ mạnh mẽ</a></li>
+                        <li><a href="#">Dịch vụ marketing</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Liên kết nhanh -->
+            <div class="col-sm-6 col-lg-2">
+                <div class="single_footer_part">
+                    <h4>Liên kết nhanh</h4>
+                    <ul class="list-unstyled">
+                        <li><a href="#">Tuyển dụng</a></li>
+                        <li><a href="#">Tài nguyên thương hiệu</a></li>
+                        <li><a href="#">Quan hệ nhà đầu tư</a></li>
+                        <li><a href="#">Điều khoản dịch vụ</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Tính năng -->
+            <div class="col-sm-6 col-lg-2">
+                <div class="single_footer_part">
+                    <h4>Tính năng</h4>
+                    <ul class="list-unstyled">
+                        <li><a href="#">Việc làm</a></li>
+                        <li><a href="#">Tài nguyên thương hiệu</a></li>
+                        <li><a href="#">Quan hệ nhà đầu tư</a></li>
+                        <li><a href="#">Điều khoản dịch vụ</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Tài nguyên -->
+            <div class="col-sm-6 col-lg-2">
+                <div class="single_footer_part">
+                    <h4>Tài nguyên</h4>
+                    <ul class="list-unstyled">
+                        <li><a href="#">Hướng dẫn</a></li>
+                        <li><a href="#">Nghiên cứu</a></li>
+                        <li><a href="#">Chuyên gia</a></li>
+                        <li><a href="#">Đối tác</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Đăng ký nhận tin -->
+            <div class="col-sm-6 col-lg-4">
+                <div class="single_footer_part">
+                    <h4>Bản tin</h4>
+                    <p>Hãy đăng ký để nhận các ưu đãi và tin tức mới nhất từ chúng tôi.</p>
+                    <div id="mc_embed_signup">
+                        <form target="_blank"
+                              action="https://spondonit.us12.list-manage.com/subscribe/post?u=1462626880ade1ac87bd9c93a&amp;id=92a4423d01"
+                              method="get" class="subscribe_form relative mail_part">
+                            <input type="email" name="email" id="newsletter-form-email" placeholder="Nhập địa chỉ email"
+                                   class="placeholder hide-on-focus"
+                                   onfocus="this.placeholder = ''"
+                                   onblur="this.placeholder = 'Nhập địa chỉ email'">
+                            <button type="submit" name="submit" id="newsletter-submit"
+                                    class="email_icon newsletter-submit button-contactForm">Đăng ký</button>
+                            <div class="mt-10 info"></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bản quyền -->
+    <div class="copyright_part">
         <div class="container">
-            <div class="row justify-content-around">
-                <div class="col-sm-6 col-lg-2">
-                    <div class="single_footer_part">
-                        <h4>Top Products</h4>
-                        <ul class="list-unstyled">
-                            <li><a href="">Managed Website</a></li>
-                            <li><a href="">Manage Reputation</a></li>
-                            <li><a href="">Power Tools</a></li>
-                            <li><a href="">Marketing Service</a></li>
-                        </ul>
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="copyright_text">
+                        <p>
+                            Bản quyền &copy;<script>document.write(new Date().getFullYear());</script>
+                            Tất cả các quyền được bảo lưu | Giao diện được thiết kế với 
+                            <i class="ti-heart" aria-hidden="true"></i> bởi
+                            <a href="https://colorlib.com" target="_blank">Colorlib</a>
+                        </p>
                     </div>
                 </div>
-                <div class="col-sm-6 col-lg-2">
-                    <div class="single_footer_part">
-                        <h4>Quick Links</h4>
+                <div class="col-lg-4">
+                    <div class="footer_icon social_icon">
                         <ul class="list-unstyled">
-                            <li><a href="">Jobs</a></li>
-                            <li><a href="">Brand Assets</a></li>
-                            <li><a href="">Investor Relations</a></li>
-                            <li><a href="">Terms of Service</a></li>
+                            <li><a href="#" class="single_social_icon"><i class="fab fa-facebook-f"></i></a></li>
+                            <li><a href="#" class="single_social_icon"><i class="fab fa-twitter"></i></a></li>
+                            <li><a href="#" class="single_social_icon"><i class="fas fa-globe"></i></a></li>
+                            <li><a href="#" class="single_social_icon"><i class="fab fa-behance"></i></a></li>
                         </ul>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-2">
-                    <div class="single_footer_part">
-                        <h4>Features</h4>
-                        <ul class="list-unstyled">
-                            <li><a href="">Jobs</a></li>
-                            <li><a href="">Brand Assets</a></li>
-                            <li><a href="">Investor Relations</a></li>
-                            <li><a href="">Terms of Service</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-2">
-                    <div class="single_footer_part">
-                        <h4>Resources</h4>
-                        <ul class="list-unstyled">
-                            <li><a href="">Guides</a></li>
-                            <li><a href="">Research</a></li>
-                            <li><a href="">Experts</a></li>
-                            <li><a href="">Agencies</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-4">
-                    <div class="single_footer_part">
-                        <h4>Newsletter</h4>
-                        <p>Heaven fruitful doesn't over lesser in days. Appear creeping</p>
-                        <div id="mc_embed_signup">
-                            <form target="_blank"
-                                action="https://spondonit.us12.list-manage.com/subscribe/post?u=1462626880ade1ac87bd9c93a&amp;id=92a4423d01"
-                                method="get" class="subscribe_form relative mail_part">
-                                <input type="email" name="email" id="newsletter-form-email" placeholder="Email Address"
-                                    class="placeholder hide-on-focus" onfocus="this.placeholder = ''"
-                                    onblur="this.placeholder = ' Email Address '">
-                                <button type="submit" name="submit" id="newsletter-submit"
-                                    class="email_icon newsletter-submit button-contactForm">subscribe</button>
-                                <div class="mt-10 info"></div>
-                            </form>
-                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="copyright_part">
-            <div class="container">
-                <div class="row">
-                    <div class="col-lg-8">
-                        <div class="copyright_text">
-                            <P><!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. -->
-                                Copyright &copy;<script>document.write(new Date().getFullYear());</script> All rights reserved | This template is made with <i class="ti-heart" aria-hidden="true"></i> by <a href="https://colorlib.com" target="_blank">Colorlib</a>
-                                <!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. --></P>
-                        </div>
-                    </div>
-                    <div class="col-lg-4">
-                        <div class="footer_icon social_icon">
-                            <ul class="list-unstyled">
-                                <li><a href="#" class="single_social_icon"><i class="fab fa-facebook-f"></i></a></li>
-                                <li><a href="#" class="single_social_icon"><i class="fab fa-twitter"></i></a></li>
-                                <li><a href="#" class="single_social_icon"><i class="fas fa-globe"></i></a></li>
-                                <li><a href="#" class="single_social_icon"><i class="fab fa-behance"></i></a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </footer>
+    </div>
+</footer>
+
 
     <!-- jQuery MUST be loaded first -->
     <script src="<?= base_url('aranoz-master/js/jquery-1.12.1.min.js'); ?>"></script>

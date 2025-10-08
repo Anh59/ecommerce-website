@@ -282,8 +282,8 @@
             <div class="col-lg-8">
                 <div class="breadcrumb_iner">
                     <div class="breadcrumb_iner_item">
-                        <h2>Shop Single</h2>
-                        <p>Home <span>-</span> Shop Single</p>
+                        <h2>Chi tiết sản phẩm</h2>
+                        <p>Trang chủ <span>-</span> Chi tiết sản phẩm</p>
                     </div>
                 </div>
             </div>
@@ -386,23 +386,23 @@
                     <ul class="list">
                         <li>
                             <a class="active" href="#">
-                                <span>Category</span> : <?= esc($category['name'] ?? 'Unknown') ?>
+                                <span>Danh mục</span> : <?= esc($category['name'] ?? 'Unknown') ?>
                             </a>
                         </li>
                         <li>
                             <a href="#">
-                                <span>Brand</span> : <?= esc($brand['name'] ?? 'Unknown') ?>
+                                <span>Thương hiệu</span> : <?= esc($brand['name'] ?? 'Unknown') ?>
                             </a>
                         </li>
                         <li>
                             <a href="#">
-                                <span>Availability</span> : 
+                                <span>Tình trạng</span> : 
                                 <?php if ($product['stock_status'] == 'in_stock'): ?>
-                                    <span class="text-success">In Stock</span>
+                                    <span class="text-success">Còn hàng</span>
                                 <?php elseif ($product['stock_status'] == 'low_stock'): ?>
-                                    <span class="text-warning">Low Stock (<?= $product['stock_quantity'] ?> left)</span>
+                                    <span class="text-warning">Hết hàng (<?= $product['stock_quantity'] ?> còn lại)</span>
                                 <?php else: ?>
-                                    <span class="text-danger">Out of Stock</span>
+                                    <span class="text-danger">Hết hàng</span>
                                 <?php endif; ?>
                             </a>
                         </li>
@@ -458,19 +458,19 @@
         <ul class="nav nav-tabs" id="myTab" role="tablist">
             <li class="nav-item">
                 <a class="nav-link active" id="description-tab" data-toggle="tab" href="#description" role="tab" 
-                   aria-controls="description" aria-selected="true">Description</a>
+                   aria-controls="description" aria-selected="true">Mô tả</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" id="specification-tab" data-toggle="tab" href="#specification" role="tab" 
-                   aria-controls="specification" aria-selected="false">Specification</a>
+                   aria-controls="specification" aria-selected="false">Thông số kỹ thuật</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" id="comments-tab" data-toggle="tab" href="#comments" role="tab" 
-                   aria-controls="comments" aria-selected="false">Comments</a>
+                   aria-controls="comments" aria-selected="false">Bình luận</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" id="reviews-tab" data-toggle="tab" href="#reviews" role="tab" 
-                   aria-controls="reviews" aria-selected="false">Reviews</a>
+                   aria-controls="reviews" aria-selected="false">Đánh giá</a>
             </li>
         </ul>
         
@@ -499,7 +499,7 @@
                             else: 
                             ?>
                                 <tr>
-                                    <td colspan="2" class="text-center">No specifications available</td>
+                                    <td colspan="2" class="text-center">Không có thông số kỹ thuật nào</td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
@@ -523,7 +523,7 @@
                                             <div class="media-body">
                                                 <h4><?= esc($comment['customer_name']) ?></h4>
                                                 <h5><?= date('M j, Y', strtotime($comment['created_at'])) ?></h5>
-                                                <a class="reply_btn" href="#" data-comment-id="<?= $comment['id'] ?>">Reply</a>
+                                                <a class="reply_btn" href="#" data-comment-id="<?= $comment['id'] ?>">Trả lời</a>
                                             </div>
                                         </div>
                                         <p><?= esc($comment['comment']) ?></p>
@@ -549,13 +549,13 @@
                                     </div>
                                 <?php endforeach; ?>
                             <?php else: ?>
-                                <p class="text-center">No comments yet. Be the first to comment!</p>
+                                <p class="text-center">Chưa có bình luận nào. Hãy là người đầu tiên bình luận!</p>
                             <?php endif; ?>
                         </div>
                     </div>
                     <div class="col-lg-6">
                         <div class="review_box comment-form" id="comment-form">
-                            <h4>Post a comment</h4>
+                            <h4>Bình luận</h4>
                             <form class="row contact_form" id="commentForm" novalidate="novalidate">
                                 <input type="hidden" name="product_id" value="<?= $product['id'] ?>">
                                 <input type="hidden" name="parent_id" value="" id="comment-parent-id">
@@ -567,7 +567,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-12 text-right">
-                                    <button type="submit" class="btn_3">Submit Comment</button>
+                                    <button type="submit" class="btn_3">Gửi bình luận</button>
                                 </div>
                             </form>
                         </div>
@@ -584,16 +584,16 @@
                                 <div class="box_total">
                                     <h5>Overall</h5>
                                     <h4><?= number_format($reviewStats['average_rating'] ?? 0, 1) ?></h4>
-                                    <h6>(<?= $reviewStats['total_reviews'] ?? 0 ?> Reviews)</h6>
+                                    <h6>(<?= $reviewStats['total_reviews'] ?? 0 ?> Đánh giá)</h6>
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="rating_list">
-                                    <h3>Based on <?= $reviewStats['total_reviews'] ?? 0 ?> Reviews</h3>
+                                    <h3>Dựa trên<?= $reviewStats['total_reviews'] ?? 0 ?> Đánh giá</h3>
                                     <ul class="list">
                                         <?php for ($i = 5; $i >= 1; $i--): ?>
                                             <li>
-                                                <a href="#"><?= $i ?> Star
+                                                <a href="#"><?= $i ?> sao
                                                     <?php for ($j = 0; $j < 5; $j++): ?>
                                                         <i class="fa fa-star<?= $j < $i ? '' : '-o' ?>"></i>
                                                     <?php endfor; ?>
@@ -630,7 +630,7 @@
                                     </div>
                                 <?php endforeach; ?>
                             <?php else: ?>
-                                <p class="text-center">No reviews yet.</p>
+                                <p class="text-center">Chưa có đánh giá nào.</p>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -645,15 +645,17 @@
 
 <?= render_best_sellers([
     'limit' => 5,
-    'title' => 'Related Products',
-    'subtitle' => 'you may also like'
+    'title' => 'Sản phẩm liên quan',
+    'subtitle' => 'Có thể bạn cũng thích'
 ]) ?>
+
 <?= render_best_sellers([
     'limit' => 6,
-    'title' => 'New Arrivals',
-    'subtitle' => 'latest',
+    'title' => 'Hàng mới về',
+    'subtitle' => 'Sản phẩm mới nhất',
     'type' => 'latest'
 ]) ?>
+
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>

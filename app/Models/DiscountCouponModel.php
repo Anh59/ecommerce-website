@@ -130,15 +130,28 @@ class DiscountCouponModel extends Model
         return $data;
     }
 
-    // Lấy coupon với thông tin products
+    // ===== SỬA: Lấy coupon với thông tin products và CAST kiểu dữ liệu =====
     public function getCouponsWithProducts()
     {
-        return $this->select('discount_coupons.*, 
+        $coupons = $this->select('discount_coupons.*, 
                             COUNT(discount_coupon_products.product_id) as product_count')
                    ->join('discount_coupon_products', 'discount_coupons.id = discount_coupon_products.coupon_id', 'left')
                    ->groupBy('discount_coupons.id')
                    ->orderBy('discount_coupons.created_at', 'DESC')
                    ->findAll();
+        
+        // ✅ CAST các trường số về đúng kiểu để JavaScript xử lý chính xác
+        foreach ($coupons as &$coupon) {
+            $coupon['used_count'] = (int) ($coupon['used_count'] ?? 0);
+            $coupon['usage_limit'] = $coupon['usage_limit'] ? (int) $coupon['usage_limit'] : null;
+            $coupon['is_active'] = (int) ($coupon['is_active'] ?? 0);
+            $coupon['apply_all'] = (int) ($coupon['apply_all'] ?? 0);
+            $coupon['product_count'] = (int) ($coupon['product_count'] ?? 0);
+            $coupon['value'] = (float) ($coupon['value'] ?? 0);
+            $coupon['min_order_amount'] = (float) ($coupon['min_order_amount'] ?? 0);
+        }
+        
+        return $coupons;
     }
 
     // Lấy coupon đang hoạt động
@@ -175,8 +188,11 @@ class DiscountCouponModel extends Model
             return ['valid' => false, 'message' => 'Mã giảm giá đã hết hạn'];
         }
         
-        // Kiểm tra giới hạn sử dụng
-        if ($coupon['usage_limit'] && $coupon['used_count'] >= $coupon['usage_limit']) {
+        // ✅ SỬA: Kiểm tra giới hạn sử dụng với cast về int
+        $usedCount = (int) ($coupon['used_count'] ?? 0);
+        $usageLimit = $coupon['usage_limit'] ? (int) $coupon['usage_limit'] : null;
+        
+        if ($usageLimit !== null && $usedCount >= $usageLimit) {
             return ['valid' => false, 'message' => 'Mã giảm giá đã hết lượt sử dụng'];
         }
         
@@ -187,27 +203,27 @@ class DiscountCouponModel extends Model
         
         // Kiểm tra áp dụng sản phẩm
         if (!$coupon['apply_all'] && !empty($productSkus)) {
-        $couponProductIds = $this->getCouponProducts($coupon['id']);
-        
-        // Chuyển đổi SKUs thành product IDs
-        $productModel = new \App\Models\ProductModel();
-        $productIds = [];
-        
-        foreach ($productSkus as $sku) {
-            $product = $productModel->where('sku', $sku)->first();
-            if ($product) {
-                $productIds[] = $product['id'];
+            $couponProductIds = $this->getCouponProducts($coupon['id']);
+            
+            // Chuyển đổi SKUs thành product IDs
+            $productModel = new \App\Models\ProductModel();
+            $productIds = [];
+            
+            foreach ($productSkus as $sku) {
+                $product = $productModel->where('sku', $sku)->first();
+                if ($product) {
+                    $productIds[] = $product['id'];
+                }
+            }
+            
+            $validProducts = array_intersect($productIds, $couponProductIds);
+            
+            if (empty($validProducts)) {
+                return ['valid' => false, 'message' => 'Mã giảm giá không áp dụng cho sản phẩm này'];
             }
         }
         
-        $validProducts = array_intersect($productIds, $couponProductIds);
-        
-        if (empty($validProducts)) {
-            return ['valid' => false, 'message' => 'Mã giảm giá không áp dụng cho sản phẩm này'];
-        }
-    }
-    
-    return ['valid' => true, 'coupon' => $coupon];
+        return ['valid' => true, 'coupon' => $coupon];
     }
 
     // Tính số tiền giảm giá
@@ -223,7 +239,10 @@ class DiscountCouponModel extends Model
     // Tăng số lần sử dụng
     public function incrementUsage($couponId)
     {
-        return $this->where('id', $couponId)->increment('used_count');
+         $coupon = $this->find($couponId);
+        return $this->update($couponId, [
+            'used_count' => ($coupon['used_count'] ?? 0) + 1
+        ]);
     }
 
     // Lấy danh sách sản phẩm của coupon
@@ -237,19 +256,21 @@ class DiscountCouponModel extends Model
         
         return array_column($result, 'product_id');
     }
-    // Thêm vào DiscountCouponModel
-public function getCouponProductSkus($couponId)
-{
-    $db = \Config\Database::connect();
-    $result = $db->table('discount_coupon_products dcp')
-                ->select('p.sku')
-                ->join('products p', 'p.id = dcp.product_id')
-                ->where('dcp.coupon_id', $couponId)
-                ->get()
-                ->getResultArray();
-    
-    return array_column($result, 'sku');
-}
+
+    // Lấy danh sách SKU sản phẩm của coupon
+    public function getCouponProductSkus($couponId)
+    {
+        $db = \Config\Database::connect();
+        $result = $db->table('discount_coupon_products dcp')
+                    ->select('p.sku')
+                    ->join('products p', 'p.id = dcp.product_id')
+                    ->where('dcp.coupon_id', $couponId)
+                    ->get()
+                    ->getResultArray();
+        
+        return array_column($result, 'sku');
+    }
+
     // Thêm sản phẩm vào coupon
     public function addProducts($couponId, $productIds)
     {
