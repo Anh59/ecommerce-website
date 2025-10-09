@@ -35,9 +35,9 @@
                                     <div class="col-lg-5 col-md-8">
                                         <div class="banner_text">
                                             <div class="banner_text_iner">
-                                                <h1>Welcome to Our Shop</h1>
-                                                <p>Discover amazing products at great prices</p>
-                                                <a href="<?= base_url('/shop') ?>" class="btn_2">shop now</a>
+                                                <h1>Chào mừng đến với cửa hàng của chúng tôi</h1>
+                                                <p>Khám phá những sản phẩm tuyệt vời với giá cả hợp lý</p>
+                                                <a href="<?= route_to('category') ?>" class="btn_2">mua sắm ngay</a>
                                             </div>
                                         </div>
                                     </div>
@@ -61,7 +61,7 @@
             <div class="row justify-content-center">
                 <div class="col-lg-8">
                     <div class="section_tittle text-center">
-                        <h2>Featured Category</h2>
+                        <h2>Danh mục nổi bật</h2>
                     </div>
                 </div>
             </div>
@@ -74,10 +74,10 @@
                     ?>
                         <div class="<?= $colClass ?>">
                             <div class="single_feature_post_text">
-                                <p>Premium Quality</p>
+                                <p>Chất lượng cao</p>
                                 <h3><?= esc($category['name']) ?></h3>
                                 <a href="<?= base_url('/category/' . $category['slug']) ?>" class="feature_btn">
-                                    EXPLORE NOW <i class="fas fa-play"></i>
+                                    KHÁM PHÁ NGAY <i class="fas fa-play"></i>
                                 </a>
                                 <img src="<?= base_url($category['image_url'] ?? 'aranoz-master/img/feature/feature_' . (($index % 4) + 1) . '.png') ?>" 
                                      alt="<?= esc($category['name']) ?>">
@@ -88,17 +88,17 @@
                     <!-- Fallback categories -->
                     <div class="col-lg-7 col-sm-6">
                         <div class="single_feature_post_text">
-                            <p>Premium Quality</p>
-                            <h3>Latest Products</h3>
-                            <a href="#" class="feature_btn">EXPLORE NOW <i class="fas fa-play"></i></a>
+                            <p></p>
+                            <h3>Sản phẩm mới nhất</h3>
+                            <a href="#" class="feature_btn">KHÁM PHÁ NGAY <i class="fas fa-play"></i></a>
                             <img src="<?= base_url('aranoz-master/img/feature/feature_1.png') ?>" alt="">
                         </div>
                     </div>
                     <div class="col-lg-5 col-sm-6">
                         <div class="single_feature_post_text">
-                            <p>Premium Quality</p>
-                            <h3>Best Sellers</h3>
-                            <a href="#" class="feature_btn">EXPLORE NOW <i class="fas fa-play"></i></a>
+                            <p>Chất lượng cao</p>
+                            <h3>Bán chạy nhất</h3>
+                            <a href="#" class="feature_btn">KHÁM PHÁ NGAY <i class="fas fa-play"></i></a>
                             <img src="<?= base_url('aranoz-master/img/feature/feature_2.png') ?>" alt="">
                         </div>
                     </div>
@@ -286,14 +286,13 @@
             <div class="row justify-content-center">
                 <div class="col-lg-7">
                     <div class="subscribe_area_text text-center">
-                        <h5>Join Our Newsletter</h5>
-                        <h2>Subscribe to get Updated
-                            with new offers</h2>
+                        <h5>Tham gia bản tin của chúng tôi</h5>
+                        <h2>Đăng ký để nhận thông tin cập nhật về các ưu đãi mới</h2>
                         <div class="input-group">
-                            <input type="text" class="form-control" placeholder="enter email address"
+                            <input type="text" class="form-control" placeholder="Nhập địa chỉ email"
                                 aria-label="Recipient's username" aria-describedby="basic-addon2">
                             <div class="input-group-append">
-                                <a href="#" class="input-group-text btn_2" id="basic-addon2">subscribe now</a>
+                                <a href="#" class="input-group-text btn_2" id="basic-addon2">Đăng ký ngay</a>
                             </div>
                         </div>
                     </div>
@@ -304,7 +303,7 @@
     <!--::subscribe_area part end::-->
 
     <!-- subscribe_area part start-->
-    <section class="client_logo padding_top">
+    <!-- <section class="client_logo padding_top">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-12">
@@ -316,7 +315,7 @@
                             </div>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <!-- Fallback brand logos -->
+                       
                         <?php for($i = 1; $i <= 10; $i++): ?>
                             <div class="single_client_logo">
                                 <img src="<?= base_url('aranoz-master/img/client_logo/client_logo_' . (($i % 5) + 1) . '.png') ?>" alt="">
@@ -326,9 +325,48 @@
                 </div>
             </div>
         </div>
-    </section>
+    </section> -->
+    
     <!--::subscribe_area part end::-->
-
+       <section class="client_logo padding_top">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-12">
+                <div class="single_client_logo">
+                    <img src="<?= base_url('aranoz-master/img/client_logo/client_logo_1.png') ?>" alt="">
+                </div>
+                <div class="single_client_logo">
+                    <img src="<?= base_url('aranoz-master/img/client_logo/client_logo_2.png') ?>" alt="">
+                </div>
+                <div class="single_client_logo">
+                    <img src="<?= base_url('aranoz-master/img/client_logo/client_logo_3.png') ?>" alt="">
+                </div>
+                <div class="single_client_logo">
+                    <img src="<?= base_url('aranoz-master/img/client_logo/client_logo_4.png') ?>" alt="">
+                </div>
+                <div class="single_client_logo">
+                    <img src="<?= base_url('aranoz-master/img/client_logo/client_logo_5.png') ?>" alt="">
+                </div>
+                <div class="single_client_logo">
+                    <img src="<?= base_url('aranoz-master/img/client_logo/client_logo_3.png') ?>" alt="">
+                </div>
+                <div class="single_client_logo">
+                    <img src="<?= base_url('aranoz-master/img/client_logo/client_logo_1.png') ?>" alt="">
+                </div>
+                <div class="single_client_logo">
+                    <img src="<?= base_url('aranoz-master/img/client_logo/client_logo_2.png') ?>" alt="">
+                </div>
+                <div class="single_client_logo">
+                    <img src="<?= base_url('aranoz-master/img/client_logo/client_logo_3.png') ?>" alt="">
+                </div>
+                <div class="single_client_logo">
+                    <img src="<?= base_url('aranoz-master/img/client_logo/client_logo_4.png') ?>" alt="">
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+                     
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
