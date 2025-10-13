@@ -23,7 +23,7 @@
                     <div class="icon">
                         <i class="ion ion-cash"></i>
                     </div>
-                    <a href="<?= site_url('admin/orders') ?>" class="small-box-footer">Chi tiết <i class="fas fa-arrow-circle-right"></i></a>
+                    <a  class="small-box-footer">Chi tiết <i class="fas fa-arrow-circle-right"></i></a>
                 </div>
             </div>
             
@@ -37,7 +37,7 @@
                     <div class="icon">
                         <i class="ion ion-checkmark-circled"></i>
                     </div>
-                    <a href="<?= site_url('admin/products?status=active') ?>" class="small-box-footer">Chi tiết <i class="fas fa-arrow-circle-right"></i></a>
+                    <a href="<?= route_to('Table_products') ?>" class="small-box-footer">Chi tiết <i class="fas fa-arrow-circle-right"></i></a>
                 </div>
             </div>
             
@@ -51,7 +51,7 @@
                     <div class="icon">
                         <i class="ion ion-person-stalker"></i>
                     </div>
-                    <a href="<?= site_url('admin/users') ?>" class="small-box-footer">Chi tiết <i class="fas fa-arrow-circle-right"></i></a>
+                    <a href="<?= route_to('Table_Customers') ?>" class="small-box-footer">Chi tiết <i class="fas fa-arrow-circle-right"></i></a>
                 </div>
             </div>
             
@@ -65,7 +65,7 @@
                     <div class="icon">
                         <i class="ion ion-ios-cart"></i>
                     </div>
-                    <a href="<?= site_url('admin/orders') ?>" class="small-box-footer">Chi tiết <i class="fas fa-arrow-circle-right"></i></a>
+                    <a href="<?= route_to('Table_orders') ?>" class="small-box-footer">Chi tiết <i class="fas fa-arrow-circle-right"></i></a>
                 </div>
             </div>
         </div>

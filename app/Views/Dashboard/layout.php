@@ -298,13 +298,13 @@
                       </li>
                       <?php endif; ?>
 
-                      <?php if ($session->get('Table_Permissions') === true ): ?>
+                      <!-- <?php if ($session->get('Table_Permissions') === true ): ?>
                       <li class="nav-item">
                           <a href="<?= route_to('Table_Permissions') ?>" class="nav-link">
                               <i class="nav-icon fas fa-th"></i>
                               <p>Danh Sách thông tin</p>
                           </a>
-                      </li>
+                      </li> -->
                       <?php endif; ?>
                       <?php if ($session->get('Table_User') === true ): ?>
                       <li class="nav-item">
