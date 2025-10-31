@@ -336,7 +336,7 @@
                   <a href="#" class="nav-link">
                     <i class="nav-icon fas fa-chart-pie"></i>
                     <p>
-                      Quản lý dịch vụ 
+                      Quản lý kinh doanh 
                       <i class="right fas fa-angle-left"></i>
                     </p>
                   </a>
@@ -384,7 +384,7 @@
                   <a href="#" class="nav-link">
                     <i class="nav-icon fas fa-chart-pie"></i>
                     <p>
-                      Quản Lý kinh doanh 
+                      Quản Lý dịch vụ 
                       <i class="right fas fa-angle-left"></i>
                     </p>
                   </a>
