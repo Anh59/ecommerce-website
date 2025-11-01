@@ -289,7 +289,7 @@ public function processLogin()
 // Thêm các method này vào CustomersController.php
 
 /**
-/**
+
      * Hiển thị trang profile
      */
     public function profile()

@@ -149,7 +149,7 @@
                 <div class="tab-pane fade" id="order-history">
                     <div class="card">
                         <div class="card-header">
-                            <h5><i class="fas fa-history"></i> Lịch sử đơn hàng</h5>
+                            <h5><i class="fas fa-history"></i> Lịch sử đặt hàng</h5>
                         </div>
                         <div class="card-body">
                             <?php if (!empty($orders)): ?>
